@@ -1,0 +1,64 @@
+{
+  "name": "vg-coder-cli",
+  "version": "1.0.1",
+  "description": "🚀 CLI tool to analyze projects, concatenate source files, count tokens, and export HTML with syntax highlighting and copy functionality",
+  "main": "src/index.js",
+  "bin": {
+    "vg-coder": "./bin/vg-coder.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "dev": "nodemon src/index.js",
+    "push" : "npm pack && npm publish"
+  },
+  "keywords": [
+    "cli",
+    "code-analysis",
+    "token-counter",
+    "ai-helper",
+    "gitignore",
+    "html-export",
+    "syntax-highlighting",
+    "project-analyzer",
+    "source-code",
+    "tiktoken",
+    "spring-boot",
+    "angular",
+    "react",
+    "vue",
+    "java",
+    "javascript",
+    "typescript"
+  ],
+  "author": "VG Coder",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vg-coder/vg-coder-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vg-coder/vg-coder-cli/issues"
+  },
+  "homepage": "https://github.com/vg-coder/vg-coder-cli#readme",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "directory-tree": "^3.5.1",
+    "tiktoken": "^1.0.10",
+    "highlight.js": "^11.9.0",
+    "ignore": "^5.3.0",
+    "fs-extra": "^11.2.0",
+    "path": "^0.12.7",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "@types/jest": "^29.5.8"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
