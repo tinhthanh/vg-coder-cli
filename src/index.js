@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const chalk = require('chalk');
 const ora = require('ora');
+const packageJson = require('../package.json');
 
 const ProjectDetector = require('./detectors/project-detector');
 const FileScanner = require('./scanner/file-scanner');
@@ -25,7 +26,7 @@ class VGCoderCLI {
     this.program
       .name('vg-coder')
       .description('CLI tool để phân tích dự án, nối file mã nguồn, đếm token và xuất HTML')
-      .version('1.0.0');
+      .version(packageJson.version);
 
     // Analyze command
     this.program

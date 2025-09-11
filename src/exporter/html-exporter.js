@@ -215,6 +215,27 @@ class HtmlExporter {
 
         ${this.options.includeSearch ? this.generateSearchSection() : ''}
 
+        <section class="template-section">
+            <h2>📝 Script Template Hướng Dẫn</h2>
+            <div class="template-container">
+                <div class="template-header">
+                    <span class="template-title">Quy tắc tạo script chỉnh sửa file:</span>
+                    <button onclick="copyTemplateGuide()" class="btn btn-copy">📋 Copy Template</button>
+                </div>
+                <div class="template-content">
+                    <pre id="template-guide"><code>Trả về với định dạng
+Quy tắc bắt buộc:
+Script phải có cú pháp:
+mkdir -p $(dirname "path/to/file.ext")
+cat <<'EOF' > path/to/file.ext
+... toàn bộ nội dung file sau khi chỉnh sửa ...
+EOF
+Mỗi file cần thay đổi phải được ghi đè hoàn toàn bằng nội dung mới.
+Nếu file chưa tồn tại, script sẽ tự tạo file và thư mục cha.</code></pre>
+                </div>
+            </div>
+        </section>
+
         <section class="content-section">
             <div class="code-container">
                 <pre id="combined-content"><code>${highlightedContent}</code></pre>
@@ -458,6 +479,63 @@ body {
 .value {
     font-weight: bold;
     color: #2c3e50;
+}
+
+/* Template Section */
+.template-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.template-section h2 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+    font-size: 1.4em;
+}
+
+.template-container {
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.template-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #ecf0f1;
+    border-bottom: 1px solid #bdc3c7;
+}
+
+.template-title {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.template-content {
+    padding: 0;
+}
+
+.template-content pre {
+    margin: 0;
+    padding: 20px;
+    background: #2c3e50;
+    color: #ecf0f1;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: auto;
+}
+
+.template-content code {
+    background: none;
+    color: inherit;
+    padding: 0;
 }
 
 .content-section {
@@ -891,7 +969,43 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-});`;
+});
+
+// Copy template guide
+async function copyTemplateGuide() {
+    try {
+        const templateText = \`Trả về với định dạng
+Quy tắc bắt buộc:
+Script phải có cú pháp:
+mkdir -p $(dirname "path/to/file.ext")
+cat <<'EOF' > path/to/file.ext
+... toàn bộ nội dung file sau khi chỉnh sửa ...
+EOF
+Mỗi file cần thay đổi phải được ghi đè hoàn toàn bằng nội dung mới.
+Nếu file chưa tồn tại, script sẽ tự tạo file và thư mục cha.\`;
+
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(templateText);
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = templateText;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
+
+        showCopySuccess();
+    } catch (err) {
+        console.error('Failed to copy template: ', err);
+        alert('Failed to copy template to clipboard');
+    }
+}`;
 
     await fs.writeFile(path.join(assetsPath, 'scripts.js'), js);
   }
