@@ -6,6 +6,7 @@
 
 - 🔍 **Phát hiện loại dự án**: Tự động nhận diện Angular, Spring Boot, React, Vue, Node.js, Python, Java, .NET
 - 📁 **Xử lý .gitignore**: Tuân thủ chuẩn Git với multi-level ignore rules
+-  **.vgignore support**: Priority cao hơn .gitignore, với syntax giống hệt
 - 📄 **Scan và nối file**: Quét toàn bộ dự án và nối file mã nguồn
 - 🧮 **Đếm token**: Sử dụng tiktoken để đếm token chính xác cho AI models
 - ✂️ **Chia nhỏ nội dung**: Smart chunking với preserve structure

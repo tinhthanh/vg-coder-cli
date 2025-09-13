@@ -247,17 +247,15 @@ class TokenManager {
     let currentTokens = 0;
     let chunkIndex = 0;
     
-    // Thêm header cho file
-    const header = `\n=== Large File: ${filePath} (Part {part}) ===\n`;
-    
+    // Không thêm header "Large File" nữa để UI sạch hơn
+
     for (const line of lines) {
       const lineTokens = this.countTokens(line + '\n');
-      
-      if (currentTokens + lineTokens > this.options.maxTokens - 100 && currentChunk) { // Reserve 100 tokens for header
-        const partHeader = header.replace('{part}', (chunkIndex + 1).toString());
+
+      if (currentTokens + lineTokens > this.options.maxTokens && currentChunk) {
         chunks.push({
-          content: partHeader + currentChunk.trim(),
-          tokens: this.countTokens(partHeader + currentChunk.trim()),
+          content: currentChunk.trim(),
+          tokens: this.countTokens(currentChunk.trim()),
           chunkIndex: chunkIndex++,
           totalChunks: 0,
           metadata: { 
@@ -277,10 +275,9 @@ class TokenManager {
     
     // Thêm chunk cuối cùng
     if (currentChunk.trim()) {
-      const partHeader = header.replace('{part}', (chunkIndex + 1).toString());
       chunks.push({
-        content: partHeader + currentChunk.trim(),
-        tokens: this.countTokens(partHeader + currentChunk.trim()),
+        content: currentChunk.trim(),
+        tokens: this.countTokens(currentChunk.trim()),
         chunkIndex: chunkIndex++,
         totalChunks: 0,
         metadata: { 

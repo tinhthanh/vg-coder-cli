@@ -1,0 +1,10 @@
+# VG Coder specific ignores
+*.tgz
+coverage/
+vg-output/
+test-small/
+
+# Additional ignores for VG Coder
+*.map
+*.min.js
+*.min.css

@@ -19,6 +19,8 @@ class IgnoreManager {
     return [
       // Node.js
       'node_modules/',
+      'package-lock.json',
+      'yarn.lock',
       'npm-debug.log*',
       'yarn-debug.log*',
       'yarn-error.log*',
@@ -126,17 +128,17 @@ class IgnoreManager {
     // Thêm default ignores
     ig.add(this.defaultIgnores);
     
-    // Đọc .gitignore từ root đến thư mục hiện tại
+    // Đọc .gitignore và .vgignore từ root đến thư mục hiện tại
     const pathParts = relativePath ? relativePath.split(path.sep) : [];
     let currentPath = this.projectPath;
-    
-    // Đọc .gitignore từ root
-    await this.addGitignoreFromPath(ig, currentPath);
-    
-    // Đọc .gitignore từ các thư mục con theo thứ tự
+
+    // Đọc .gitignore và .vgignore từ root
+    await this.addIgnoreFromPath(ig, currentPath);
+
+    // Đọc .gitignore và .vgignore từ các thư mục con theo thứ tự
     for (const part of pathParts) {
       currentPath = path.join(currentPath, part);
-      await this.addGitignoreFromPath(ig, currentPath);
+      await this.addIgnoreFromPath(ig, currentPath);
     }
     
     this.ignoreInstances.set(cacheKey, ig);
@@ -144,26 +146,38 @@ class IgnoreManager {
   }
 
   /**
-   * Thêm patterns từ .gitignore file
+   * Thêm patterns từ .gitignore và .vgignore files
    */
-  async addGitignoreFromPath(ig, dirPath) {
+  async addIgnoreFromPath(ig, dirPath) {
+    // Đọc .gitignore
     const gitignorePath = path.join(dirPath, '.gitignore');
-    
     try {
       if (await fs.pathExists(gitignorePath)) {
         const content = await fs.readFile(gitignorePath, 'utf8');
-        const patterns = this.parseGitignoreContent(content, dirPath);
+        const patterns = this.parseIgnoreContent(content, dirPath);
         ig.add(patterns);
       }
     } catch (error) {
       // Ignore errors reading .gitignore files
     }
+
+    // Đọc .vgignore (có priority cao hơn .gitignore)
+    const vgignorePath = path.join(dirPath, '.vgignore');
+    try {
+      if (await fs.pathExists(vgignorePath)) {
+        const content = await fs.readFile(vgignorePath, 'utf8');
+        const patterns = this.parseIgnoreContent(content, dirPath);
+        ig.add(patterns);
+      }
+    } catch (error) {
+      // Ignore errors reading .vgignore files
+    }
   }
 
   /**
-   * Parse nội dung .gitignore
+   * Parse nội dung .gitignore và .vgignore
    */
-  parseGitignoreContent(content, basePath) {
+  parseIgnoreContent(content, basePath) {
     const lines = content.split('\n');
     const patterns = [];
     
