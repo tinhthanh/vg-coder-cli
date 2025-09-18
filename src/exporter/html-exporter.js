@@ -39,11 +39,15 @@ class HtmlExporter {
     
     // Tạo combined view
     await this.createCombinedPage(chunks, metadata);
-    
+
+    // Tạo combined.txt cho AI tools
+    await this.createCombinedTxtFile(chunks, metadata);
+
     return {
       indexPath: path.join(this.outputPath, 'index.html'),
       chunksPath: path.join(this.outputPath, 'chunks'),
       combinedPath: path.join(this.outputPath, 'combined.html'),
+      combinedTxtPath: path.join(this.outputPath, 'combined.txt'),
       totalFiles: chunks.length
     };
   }
@@ -248,6 +252,126 @@ Nếu file chưa tồn tại, script sẽ tự tạo file và thư mục cha.</c
 </html>`;
 
     await fs.writeFile(path.join(this.outputPath, 'combined.html'), html);
+  }
+
+  /**
+   * Tạo combined.txt file cho AI tools với formatting tối ưu
+   */
+  async createCombinedTxtFile(chunks, metadata) {
+    // Sử dụng files gốc nếu có, nếu không thì dùng chunks
+    const files = metadata.files;
+
+    if (files && files.length > 0) {
+      // Tạo content từ files gốc với formatting AI-friendly
+      let content = '';
+
+      // Minimal header cho AI context
+      content += `// VG Coder Analysis - ${metadata.projectInfo?.primary || 'Unknown'} Project\n`;
+      content += `// Files: ${files.length} | Generated: ${new Date().toISOString()}\n\n`;
+
+      // Nội dung từng file với boundaries rõ ràng
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // File boundary marker
+        content += `// ===== FILE: ${file.relativePath} =====\n`;
+
+        // Nội dung file nguyên bản
+        content += file.content;
+
+        // Đảm bảo file kết thúc bằng newline
+        if (!file.content.endsWith('\n')) {
+          content += '\n';
+        }
+
+        // Separator giữa các files
+        if (i < files.length - 1) {
+          content += '\n';
+        }
+      }
+
+      await fs.writeFile(path.join(this.outputPath, 'combined.txt'), content, 'utf8');
+    } else {
+      // Fallback: sử dụng chunks (legacy)
+      let content = '';
+
+      // Minimal header cho AI context
+      content += `// VG Coder Analysis - ${metadata.projectInfo?.primary || 'Unknown'} Project\n`;
+      content += `// Files: ${chunks.length} | Generated: ${new Date().toISOString()}\n\n`;
+
+      // Parse chunks để extract file content với boundaries rõ ràng
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+
+        // Extract file content từ chunk, bỏ qua headers và separators
+        const cleanContent = this.extractCleanContent(chunk.content);
+
+        if (cleanContent.trim()) {
+          content += cleanContent;
+
+          // Đảm bảo kết thúc bằng newline
+          if (!cleanContent.endsWith('\n')) {
+            content += '\n';
+          }
+
+          // Separator giữa các chunks (minimal)
+          if (i < chunks.length - 1) {
+            content += '\n';
+          }
+        }
+      }
+
+      await fs.writeFile(path.join(this.outputPath, 'combined.txt'), content, 'utf8');
+    }
+  }
+
+  /**
+   * Extract clean content từ chunk, loại bỏ headers và formatting
+   */
+  extractCleanContent(chunkContent) {
+    const lines = chunkContent.split('\n');
+    let cleanLines = [];
+    let inFileContent = false;
+    let currentFilePath = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Detect file header
+      if (line.includes('================================================================================')) {
+        if (i + 1 < lines.length && lines[i + 1].startsWith('File: ')) {
+          // Start of new file
+          currentFilePath = lines[i + 1].replace('File: ', '').trim();
+          cleanLines.push(`// ===== FILE: ${currentFilePath} =====`);
+          inFileContent = false;
+          i += 2; // Skip header lines
+          continue;
+        }
+      }
+
+      // Skip project headers and structure
+      if (line.startsWith('# Project Analysis Report') ||
+          line.startsWith('Generated:') ||
+          line.startsWith('Project Path:') ||
+          line.startsWith('## Statistics') ||
+          line.startsWith('## Project Structure') ||
+          line.startsWith('- Total') ||
+          line.startsWith('- Extensions:') ||
+          line.startsWith('```') ||
+          line.startsWith('├──') ||
+          line.startsWith('└──') ||
+          line.trim() === '') {
+        continue;
+      }
+
+      // Add actual file content
+      if (currentFilePath && !line.includes('================================================================================')) {
+        cleanLines.push(line);
+        inFileContent = true;
+      }
+    }
+
+    return cleanLines.join('\n');
   }
 
   /**

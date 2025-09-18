@@ -9,6 +9,7 @@ const ProjectDetector = require('./detectors/project-detector');
 const FileScanner = require('./scanner/file-scanner');
 const TokenManager = require('./tokenizer/token-manager');
 const HtmlExporter = require('./exporter/html-exporter');
+const ClipboardManager = require('./utils/clipboard');
 
 /**
  * Main CLI Application
@@ -39,6 +40,8 @@ class VGCoderCLI {
       .option('--include-hidden', 'Bao gồm file ẩn')
       .option('--no-structure', 'Không ưu tiên giữ cấu trúc file')
       .option('--theme <theme>', 'Theme cho syntax highlighting', 'github')
+      .option('--clipboard-only', 'Copy content to clipboard without creating files')
+      .option('--clipboard', 'Alias for --clipboard-only')
       .action(this.handleAnalyze.bind(this));
 
     // Info command
@@ -60,15 +63,23 @@ class VGCoderCLI {
    */
   async handleAnalyze(projectPath, options) {
     const spinner = ora('Initializing analysis...').start();
-    
+
     try {
       // Resolve project path
       projectPath = path.resolve(projectPath || process.cwd());
-      const outputPath = path.resolve(options.output);
+
+      // Check if clipboard-only mode
+      const clipboardMode = options.clipboardOnly || options.clipboard;
+      const outputPath = clipboardMode ? null : path.resolve(options.output || './vg-output');
       
       // Validate project path
       if (!await fs.pathExists(projectPath)) {
         throw new Error(`Project path does not exist: ${projectPath}`);
+      }
+
+      // Validate output path for non-clipboard mode
+      if (!clipboardMode && !outputPath) {
+        throw new Error('Output path is required for non-clipboard mode');
       }
 
       spinner.text = 'Detecting project type...';
@@ -123,10 +134,42 @@ class VGCoderCLI {
       console.log(`Estimated Chunks: ${tokenAnalysis.summary.estimatedChunks}`);
 
       spinner.text = 'Creating content chunks...';
-      
-      // Create combined content
+
+      if (clipboardMode) {
+        // Clipboard mode: create AI-friendly content and copy to clipboard
+        spinner.text = 'Creating AI-friendly content...';
+
+        const aiContent = await scanner.createCombinedContentForAI(scanResult.files, {
+          includeStats: false,
+          includeTree: false,
+          preserveLineNumbers: true
+        });
+
+        spinner.text = 'Copying to clipboard...';
+
+        await ClipboardManager.copyToClipboard(aiContent);
+        const contentInfo = ClipboardManager.getContentInfo(aiContent);
+
+        // Cleanup
+        tokenManager.cleanup();
+
+        spinner.succeed('Content copied to clipboard successfully!');
+
+        console.log(chalk.green('\n📋 Clipboard Content:'));
+        console.log(`Files: ${chalk.cyan(scanResult.files.length)}`);
+        console.log(`Lines: ${chalk.cyan(contentInfo.lines.toLocaleString())}`);
+        console.log(`Characters: ${chalk.cyan(contentInfo.characters.toLocaleString())}`);
+        console.log(`Size: ${chalk.cyan(contentInfo.size)}`);
+
+        console.log(chalk.blue('\n💡 Ready for AI analysis!'));
+        console.log('Content is now in your clipboard and ready to paste into AI tools.');
+
+        return; // Exit early for clipboard mode
+      }
+
+      // Normal mode: create HTML output
       const combinedContent = await scanner.createCombinedContent(scanResult.files);
-      
+
       // Chunk content
       const chunks = await tokenManager.chunkContent(combinedContent, {
         projectType: projectInfo.primary,
@@ -153,7 +196,8 @@ class VGCoderCLI {
         projectInfo: projectInfo,
         scanStats: scanResult.stats,
         tokenStats: tokenAnalysis.summary,
-        directoryStructure: treeStructure
+        directoryStructure: treeStructure,
+        files: scanResult.files // Thêm files gốc để tạo combined.txt
       });
       
       // Cleanup
@@ -164,6 +208,9 @@ class VGCoderCLI {
       console.log(chalk.green('\n✅ Output Generated:'));
       console.log(`Index: ${chalk.cyan(exportResult.indexPath)}`);
       console.log(`Combined: ${chalk.cyan(exportResult.combinedPath)}`);
+      if (exportResult.combinedTxtPath) {
+        console.log(`Combined.txt: ${chalk.cyan(exportResult.combinedTxtPath)}`);
+      }
       console.log(`Chunks: ${chalk.cyan(exportResult.chunksPath)}`);
       console.log(`Total Files: ${exportResult.totalFiles}`);
       

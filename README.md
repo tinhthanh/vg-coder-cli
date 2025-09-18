@@ -4,15 +4,18 @@
 
 ## ✨ Tính năng
 
-- 🔍 **Phát hiện loại dự án**: Tự động nhận diện Angular, Spring Boot, React, Vue, Node.js, Python, Java, .NET
-- 📁 **Xử lý .gitignore**: Tuân thủ chuẩn Git với multi-level ignore rules
--  **.vgignore support**: Priority cao hơn .gitignore, với syntax giống hệt
-- 📄 **Scan và nối file**: Quét toàn bộ dự án và nối file mã nguồn
-- 🧮 **Đếm token**: Sử dụng tiktoken để đếm token chính xác cho AI models
-- ✂️ **Chia nhỏ nội dung**: Smart chunking với preserve structure
-- 🌐 **Xuất HTML**: Tạo HTML với syntax highlighting và copy buttons
-- 🎨 **Syntax Highlighting**: Hỗ trợ nhiều ngôn ngữ lập trình
-- 📋 **Copy to Clipboard**: Dễ dàng copy code với một click
+- 🔍 **Phát hiện loại dự án**: Tự động nhận diện Angular, Spring Boot, React, Vue, Node.js, Python, Java, .NET.
+- 📁 **Xử lý `.gitignore`**: Tuân thủ chuẩn Git với multi-level ignore rules.
+- 🛡️ **Hỗ trợ `.vgignore`**: Có độ ưu tiên cao hơn `.gitignore`, với cú pháp giống hệt.
+- 📜 **Bỏ qua file mặc định**: Tự động bỏ qua các thư mục phổ biến như `node_modules`, `dist`, `.git`, `build`, `target` và các file cấu hình IDE.
+- 📄 **Scan và nối file**: Quét toàn bộ dự án và nối các file mã nguồn lại với nhau.
+- 🧮 **Đếm token**: Sử dụng `tiktoken` để đếm token chính xác cho các mô hình AI.
+- ✂️ **Chia nhỏ nội dung**: Chia nội dung thông minh thành các chunk nhỏ hơn mà vẫn giữ cấu trúc file.
+- 🌐 **Xuất HTML**: Tạo báo cáo HTML tương tác với syntax highlighting và các nút bấm sao chép.
+- 📋 **Sao chép vào Clipboard**: Chế độ `--clipboard-only` giúp sao chép toàn bộ mã nguồn đã xử lý vào clipboard, không cần tạo file.
+- 🤖 **Tối ưu cho AI**: Xuất file `combined.txt` với định dạng thân thiện cho các mô hình AI và cung cấp mẫu script để hướng dẫn AI.
+- 🌳 **Cây thư mục**: Hiển thị và cho phép sao chép cấu trúc cây thư mục của dự án trong giao diện HTML.
+- 🔍 **Tìm kiếm tích hợp**: Giao diện HTML đi kèm chức năng tìm kiếm nội dung trực tiếp trong code.
 
 ## 📦 Cài đặt
 
@@ -40,7 +43,7 @@ chmod +x bin/vg-coder.js
 
 ## 🚀 Sử dụng
 
-### Phân tích dự án
+### Phân tích dự án và xuất HTML
 ```bash
 # Nếu cài global
 vg-coder analyze
@@ -55,6 +58,15 @@ vg-coder analyze /path/to/project
 vg-coder analyze /path/to/project --max-tokens 8192 --output ./my-output --theme monokai
 ```
 
+### Sao chép nhanh vào Clipboard (Không tạo file)
+Chế độ này rất hữu ích để nhanh chóng đưa toàn bộ ngữ cảnh dự án vào các công cụ AI.
+```bash
+# Phân tích và sao chép toàn bộ code vào clipboard
+vg-coder analyze --clipboard-only
+
+# Hoặc dùng alias ngắn gọn
+vg-coder analyze --clipboard```
+
 ### Xem thông tin dự án
 ```bash
 # Thông tin dự án hiện tại
@@ -64,13 +76,12 @@ vg-coder info
 vg-coder info /path/to/project
 ```
 
-### Xóa output
-```bash
+### Xóa output```bash
 # Xóa output mặc định
-node src/index.js clean
+vg-coder clean
 
 # Xóa output tùy chỉnh
-node src/index.js clean --output ./my-output
+vg-coder clean --output ./my-output
 ```
 
 ## ⚙️ Options
@@ -80,68 +91,42 @@ node src/index.js clean --output ./my-output
 | `--max-tokens <number>` | Số token tối đa mỗi chunk | 8000 |
 | `--model <model>` | Model AI để đếm token | gpt-4 |
 | `--output <path>` | Thư mục output | ./vg-output |
-| `--extensions <list>` | Danh sách extensions (comma-separated) | Auto-detect |
-| `--include-hidden` | Bao gồm file ẩn | false |
-| `--no-structure` | Không ưu tiên giữ cấu trúc file | false |
+| `--extensions <list>` | Danh sách extensions (comma-separated) | Tự động phát hiện |
+| `--include-hidden` | Bao gồm file ẩn (bị bỏ qua mặc định) | false |
+| `--no-structure` | Không ưu tiên giữ cấu trúc file khi chia chunk | false |
 | `--theme <theme>` | Theme cho syntax highlighting | github |
+| `--clipboard-only` | Sao chép nội dung vào clipboard thay vì tạo file output. | false |
+| `--clipboard` | Alias cho `--clipboard-only` | false |
 
-## 📋 Ví dụ chi tiết
 
-### Phân tích dự án Angular
-```bash
-node src/index.js analyze ./my-angular-app --max-tokens 6000 --theme monokai
+## 🤖 Tối ưu cho AI (AI Optimization)
+
+### File `combined.txt`
+Công cụ tạo ra file `combined.txt` được định dạng đặc biệt để dễ dàng đưa vào các mô hình ngôn ngữ lớn. Mỗi file được phân tách rõ ràng bằng một header duy nhất, giúp AI nhận biết và xử lý chính xác từng file.
+
+**Ví dụ định dạng:**
+```
+// ===== FILE: src/index.js =====
+... nội dung file index.js ...
+
+// ===== FILE: src/utils.js =====
+... nội dung file utils.js ...
 ```
 
-### Phân tích với extensions tùy chỉnh
-```bash
-node src/index.js analyze ./my-project --extensions "js,ts,vue,css" --include-hidden
-```
-
-### Xem thông tin chi tiết
-```bash
-node src/index.js info ./my-project
-# Output:
-# 📁 Project Information:
-# Path: /path/to/my-project
-# Primary Type: nodejs
-#
-# Detected Technologies:
-#   nodejs: high confidence
-#
-# 📊 File Statistics:
-# Total Files: 25
-# Total Size: 156.7 KB
-# Total Lines: 4,523
-# Extensions: js, ts, json, md
-```
-
-## 🧪 Testing
-
-```bash
-# Chạy tất cả tests
-npm test
-
-# Chạy tests với coverage
-npm run test:coverage
-
-# Chạy specific test
-npm test -- --testNamePattern="project detection"
-```
+### Mẫu Script Hướng Dẫn AI
+Trang `combined.html` có sẵn một mẫu hướng dẫn (prompt template) để yêu cầu AI trả về các thay đổi dưới dạng script shell. Điều này giúp tự động hóa việc áp dụng các thay đổi do AI đề xuất một cách an toàn và có thể kiểm soát.
 
 ## 📁 Cấu trúc Output
 
 ```
 vg-output/
-├── index.html          # Trang chính với navigation
-├── combined.html       # Tất cả code trong một file
-├── chunks/             # Các chunk riêng biệt
+├── index.html          # Trang chính với navigation và cây thư mục
+├── combined.html       # Tất cả code trong một file HTML, có chức năng tìm kiếm
+├── combined.txt        # Tất cả code trong một file text, tối ưu cho AI
+├── chunks/             # Các chunk riêng biệt (nếu nội dung lớn)
 │   ├── chunk-1.html
-│   ├── chunk-2.html
 │   └── ...
-└── assets/             # CSS, JS, themes
-    ├── styles.css
-    ├── scripts.js
-    └── highlight.css
+└── assets/             # CSS, JS cho trang HTML
 ```
 
 ## 🎯 Các loại dự án được hỗ trợ
@@ -152,28 +137,20 @@ vg-output/
 - **Languages**: JavaScript, TypeScript, Java, Python, C#, Go, Rust
 - **Config**: JSON, YAML, XML, TOML
 
-## 🔧 Tùy chỉnh
+## 🛡️ Quy tắc bỏ qua file (Ignoring Files)
 
-### Extensions mặc định
-Tool tự động detect extensions phù hợp với loại dự án:
-- **Web**: .js, .jsx, .ts, .tsx, .vue, .html, .css, .scss
-- **Backend**: .java, .py, .cs, .go, .rs, .php
-- **Config**: .json, .yaml, .xml, .toml, .env
-
-### Themes có sẵn
-- github (default)
-- monokai
-- atom-one-dark
-- vs2015
-- rainbow
+Công cụ tuân thủ các quy tắc bỏ qua file theo thứ tự ưu tiên sau:
+1.  **`.vgignore`**: Các quy tắc trong file này có độ ưu tiên cao nhất.
+2.  **`.gitignore`**: Các quy tắc trong file `.gitignore` sẽ được áp dụng.
+3.  **Quy tắc mặc định**: Nếu không có các file trên, công cụ sẽ tự động bỏ qua các thư mục và file phổ biến như `node_modules`, `.git`, `dist`, `build`, `target`, các file log, và các thư mục cấu hình của IDE (`.vscode`, `.idea`).
 
 ## 🤝 Đóng góp
 
-1. Fork repository
-2. Tạo feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Tạo Pull Request
+1.  Fork repository
+2.  Tạo feature branch (`git checkout -b feature/amazing-feature`)
+3.  Commit changes (`git commit -m 'Add amazing feature'`)
+4.  Push to branch (`git push origin feature/amazing-feature`)
+5.  Tạo Pull Request
 
 ## 📄 License
 

@@ -447,6 +447,54 @@ Size: {size} bytes | Lines: {lines}
   }
 
   /**
+   * Tạo nội dung kết hợp cho AI tools với formatting chính xác
+   */
+  async createCombinedContentForAI(files, options = {}) {
+    const {
+      includeStats = false,
+      includeTree = false,
+      preserveLineNumbers = true
+    } = options;
+
+    let content = '';
+
+    // Header với thông tin project (tùy chọn)
+    if (includeStats) {
+      content += this.generateProjectHeader(files);
+      content += '\n\n';
+    }
+
+    // Cấu trúc thư mục (tùy chọn)
+    if (includeTree) {
+      content += this.generateTreeStructure(files);
+      content += '\n\n';
+    }
+
+    // Nội dung từng file với formatting chính xác
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // File boundary marker - không ảnh hưởng line numbering
+      content += `// ===== FILE: ${file.relativePath} =====\n`;
+
+      // Nội dung file nguyên bản
+      content += file.content;
+
+      // Đảm bảo file kết thúc bằng newline
+      if (!file.content.endsWith('\n')) {
+        content += '\n';
+      }
+
+      // Separator giữa các files
+      if (i < files.length - 1) {
+        content += '\n';
+      }
+    }
+
+    return content;
+  }
+
+  /**
    * Tạo header thông tin project
    */
   generateProjectHeader(files) {
