@@ -65,7 +65,8 @@ Chế độ này rất hữu ích để nhanh chóng đưa toàn bộ ngữ cả
 vg-coder analyze --clipboard-only
 
 # Hoặc dùng alias ngắn gọn
-vg-coder analyze --clipboard```
+vg-coder analyze --clipboard
+```
 
 ### Xem thông tin dự án
 ```bash
@@ -76,12 +77,46 @@ vg-coder info
 vg-coder info /path/to/project
 ```
 
-### Xóa output```bash
+### Xóa output
+```bash
 # Xóa output mặc định
 vg-coder clean
 
 # Xóa output tùy chỉnh
 vg-coder clean --output ./my-output
+```
+
+## 📜 Trợ giúp (Help)
+
+Bạn có thể xem tất cả các lệnh và tùy chọn có sẵn bằng cách sử dụng cờ `--help` hoặc `-h`.
+
+### Trợ giúp chung
+Để xem danh sách các lệnh chính:
+```bash
+vg-coder --help
+```
+
+**Output (ví dụ):**
+```
+Usage: vg-coder [command] [options]
+
+CLI tool để phân tích dự án, nối file mã nguồn, đếm token và xuất HTML
+
+Options:
+  -V, --version      output the version number
+  -h, --help         display help for command
+
+Commands:
+  analyze [path]     Phân tích dự án và tạo output HTML
+  info [path]        Hiển thị thông tin về dự án
+  clean              Xóa thư mục output
+  help [command]     display help for command
+```
+
+### Trợ giúp cho lệnh cụ thể
+Để xem chi tiết các tùy chọn cho một lệnh cụ thể (ví dụ: `analyze`):
+```bash
+vg-coder analyze --help
 ```
 
 ## ⚙️ Options
