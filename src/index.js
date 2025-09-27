@@ -42,6 +42,7 @@ class VGCoderCLI {
       .option('--theme <theme>', 'Theme cho syntax highlighting', 'github')
       .option('--clipboard-only', 'Copy content to clipboard without creating files')
       .option('--clipboard', 'Alias for --clipboard-only')
+      .option('--save-txt', 'Save AI-friendly content to vg-projects.txt file')
       .action(this.handleAnalyze.bind(this));
 
     // Info command
@@ -68,18 +69,20 @@ class VGCoderCLI {
       // Resolve project path
       projectPath = path.resolve(projectPath || process.cwd());
 
-      // Check if clipboard-only mode
+      // Check special modes
       const clipboardMode = options.clipboardOnly || options.clipboard;
-      const outputPath = clipboardMode ? null : path.resolve(options.output || './vg-output');
+      const saveTxtMode = options.saveTxt;
+      const specialMode = clipboardMode || saveTxtMode;
+      const outputPath = specialMode ? null : path.resolve(options.output || './vg-output');
       
       // Validate project path
       if (!await fs.pathExists(projectPath)) {
         throw new Error(`Project path does not exist: ${projectPath}`);
       }
 
-      // Validate output path for non-clipboard mode
-      if (!clipboardMode && !outputPath) {
-        throw new Error('Output path is required for non-clipboard mode');
+      // Validate output path for normal mode
+      if (!specialMode && !outputPath) {
+        throw new Error('Output path is required for normal mode');
       }
 
       spinner.text = 'Detecting project type...';
@@ -165,6 +168,48 @@ class VGCoderCLI {
         console.log('Content is now in your clipboard and ready to paste into AI tools.');
 
         return; // Exit early for clipboard mode
+      }
+
+      if (saveTxtMode) {
+        // Save-txt mode: create AI-friendly content and save to vg-projects.txt
+        spinner.text = 'Creating AI-friendly content...';
+
+        const aiContent = await scanner.createCombinedContentForAI(scanResult.files, {
+          includeStats: false,
+          includeTree: false,
+          preserveLineNumbers: true
+        });
+
+        spinner.text = 'Saving to vg-projects.txt...';
+
+        const outputFilePath = path.resolve('vg-projects.txt');
+
+        // Ensure file is deleted first
+        try {
+          await fs.unlink(outputFilePath);
+        } catch (error) {
+          // File doesn't exist, that's fine
+        }
+
+        await fs.writeFile(outputFilePath, aiContent, 'utf8');
+        const contentInfo = ClipboardManager.getContentInfo(aiContent);
+
+        // Cleanup
+        tokenManager.cleanup();
+
+        spinner.succeed('Content saved to vg-projects.txt successfully!');
+
+        console.log(chalk.green('\n📄 File Content:'));
+        console.log(`Output: ${chalk.cyan(outputFilePath)}`);
+        console.log(`Files: ${chalk.cyan(scanResult.files.length)}`);
+        console.log(`Lines: ${chalk.cyan(contentInfo.lines.toLocaleString())}`);
+        console.log(`Characters: ${chalk.cyan(contentInfo.characters.toLocaleString())}`);
+        console.log(`Size: ${chalk.cyan(contentInfo.size)}`);
+
+        console.log(chalk.blue('\n💡 Ready for AI analysis!'));
+        console.log('Content is now saved in vg-projects.txt and ready for AI tools.');
+
+        return; // Exit early for save-txt mode
       }
 
       // Normal mode: create HTML output
