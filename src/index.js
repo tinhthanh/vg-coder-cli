@@ -25,13 +25,14 @@ class VGCoderCLI {
    */
   setupCommands() {
     this.program
-      .name('vg-coder')
+      .name('vg')
       .description('CLI tool để phân tích dự án, nối file mã nguồn, đếm token và xuất HTML')
       .version(packageJson.version);
 
     // Analyze command
     this.program
       .command('analyze [path]')
+      .alias('a')
       .description('Phân tích dự án và tạo output HTML')
       .option('-o, --output <path>', 'Thư mục output', './vg-output')
       .option('-m, --max-tokens <number>', 'Số token tối đa mỗi chunk', '8000')
@@ -41,7 +42,7 @@ class VGCoderCLI {
       .option('--no-structure', 'Không ưu tiên giữ cấu trúc file')
       .option('--theme <theme>', 'Theme cho syntax highlighting', 'github')
       .option('--clipboard-only', 'Copy content to clipboard without creating files')
-      .option('--clipboard', 'Alias for --clipboard-only')
+      .option('-c, --clipboard', 'Alias for --clipboard-only')
       .option('--save-txt', 'Save AI-friendly content to vg-projects.txt file')
       .action(this.handleAnalyze.bind(this));
 

@@ -1,9 +1,10 @@
 {
   "name": "vg-coder-cli",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "🚀 CLI tool to analyze projects, concatenate source files, count tokens, and export HTML with syntax highlighting and copy functionality",
   "main": "src/index.js",
   "bin": {
+    "vg": "./bin/vg.js",
     "vg-coder": "./bin/vg-coder.js"
   },
   "scripts": {
@@ -11,7 +12,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "dev": "nodemon src/index.js",
-    "push" : "npm pack && npm publish"
+    "push": "npm pack && npm publish"
   },
   "keywords": [
     "cli",
