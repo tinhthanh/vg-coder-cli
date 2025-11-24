@@ -363,6 +363,10 @@
                         <span id="analyze-copy-icon">📋</span>
                         <span id="analyze-copy-text">Copy to Clipboard</span>
                     </button>
+                    <button class="btn btn-copy" onclick="copyAnalyzeAsFile()">
+                        <span id="analyze-file-icon">📄</span>
+                        <span id="analyze-file-text">Copy as File</span>
+                    </button>
                 </div>
                 <div class="response" id="analyze-response"></div>
             </div>
@@ -669,6 +673,75 @@ API sẽ:
                 } catch (fallbackErr) {
                     showToast('❌ Lỗi copy: ' + fallbackErr.message, 'error');
                 }
+            }
+        }
+
+        async function copyAsFile(filename, content) {
+            const blob = new Blob([content], {
+                type: "application/octet-stream"
+            });
+
+            // ClipboardItem cần type key phải trùng blob.type
+            const item = new ClipboardItem(
+                { [blob.type]: blob },
+                {
+                    // Không phải chuẩn, nhưng Chrome hỗ trợ unofficial metadata
+                    type: "application/octet-stream",
+                    presentationStyle: "attachment",
+                    name: filename
+                }
+            );
+
+            await navigator.clipboard.write([item]);
+        }
+
+        async function copyAnalyzeAsFile() {
+            const copyBtn = event.target.closest('.btn-copy');
+            const copyIcon = document.getElementById('analyze-file-icon');
+            const copyText = document.getElementById('analyze-file-text');
+
+            if (!lastAnalyzeResult) {
+                // Fetch if not already analyzed
+                const path = document.getElementById('analyze-path').value;
+                showLoading(copyBtn, '<span id="analyze-file-icon">📄</span><span id="analyze-file-text">Copy as File</span>');
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/analyze`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path })
+                    });
+
+                    if (res.ok) {
+                        lastAnalyzeResult = await res.text();
+                    } else {
+                        showToast('❌ Lỗi analyze!', 'error');
+                        resetButton(copyBtn);
+                        return;
+                    }
+                } catch (err) {
+                    showToast('❌ Lỗi: ' + err.message, 'error');
+                    resetButton(copyBtn);
+                    return;
+                }
+                resetButton(copyBtn);
+            }
+
+            try {
+                await copyAsFile("project.txt", lastAnalyzeResult);
+
+                copyBtn.classList.add('copied');
+                copyIcon.textContent = '✓';
+                copyText.textContent = 'Copied!';
+                showToast('✅ Đã copy project.txt như file!', 'success');
+
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyIcon.textContent = '📄';
+                    copyText.textContent = 'Copy as File';
+                }, 2000);
+            } catch (err) {
+                showToast('❌ Lỗi copy: ' + err.message, 'error');
             }
         }
 
