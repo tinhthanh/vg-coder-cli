@@ -1,170 +1,260 @@
 # VG Coder CLI
 
-🚀 **CLI tool để phân tích dự án, nối file mã nguồn, đếm token và xuất HTML** với syntax highlighting và copy functionality.
+🚀 **Powerful CLI tool & API Server** để phân tích dự án, nối file mã nguồn, đếm token, xuất HTML và thực thi bash scripts qua REST API.
 
 ## ✨ Tính năng
 
-- 🔍 **Phát hiện loại dự án**: Tự động nhận diện Angular, Spring Boot, React, Vue, Node.js, Python, Java, .NET.
-- 📁 **Xử lý `.gitignore`**: Tuân thủ chuẩn Git với multi-level ignore rules.
-- 🛡️ **Hỗ trợ `.vgignore`**: Có độ ưu tiên cao hơn `.gitignore`, với cú pháp giống hệt.
-- 📜 **Bỏ qua file mặc định**: Tự động bỏ qua các thư mục phổ biến như `node_modules`, `dist`, `.git`, `build`, `target` và các file cấu hình IDE.
-- 📄 **Scan và nối file**: Quét toàn bộ dự án và nối các file mã nguồn lại với nhau.
-- 🧮 **Đếm token**: Sử dụng `tiktoken` để đếm token chính xác cho các mô hình AI.
-- ✂️ **Chia nhỏ nội dung**: Chia nội dung thông minh thành các chunk nhỏ hơn mà vẫn giữ cấu trúc file.
-- 🌐 **Xuất HTML**: Tạo báo cáo HTML tương tác với syntax highlighting và các nút bấm sao chép.
-- 📋 **Sao chép vào Clipboard**: Chế độ `--clipboard-only` giúp sao chép toàn bộ mã nguồn đã xử lý vào clipboard, không cần tạo file.
-- 🤖 **Tối ưu cho AI**: Xuất file `combined.txt` với định dạng thân thiện cho các mô hình AI và cung cấp mẫu script để hướng dẫn AI.
-- 🌳 **Cây thư mục**: Hiển thị và cho phép sao chép cấu trúc cây thư mục của dự án trong giao diện HTML.
-- 🔍 **Tìm kiếm tích hợp**: Giao diện HTML đi kèm chức năng tìm kiếm nội dung trực tiếp trong code.
+### 📊 Code Analysis & Export
+- 🔍 **Phát hiện loại dự án**: Tự động nhận diện Angular, Spring Boot, React, Vue, Node.js, Python, Java, .NET
+- 📁 **Xử lý `.gitignore`**: Tuân thủ chuẩn Git với multi-level ignore rules
+- 🛡️ **Hỗ trợ `.vgignore`**: Có độ ưu tiên cao hơn `.gitignore`, với cú pháp giống hệt
+- 📜 **Bỏ qua file mặc định**: Tự động bỏ qua `node_modules`, `dist`, `.git`, `build`, `target`
+- 📄 **Scan và nối file**: Quét toàn bộ dự án và nối các file mã nguồn
+- 🧮 **Đếm token**: Sử dụng `tiktoken` để đếm token chính xác cho AI models
+- ✂️ **Chia nhỏ nội dung**: Chia nội dung thông minh thành chunks nhỏ hơn
+- 🌐 **Xuất HTML**: Tạo báo cáo HTML tương tác với syntax highlighting
+- 📋 **Sao chép vào Clipboard**: Chế độ `-c` sao chép toàn bộ code vào clipboard
+- 🤖 **Tối ưu cho AI**: Xuất file `combined.txt` với định dạng thân thiện cho AI
+
+### 🚀 API Server (NEW!)
+- 🌐 **REST API Server**: Khởi động server với `vg start`
+- 🎨 **Beautiful Dashboard**: Tự động mở web UI để test API
+- 📡 **5 API Endpoints**:
+  - `GET /health` - Health check
+  - `POST /api/analyze` - Phân tích dự án, download project.txt
+  - `GET /api/info` - Lấy thông tin dự án (JSON)
+  - `POST /api/execute` - **Thực thi bash scripts** với validation
+  - `DELETE /api/clean` - Xóa output directory
+- ⚡ **Real-time Status**: Dashboard hiển thị server status live
+- 🔒 **Syntax Validation**: Validate bash syntax trước khi execute
+- 🧹 **Auto Cleanup**: Tự động dọn dẹp temp files
 
 ## 📦 Cài đặt
 
-### Cài đặt từ NPM (Recommended)
+### Từ NPM (Recommended)
 ```bash
-# Cài đặt global
+# Global install
 npm install -g vg-coder-cli
 
-# Hoặc cài đặt local
+# Local install
 npm install vg-coder-cli
 ```
 
-### Cài đặt từ source
+### Từ Source
 ```bash
-# Clone repository
-git clone <repository-url>
+git clone https://github.com/tinhthanh/vg-coder-cli.git
 cd vg-coder-cli
-
-# Cài đặt dependencies
 npm install
-
-# Cấp quyền thực thi (nếu cần)
-chmod +x bin/vg-coder.js
 ```
 
 ## 🚀 Sử dụng
 
-### Phân tích dự án và xuất HTML
+### CLI Commands
+
+#### 1. Phân tích dự án
 ```bash
-# Nếu cài global
-vg-coder analyze
+# Phân tích và xuất HTML
+vg analyze
+vg a                    # Alias rút gọn
 
-# Nếu cài local
-npx vg-coder analyze
+# Với options
+vg analyze /path/to/project --max-tokens 8192 --output ./my-output
 
-# Phân tích dự án khác
-vg-coder analyze /path/to/project
-
-# Với options tùy chỉnh
-vg-coder analyze /path/to/project --max-tokens 8192 --output ./my-output --theme monokai
+# Copy vào clipboard (không tạo file)
+vg analyze -c
+vg analyze --clipboard
 ```
 
-### Sao chép nhanh vào Clipboard (Không tạo file)
-Chế độ này rất hữu ích để nhanh chóng đưa toàn bộ ngữ cảnh dự án vào các công cụ AI.
+#### 2. Xem thông tin dự án
 ```bash
-# Phân tích và sao chép toàn bộ code vào clipboard
-vg-coder analyze --clipboard-only
-
-# Hoặc dùng alias ngắn gọn
-vg-coder analyze --clipboard
+vg info
+vg info /path/to/project
 ```
 
-### Xem thông tin dự án
+#### 3. Xóa output
 ```bash
-# Thông tin dự án hiện tại
-vg-coder info
-
-# Thông tin dự án khác
-vg-coder info /path/to/project
+vg clean
+vg clean --output ./my-output
 ```
 
-### Xóa output
+#### 4. **Khởi động API Server** 🆕
 ```bash
-# Xóa output mặc định
-vg-coder clean
+# Start server (mặc định port 6868)
+vg start
+vg s                    # Alias rút gọn
 
-# Xóa output tùy chỉnh
-vg-coder clean --output ./my-output
+# Custom port
+vg start -p 8080
+
+# Browser tự động mở dashboard tại http://localhost:6868
 ```
 
-## 📜 Trợ giúp (Help)
+### API Endpoints
 
-Bạn có thể xem tất cả các lệnh và tùy chọn có sẵn bằng cách sử dụng cờ `--help` hoặc `-h`.
-
-### Trợ giúp chung
-Để xem danh sách các lệnh chính:
+#### Health Check
 ```bash
-vg-coder --help
+GET http://localhost:6868/health
 ```
 
-**Output (ví dụ):**
-```
-Usage: vg-coder [command] [options]
-
-CLI tool để phân tích dự án, nối file mã nguồn, đếm token và xuất HTML
-
-Options:
-  -V, --version      output the version number
-  -h, --help         display help for command
-
-Commands:
-  analyze [path]     Phân tích dự án và tạo output HTML
-  info [path]        Hiển thị thông tin về dự án
-  clean              Xóa thư mục output
-  help [command]     display help for command
+**Response:**
+```json
+{
+  "status": "ok",
+  "version": "1.0.10",
+  "timestamp": "2025-11-24T15:00:00.000Z"
+}
 ```
 
-### Trợ giúp cho lệnh cụ thể
-Để xem chi tiết các tùy chọn cho một lệnh cụ thể (ví dụ: `analyze`):
+#### Analyze Project
 ```bash
-vg-coder analyze --help
+POST http://localhost:6868/api/analyze
+Content-Type: application/json
+
+{
+  "path": ".",
+  "options": {
+    "maxTokens": 8000
+  }
+}
+```
+
+**Response:** Downloads `project.txt` file
+
+#### Get Project Info
+```bash
+GET http://localhost:6868/api/info?path=.
+```
+
+**Response:**
+```json
+{
+  "path": "/path/to/project",
+  "primaryType": "nodejs",
+  "stats": {
+    "totalFiles": 42,
+    "totalSize": 123456,
+    "totalLines": 5000
+  },
+  "tokens": {
+    "total": 15000,
+    "averagePerFile": 357
+  }
+}
+```
+
+#### Execute Bash Script 🆕
+```bash
+POST http://localhost:6868/api/execute
+Content-Type: application/json
+
+{
+  "bash": "mkdir -p $(dirname \"src/test.js\")\ncat <<'EOF' > src/test.js\nconsole.log('Hello');\nEOF"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "stdout": "",
+  "stderr": "",
+  "exitCode": 0,
+  "executionTime": 15
+}
+```
+
+**Features:**
+- ✅ Syntax validation trong `.vg/temp-execute`
+- ✅ Execute tại working directory
+- ✅ Auto cleanup temp files
+- ✅ Return stdout/stderr/exitCode
+
+#### Clean Output
+```bash
+DELETE http://localhost:6868/api/clean
+Content-Type: application/json
+
+{
+  "output": "./vg-output"
+}
 ```
 
 ## ⚙️ Options
 
+### CLI Options
+
 | Option | Mô tả | Default |
 |--------|-------|---------|
-| `--max-tokens <number>` | Số token tối đa mỗi chunk | 8000 |
-| `--model <model>` | Model AI để đếm token | gpt-4 |
-| `--output <path>` | Thư mục output | ./vg-output |
-| `--extensions <list>` | Danh sách extensions (comma-separated) | Tự động phát hiện |
-| `--include-hidden` | Bao gồm file ẩn (bị bỏ qua mặc định) | false |
-| `--no-structure` | Không ưu tiên giữ cấu trúc file khi chia chunk | false |
+| `-o, --output <path>` | Thư mục output | ./vg-output |
+| `-m, --max-tokens <number>` | Số token tối đa mỗi chunk | 8000 |
+| `-t, --model <model>` | Model AI để đếm token | gpt-4 |
+| `--extensions <list>` | Extensions (comma-separated) | Auto-detect |
+| `--include-hidden` | Bao gồm file ẩn | false |
+| `--no-structure` | Không giữ cấu trúc file | false |
 | `--theme <theme>` | Theme cho syntax highlighting | github |
-| `--clipboard-only` | Sao chép nội dung vào clipboard thay vì tạo file output. | false |
-| `--clipboard` | Alias cho `--clipboard-only` | false |
+| `-c, --clipboard` | Copy vào clipboard | false |
+| `--save-txt` | Lưu vào vg-projects.txt | false |
 
+### Server Options
 
-## 🤖 Tối ưu cho AI (AI Optimization)
+| Option | Mô tả | Default |
+|--------|-------|---------|
+| `-p, --port <port>` | Port cho server | 6868 |
 
-### File `combined.txt`
-Công cụ tạo ra file `combined.txt` được định dạng đặc biệt để dễ dàng đưa vào các mô hình ngôn ngữ lớn. Mỗi file được phân tách rõ ràng bằng một header duy nhất, giúp AI nhận biết và xử lý chính xác từng file.
+## 🎨 Dashboard UI
 
-**Ví dụ định dạng:**
+Khi chạy `vg start`, browser tự động mở dashboard với:
+
+- 🎯 **Interactive Forms** cho tất cả endpoints
+- 🎨 **Beautiful Gradient UI** (purple to violet)
+- 📊 **Real-time Server Status** (green/red indicator)
+- 💻 **Syntax Highlighting** cho responses
+- ⚡ **Loading States** cho async operations
+- 📥 **Auto Download** cho analyze endpoint
+
+## 🤖 Tích hợp AI
+
+### System Prompt cho AI
+
+Xem file [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) để biết cách tích hợp với AI.
+
+**Command Prefixes:**
+- `/ask` - Q&A mode (Markdown response)
+- `/plan` - Planning mode (Checklist + bash)
+- `/fix` - Bug fix mode (Analysis + solution)
+- `/code` - Code generation (Bash script only)
+
+### Bash Script Format
+
+Khi AI generate code với `/code`, format chuẩn:
+
+```bash
+mkdir -p $(dirname "path/to/file.ext")
+cat <<'EOF' > path/to/file.ext
+... file content ...
+EOF
 ```
-// ===== FILE: src/index.js =====
-... nội dung file index.js ...
 
-// ===== FILE: src/utils.js =====
-... nội dung file utils.js ...
-```
-
-### Mẫu Script Hướng Dẫn AI
-Trang `combined.html` có sẵn một mẫu hướng dẫn (prompt template) để yêu cầu AI trả về các thay đổi dưới dạng script shell. Điều này giúp tự động hóa việc áp dụng các thay đổi do AI đề xuất một cách an toàn và có thể kiểm soát.
+**Quy tắc:**
+- ✅ Luôn có `mkdir -p $(dirname "...")` trước mỗi file
+- ✅ Sử dụng `<<'EOF'` (có quotes) để tránh expansion
+- ✅ Chỉ include files có thay đổi
+- ✅ Ghi đè hoàn toàn file content
 
 ## 📁 Cấu trúc Output
 
 ```
 vg-output/
-├── index.html          # Trang chính với navigation và cây thư mục
-├── combined.html       # Tất cả code trong một file HTML, có chức năng tìm kiếm
-├── combined.txt        # Tất cả code trong một file text, tối ưu cho AI
-├── chunks/             # Các chunk riêng biệt (nếu nội dung lớn)
+├── index.html          # Trang chính với navigation
+├── combined.html       # Tất cả code, có search
+├── combined.txt        # Text format, tối ưu cho AI
+├── chunks/             # Chunks riêng biệt
 │   ├── chunk-1.html
 │   └── ...
-└── assets/             # CSS, JS cho trang HTML
+└── assets/             # CSS, JS
 ```
 
-## 🎯 Các loại dự án được hỗ trợ
+## 🎯 Dự án được hỗ trợ
 
 - **Frontend**: Angular, React, Vue.js, Svelte
 - **Backend**: Node.js, Spring Boot, Python, .NET
@@ -172,21 +262,100 @@ vg-output/
 - **Languages**: JavaScript, TypeScript, Java, Python, C#, Go, Rust
 - **Config**: JSON, YAML, XML, TOML
 
-## 🛡️ Quy tắc bỏ qua file (Ignoring Files)
+## 🛡️ Quy tắc bỏ qua file
 
-Công cụ tuân thủ các quy tắc bỏ qua file theo thứ tự ưu tiên sau:
-1.  **`.vgignore`**: Các quy tắc trong file này có độ ưu tiên cao nhất.
-2.  **`.gitignore`**: Các quy tắc trong file `.gitignore` sẽ được áp dụng.
-3.  **Quy tắc mặc định**: Nếu không có các file trên, công cụ sẽ tự động bỏ qua các thư mục và file phổ biến như `node_modules`, `.git`, `dist`, `build`, `target`, các file log, và các thư mục cấu hình của IDE (`.vscode`, `.idea`).
+Thứ tự ưu tiên:
+1. **`.vgignore`** - Cao nhất
+2. **`.gitignore`** - Trung bình
+3. **Default rules** - Thấp nhất (node_modules, .git, dist, build, target)
+
+## 📝 Examples
+
+### Example 1: Analyze và Copy
+```bash
+# Analyze project và copy vào clipboard
+vg a . -c
+
+# Paste vào AI tool (Claude, ChatGPT, etc.)
+```
+
+### Example 2: API Server Workflow
+```bash
+# 1. Start server
+vg start
+
+# 2. Browser mở dashboard tự động
+# 3. Test endpoints trực tiếp trên UI
+# 4. Hoặc dùng Postman/curl
+
+# 5. Execute bash script từ AI
+curl -X POST http://localhost:6868/api/execute \
+  -H "Content-Type: application/json" \
+  -d '{"bash": "mkdir -p src && echo \"test\" > src/file.js"}'
+```
+
+### Example 3: AI Integration
+```bash
+# 1. Analyze project
+vg a . -c
+
+# 2. Paste vào AI với prompt:
+# "/code Thêm authentication vào project này"
+
+# 3. AI trả về bash script
+# 4. Copy bash script
+
+# 5. Execute qua API
+curl -X POST http://localhost:6868/api/execute \
+  -H "Content-Type: application/json" \
+  -d '{"bash": "..."}'
+```
+
+## 🔧 Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Run in dev mode
+npm run dev
+
+# Build and publish
+npm run push
+```
 
 ## 🤝 Đóng góp
 
-1.  Fork repository
-2.  Tạo feature branch (`git checkout -b feature/amazing-feature`)
-3.  Commit changes (`git commit -m 'Add amazing feature'`)
-4.  Push to branch (`git push origin feature/amazing-feature`)
-5.  Tạo Pull Request
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Create Pull Request
 
 ## 📄 License
 
 MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
+
+## 🔗 Links
+
+- **GitHub**: https://github.com/tinhthanh/vg-coder-cli
+- **NPM**: https://www.npmjs.com/package/vg-coder-cli
+- **Issues**: https://github.com/tinhthanh/vg-coder-cli/issues
+
+## 📊 Version History
+
+### v1.0.10 (Latest)
+- ✨ Added API Server with REST endpoints
+- 🎨 Beautiful dashboard UI with auto-open browser
+- ⚡ Bash script execution with validation
+- 🔧 Shortened commands: `vg`, `a`, `-c`, `s`
+- 📝 System prompt documentation
+
+### v1.0.9
+- 🚀 Initial release
+- 📊 Code analysis and token counting
+- 🌐 HTML export with syntax highlighting
+- 📋 Clipboard integration

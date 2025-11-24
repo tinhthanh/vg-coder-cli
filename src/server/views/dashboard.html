@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VG Coder API Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .endpoints {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+        }
+
+        .endpoint-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .endpoint-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .method {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .method.get {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .method.post {
+            background: #10b981;
+            color: white;
+        }
+
+        .method.delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .endpoint-path {
+            font-family: 'Courier New', monospace;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .endpoint-desc {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .response {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            background: #f9fafb;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .response.show {
+            display: block;
+        }
+
+        .response.success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .response.error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .response pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .system-prompt-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .system-prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .system-prompt-header h2 {
+            color: #667eea;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.open {
+            transform: rotate(180deg);
+        }
+
+        .system-prompt-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .system-prompt-content.open {
+            max-height: 2000px;
+        }
+
+        .prompt-text {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .btn-copy {
+            background: #10b981;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-copy:hover {
+            background: #059669;
+        }
+
+        .btn-copy.copied {
+            background: #6366f1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 VG Coder API Dashboard</h1>
+            <p>Test your API endpoints directly from the browser</p>
+            <span class="status" id="status">● Server Running</span>
+        </div>
+
+        <!-- System Prompt Section -->
+        <div class="system-prompt-card">
+            <div class="system-prompt-header" onclick="toggleSystemPrompt()">
+                <h2>
+                    <span>📝</span>
+                    <span>AI System Prompt</span>
+                </h2>
+                <span class="toggle-icon" id="toggle-icon">▼</span>
+            </div>
+            <div class="system-prompt-content" id="system-prompt-content">
+                <div class="prompt-text" id="prompt-text"></div>
+                <button class="btn btn-copy" onclick="copySystemPrompt()">
+                    <span id="copy-icon">📋</span>
+                    <span id="copy-text">Copy System Prompt</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="endpoints">
+            <!-- Health Check -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/health</span>
+                </div>
+                <p class="endpoint-desc">Check server health status</p>
+                <button class="btn" onclick="testHealth()">Test Health Check</button>
+                <div class="response" id="health-response"></div>
+            </div>
+
+            <!-- Analyze -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/analyze</span>
+                </div>
+                <p class="endpoint-desc">Analyze project and download project.txt</p>
+                <div class="form-group">
+                    <label>Project Path:</label>
+                    <input type="text" id="analyze-path" value="." placeholder=".">
+                </div>
+                <div class="form-group">
+                    <label>Max Tokens:</label>
+                    <input type="number" id="analyze-tokens" value="8000" placeholder="8000">
+                </div>
+                <button class="btn" onclick="testAnalyze()">Analyze & Download</button>
+                <div class="response" id="analyze-response"></div>
+            </div>
+
+            <!-- Info -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/info</span>
+                </div>
+                <p class="endpoint-desc">Get project information and statistics</p>
+                <div class="form-group">
+                    <label>Project Path:</label>
+                    <input type="text" id="info-path" value="." placeholder=".">
+                </div>
+                <button class="btn" onclick="testInfo()">Get Info</button>
+                <div class="response" id="info-response"></div>
+            </div>
+
+            <!-- Execute Bash -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/execute</span>
+                </div>
+                <p class="endpoint-desc">Execute bash script with syntax validation</p>
+                <div class="form-group">
+                    <label>Bash Script:</label>
+                    <textarea id="execute-bash" placeholder="echo 'Hello World'&#10;date"></textarea>
+                </div>
+                <button class="btn" onclick="testExecute()">Execute Script</button>
+                <div class="response" id="execute-response"></div>
+            </div>
+
+            <!-- Clean -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/clean</span>
+                </div>
+                <p class="endpoint-desc">Clean output directory</p>
+                <div class="form-group">
+                    <label>Output Path:</label>
+                    <input type="text" id="clean-output" value="./vg-output" placeholder="./vg-output">
+                </div>
+                <button class="btn" onclick="testClean()">Clean Directory</button>
+                <div class="response" id="clean-response"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        function showResponse(elementId, data, isError = false) {
+            const el = document.getElementById(elementId);
+            el.className = 'response show ' + (isError ? 'error' : 'success');
+            el.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+        function showLoading(button) {
+            button.disabled = true;
+            button.innerHTML = '<span class="loading"></span> Loading...';
+        }
+
+        function resetButton(button, text) {
+            button.disabled = false;
+            button.textContent = text;
+        }
+
+        async function testHealth() {
+            const btn = event.target;
+            showLoading(btn);
+            try {
+                const res = await fetch(`${API_BASE}/health`);
+                const data = await res.json();
+                showResponse('health-response', data);
+            } catch (err) {
+                showResponse('health-response', { error: err.message }, true);
+            }
+            resetButton(btn, 'Test Health Check');
+        }
+
+        async function testAnalyze() {
+            const btn = event.target;
+            const path = document.getElementById('analyze-path').value;
+            const maxTokens = document.getElementById('analyze-tokens').value;
+
+            showLoading(btn);
+            try {
+                const res = await fetch(`${API_BASE}/api/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path,
+                        options: { maxTokens: parseInt(maxTokens) }
+                    })
+                });
+
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'project.txt';
+                    a.click();
+                    showResponse('analyze-response', { success: true, message: 'File downloaded!' });
+                } else {
+                    const data = await res.json();
+                    showResponse('analyze-response', data, true);
+                }
+            } catch (err) {
+                showResponse('analyze-response', { error: err.message }, true);
+            }
+            resetButton(btn, 'Analyze & Download');
+        }
+
+        async function testInfo() {
+            const btn = event.target;
+            const path = document.getElementById('info-path').value;
+
+            showLoading(btn);
+            try {
+                const res = await fetch(`${API_BASE}/api/info?path=${encodeURIComponent(path)}`);
+                const data = await res.json();
+                showResponse('info-response', data, !res.ok);
+            } catch (err) {
+                showResponse('info-response', { error: err.message }, true);
+            }
+            resetButton(btn, 'Get Info');
+        }
+
+        async function testExecute() {
+            const btn = event.target;
+            const bash = document.getElementById('execute-bash').value;
+
+            if (!bash.trim()) {
+                showResponse('execute-response', { error: 'Bash script is required' }, true);
+                return;
+            }
+
+            showLoading(btn);
+            try {
+                const res = await fetch(`${API_BASE}/api/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bash })
+                });
+                const data = await res.json();
+                showResponse('execute-response', data, !res.ok || !data.success);
+            } catch (err) {
+                showResponse('execute-response', { error: err.message }, true);
+            }
+            resetButton(btn, 'Execute Script');
+        }
+
+        async function testClean() {
+            const btn = event.target;
+            const output = document.getElementById('clean-output').value;
+
+            showLoading(btn);
+            try {
+                const res = await fetch(`${API_BASE}/api/clean`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ output })
+                });
+                const data = await res.json();
+                showResponse('clean-response', data, !res.ok);
+            } catch (err) {
+                showResponse('clean-response', { error: err.message }, true);
+            }
+            resetButton(btn, 'Clean Directory');
+        }
+
+        // System Prompt
+        const SYSTEM_PROMPT = `# VG Coder AI System Prompt
+
+## Command Prefixes
+
+### /ask - Question & Answer Mode
+Khi người dùng hỏi với prefix /ask, họ đang muốn tìm hiểu hoặc được giải thích về một vấn đề.
+
+**Response Format:** Markdown
+- Trả lời chi tiết, rõ ràng
+- Sử dụng code blocks, lists, tables khi cần
+- Cung cấp ví dụ minh họa
+
+---
+
+### /plan - Planning Mode
+Khi người dùng muốn lên kế hoạch với prefix /plan, tạo một implementation plan chi tiết.
+
+**Response Format:** Markdown checklist với bash commands
+- Chia nhỏ thành các bước cụ thể
+- Mỗi bước có bash command tương ứng
+- Sắp xếp theo thứ tự logic
+
+---
+
+### /fix - Bug Fix Mode
+Khi người dùng cần fix bug với prefix /fix, phân tích lỗi và đưa ra giải pháp.
+
+**Response Format:** Markdown + Bash script
+1. **Phân tích lỗi:** Giải thích nguyên nhân
+2. **Giải pháp:** Mô tả cách fix
+3. **Bash script:** Code để fix (nếu cần)
+
+---
+
+### /code - Code Generation Mode
+Khi người dùng hỏi với prefix /code, trả về **BASH SCRIPT DUY NHẤT** để tạo/cập nhật files.
+
+## ⚠️ QUY TẮC BẮT BUỘC
+
+### 1. Chỉ bao gồm files có thay đổi
+- ❌ **KHÔNG** bao gồm files không có sự thay đổi nội dung
+- ✅ Nếu nội dung file sau chỉnh sửa giống 100% bản cũ → **BỎ QUA**
+
+### 2. Format Script Chuẩn
+
+**Mỗi file PHẢI theo cú pháp:**
+\`\`\`bash
+mkdir -p $(dirname "path/to/file.ext")
+cat <<'EOF' > path/to/file.ext
+... toàn bộ nội dung file sau khi chỉnh sửa ...
+EOF
+\`\`\`
+
+### 3. Chi tiết quan trọng
+- ✅ **LUÔN** có \`mkdir -p $(dirname "...")\` trước mỗi file
+- ✅ Sử dụng \`<<'EOF'\` (có dấu nháy đơn) để tránh bash expansion
+- ✅ Ghi đè hoàn toàn file bằng nội dung mới
+- ✅ Tự động tạo file và thư mục cha nếu chưa tồn tại
+- ✅ Đường dẫn giống với file mẫu đính kèm
+
+### 4. Example Output
+
+\`\`\`bash
+# Create/Update component file
+mkdir -p $(dirname "src/components/Button/index.tsx")
+cat <<'EOF' > src/components/Button/index.tsx
+import React from 'react';
+
+export const Button = () => {
+  return <button>Click me</button>;
+};
+EOF
+
+# Create/Update styles
+mkdir -p $(dirname "src/components/Button/styles.css")
+cat <<'EOF' > src/components/Button/styles.css
+.button {
+  padding: 10px 20px;
+  background: blue;
+}
+EOF
+\`\`\`
+
+---
+
+## Integration với VG Coder CLI
+
+Bash scripts được generate sẽ được thực thi qua:
+\`\`\`bash
+POST http://localhost:6868/api/execute
+{
+  "bash": "mkdir -p $(dirname \\"src/...\\")\\\\ncat <<'EOF' > ..."
+}
+\`\`\`
+
+API sẽ:
+1. ✅ Validate bash syntax trong \`.vg/temp-execute\`
+2. ✅ Execute tại working directory nếu syntax OK
+3. ✅ Trả về stdout/stderr/exitCode
+4. ✅ Auto cleanup temp directory
+
+---
+
+## Best Practices
+
+### DO ✅
+- Luôn dùng \`mkdir -p $(dirname "...")\` trước mỗi file
+- Sử dụng \`<<'EOF'\` để tránh variable expansion
+- Ghi đè toàn bộ nội dung file
+- Chỉ include files có thay đổi thực sự
+
+### DON'T ❌
+- Không tạo file mà không tạo thư mục cha
+- Không dùng \`<<EOF\` (thiếu quotes) nếu có \`$\` trong content
+- Không include files không thay đổi
+- Không dùng relative paths phức tạp`;
+
+        // Load system prompt on page load
+        document.getElementById('prompt-text').textContent = SYSTEM_PROMPT;
+
+        function toggleSystemPrompt() {
+            const content = document.getElementById('system-prompt-content');
+            const icon = document.getElementById('toggle-icon');
+            content.classList.toggle('open');
+            icon.classList.toggle('open');
+        }
+
+        function copySystemPrompt() {
+            const copyBtn = event.target.closest('.btn-copy');
+            const copyIcon = document.getElementById('copy-icon');
+            const copyText = document.getElementById('copy-text');
+
+            navigator.clipboard.writeText(SYSTEM_PROMPT).then(() => {
+                copyBtn.classList.add('copied');
+                copyIcon.textContent = '✓';
+                copyText.textContent = 'Copied!';
+
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyIcon.textContent = '📋';
+                    copyText.textContent = 'Copy System Prompt';
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy: ' + err.message);
+            });
+        }
+
+        // Check server status ONCE on page load
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE}/health`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('status').textContent = '● Server Running';
+                    document.getElementById('status').style.background = '#10b981';
+                    // Auto-show health check result
+                    showResponse('health-response', data);
+                }
+            } catch {
+                document.getElementById('status').textContent = '● Server Offline';
+                document.getElementById('status').style.background = '#ef4444';
+            }
+        })();
+    </script>
+</body>
+
+</html>

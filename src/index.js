@@ -10,6 +10,7 @@ const FileScanner = require('./scanner/file-scanner');
 const TokenManager = require('./tokenizer/token-manager');
 const HtmlExporter = require('./exporter/html-exporter');
 const ClipboardManager = require('./utils/clipboard');
+const ApiServer = require('./server/api-server');
 
 /**
  * Main CLI Application
@@ -58,6 +59,14 @@ class VGCoderCLI {
       .description('Xóa thư mục output')
       .option('-o, --output <path>', 'Thư mục output', './vg-output')
       .action(this.handleClean.bind(this));
+
+    // Start server command
+    this.program
+      .command('start')
+      .alias('s')
+      .description('Khởi động API server')
+      .option('-p, --port <port>', 'Port cho server', '6868')
+      .action(this.handleStart.bind(this));
   }
 
   /**
@@ -354,6 +363,54 @@ class VGCoderCLI {
     } catch (error) {
       spinner.fail('Failed to clean');
       console.error(chalk.red('\n❌ Error:'), error.message);
+      process.exit(1);
+    }
+  }
+
+  /**
+   * Handle start command
+   */
+  async handleStart(options) {
+    try {
+      const port = parseInt(options.port);
+      const server = new ApiServer(port);
+      
+      await server.start();
+      
+      // Auto-open browser to dashboard
+      const dashboardUrl = `http://localhost:${port}`;
+      const { exec } = require('child_process');
+      const platform = process.platform;
+      
+      let openCommand;
+      if (platform === 'darwin') {
+        openCommand = `open ${dashboardUrl}`;
+      } else if (platform === 'win32') {
+        openCommand = `start ${dashboardUrl}`;
+      } else {
+        openCommand = `xdg-open ${dashboardUrl}`;
+      }
+      
+      exec(openCommand, (error) => {
+        if (error) {
+          console.log(chalk.yellow(`\n💡 Open your browser manually: ${dashboardUrl}`));
+        } else {
+          console.log(chalk.green(`\n✓ Dashboard opened in browser`));
+        }
+      });
+      
+      // Handle graceful shutdown
+      const shutdown = async () => {
+        console.log(chalk.yellow('\n\nShutting down server...'));
+        await server.stop();
+        process.exit(0);
+      };
+      
+      process.on('SIGINT', shutdown);
+      process.on('SIGTERM', shutdown);
+      
+    } catch (error) {
+      console.error(chalk.red('\n❌ Failed to start server:'), error.message);
       process.exit(1);
     }
   }
