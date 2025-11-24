@@ -83,9 +83,8 @@ class ApiServer {
         const detector = new ProjectDetector(resolvedPath);
         const projectInfo = await detector.detectAll();
 
-        // Scan files
+        // Scan files (no token limit, get all files)
         const scannerOptions = {
-          maxTokens: parseInt(options.maxTokens || 8000),
           extensions: options.extensions ? options.extensions.split(',').map(ext => ext.trim()) : undefined,
           includeHidden: options.includeHidden || false
         };

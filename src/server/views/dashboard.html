@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
         }
 
@@ -51,159 +51,6 @@
             border-radius: 20px;
             font-size: 0.9em;
             margin-top: 10px;
-        }
-
-        .endpoints {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 20px;
-        }
-
-        .endpoint-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
-        }
-
-        .endpoint-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .endpoint-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .method {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.85em;
-        }
-
-        .method.get {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .method.post {
-            background: #10b981;
-            color: white;
-        }
-
-        .method.delete {
-            background: #ef4444;
-            color: white;
-        }
-
-        .endpoint-path {
-            font-family: 'Courier New', monospace;
-            color: #333;
-            font-size: 1.1em;
-        }
-
-        .endpoint-desc {
-            color: #666;
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e5e7eb;
-            border-radius: 6px;
-            font-size: 0.95em;
-            font-family: 'Courier New', monospace;
-        }
-
-        .form-group textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: background 0.3s ease;
-        }
-
-        .btn:hover {
-            background: #5568d3;
-        }
-
-        .btn:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-        }
-
-        .response {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 6px;
-            background: #f9fafb;
-            border-left: 4px solid #667eea;
-            display: none;
-        }
-
-        .response.show {
-            display: block;
-        }
-
-        .response.success {
-            border-left-color: #10b981;
-            background: #f0fdf4;
-        }
-
-        .response.error {
-            border-left-color: #ef4444;
-            background: #fef2f2;
-        }
-
-        .response pre {
-            margin: 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255, 255, 255, .3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
         }
 
         .system-prompt-card {
@@ -263,19 +110,208 @@
             margin-bottom: 15px;
         }
 
-        .btn-copy {
+        .endpoints {
+            display: grid;
+            gap: 20px;
+        }
+
+        .endpoint-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .method {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .method.post {
             background: #10b981;
+            color: white;
+        }
+
+        .endpoint-path {
+            font-family: 'Courier New', monospace;
+            color: #333;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .endpoint-desc {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            font-size: 1.05em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
             gap: 8px;
         }
 
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-copy {
+            background: #10b981;
+        }
+
         .btn-copy:hover {
             background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
 
         .btn-copy.copied {
             background: #6366f1;
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f9fafb;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .response.show {
+            display: block;
+        }
+
+        .response.success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .response.error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .response pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: #10b981;
+        }
+
+        .toast.error {
+            background: #ef4444;
+        }
+
+        .toast.info {
+            background: #3b82f6;
         }
     </style>
 </head>
@@ -284,7 +320,7 @@
     <div class="container">
         <div class="header">
             <h1>🚀 VG Coder API Dashboard</h1>
-            <p>Test your API endpoints directly from the browser</p>
+            <p>Phân tích dự án và thực thi bash scripts</p>
             <span class="status" id="status">● Server Running</span>
         </div>
 
@@ -307,49 +343,28 @@
         </div>
 
         <div class="endpoints">
-            <!-- Health Check -->
-            <div class="endpoint-card">
-                <div class="endpoint-header">
-                    <span class="method get">GET</span>
-                    <span class="endpoint-path">/health</span>
-                </div>
-                <p class="endpoint-desc">Check server health status</p>
-                <button class="btn" onclick="testHealth()">Test Health Check</button>
-                <div class="response" id="health-response"></div>
-            </div>
-
             <!-- Analyze -->
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method post">POST</span>
                     <span class="endpoint-path">/api/analyze</span>
                 </div>
-                <p class="endpoint-desc">Analyze project and download project.txt</p>
+                <p class="endpoint-desc">📊 Phân tích dự án và lấy toàn bộ source code</p>
                 <div class="form-group">
-                    <label>Project Path:</label>
+                    <label>📁 Project Path:</label>
                     <input type="text" id="analyze-path" value="." placeholder=".">
                 </div>
-                <div class="form-group">
-                    <label>Max Tokens:</label>
-                    <input type="number" id="analyze-tokens" value="8000" placeholder="8000">
+                <div class="btn-group">
+                    <button class="btn" onclick="testAnalyze()">
+                        <span>📥</span>
+                        <span>Download File</span>
+                    </button>
+                    <button class="btn btn-copy" onclick="copyAnalyzeResult()">
+                        <span id="analyze-copy-icon">📋</span>
+                        <span id="analyze-copy-text">Copy to Clipboard</span>
+                    </button>
                 </div>
-                <button class="btn" onclick="testAnalyze()">Analyze & Download</button>
                 <div class="response" id="analyze-response"></div>
-            </div>
-
-            <!-- Info -->
-            <div class="endpoint-card">
-                <div class="endpoint-header">
-                    <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/info</span>
-                </div>
-                <p class="endpoint-desc">Get project information and statistics</p>
-                <div class="form-group">
-                    <label>Project Path:</label>
-                    <input type="text" id="info-path" value="." placeholder=".">
-                </div>
-                <button class="btn" onclick="testInfo()">Get Info</button>
-                <div class="response" id="info-response"></div>
             </div>
 
             <!-- Execute Bash -->
@@ -358,155 +373,26 @@
                     <span class="method post">POST</span>
                     <span class="endpoint-path">/api/execute</span>
                 </div>
-                <p class="endpoint-desc">Execute bash script with syntax validation</p>
+                <p class="endpoint-desc">⚡ Thực thi bash script với syntax validation</p>
                 <div class="form-group">
-                    <label>Bash Script:</label>
-                    <textarea id="execute-bash" placeholder="echo 'Hello World'&#10;date"></textarea>
+                    <label>💻 Bash Script:</label>
+                    <textarea id="execute-bash"
+                        placeholder="mkdir -p $(dirname &quot;src/test.js&quot;)&#10;cat <<'EOF' > src/test.js&#10;console.log('Hello World');&#10;EOF"></textarea>
                 </div>
-                <button class="btn" onclick="testExecute()">Execute Script</button>
+                <button class="btn" onclick="testExecute()">
+                    <span>▶️</span>
+                    <span>Execute Script</span>
+                </button>
                 <div class="response" id="execute-response"></div>
-            </div>
-
-            <!-- Clean -->
-            <div class="endpoint-card">
-                <div class="endpoint-header">
-                    <span class="method delete">DELETE</span>
-                    <span class="endpoint-path">/api/clean</span>
-                </div>
-                <p class="endpoint-desc">Clean output directory</p>
-                <div class="form-group">
-                    <label>Output Path:</label>
-                    <input type="text" id="clean-output" value="./vg-output" placeholder="./vg-output">
-                </div>
-                <button class="btn" onclick="testClean()">Clean Directory</button>
-                <div class="response" id="clean-response"></div>
             </div>
         </div>
     </div>
 
+    <div class="toast" id="toast"></div>
+
     <script>
         const API_BASE = window.location.origin;
-
-        function showResponse(elementId, data, isError = false) {
-            const el = document.getElementById(elementId);
-            el.className = 'response show ' + (isError ? 'error' : 'success');
-            el.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-        }
-
-        function showLoading(button) {
-            button.disabled = true;
-            button.innerHTML = '<span class="loading"></span> Loading...';
-        }
-
-        function resetButton(button, text) {
-            button.disabled = false;
-            button.textContent = text;
-        }
-
-        async function testHealth() {
-            const btn = event.target;
-            showLoading(btn);
-            try {
-                const res = await fetch(`${API_BASE}/health`);
-                const data = await res.json();
-                showResponse('health-response', data);
-            } catch (err) {
-                showResponse('health-response', { error: err.message }, true);
-            }
-            resetButton(btn, 'Test Health Check');
-        }
-
-        async function testAnalyze() {
-            const btn = event.target;
-            const path = document.getElementById('analyze-path').value;
-            const maxTokens = document.getElementById('analyze-tokens').value;
-
-            showLoading(btn);
-            try {
-                const res = await fetch(`${API_BASE}/api/analyze`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        path,
-                        options: { maxTokens: parseInt(maxTokens) }
-                    })
-                });
-
-                if (res.ok) {
-                    const blob = await res.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'project.txt';
-                    a.click();
-                    showResponse('analyze-response', { success: true, message: 'File downloaded!' });
-                } else {
-                    const data = await res.json();
-                    showResponse('analyze-response', data, true);
-                }
-            } catch (err) {
-                showResponse('analyze-response', { error: err.message }, true);
-            }
-            resetButton(btn, 'Analyze & Download');
-        }
-
-        async function testInfo() {
-            const btn = event.target;
-            const path = document.getElementById('info-path').value;
-
-            showLoading(btn);
-            try {
-                const res = await fetch(`${API_BASE}/api/info?path=${encodeURIComponent(path)}`);
-                const data = await res.json();
-                showResponse('info-response', data, !res.ok);
-            } catch (err) {
-                showResponse('info-response', { error: err.message }, true);
-            }
-            resetButton(btn, 'Get Info');
-        }
-
-        async function testExecute() {
-            const btn = event.target;
-            const bash = document.getElementById('execute-bash').value;
-
-            if (!bash.trim()) {
-                showResponse('execute-response', { error: 'Bash script is required' }, true);
-                return;
-            }
-
-            showLoading(btn);
-            try {
-                const res = await fetch(`${API_BASE}/api/execute`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ bash })
-                });
-                const data = await res.json();
-                showResponse('execute-response', data, !res.ok || !data.success);
-            } catch (err) {
-                showResponse('execute-response', { error: err.message }, true);
-            }
-            resetButton(btn, 'Execute Script');
-        }
-
-        async function testClean() {
-            const btn = event.target;
-            const output = document.getElementById('clean-output').value;
-
-            showLoading(btn);
-            try {
-                const res = await fetch(`${API_BASE}/api/clean`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ output })
-                });
-                const data = await res.json();
-                showResponse('clean-response', data, !res.ok);
-            } catch (err) {
-                showResponse('clean-response', { error: err.message }, true);
-            }
-            resetButton(btn, 'Clean Directory');
-        }
+        let lastAnalyzeResult = null;
 
         // System Prompt
         const SYSTEM_PROMPT = `# VG Coder AI System Prompt
@@ -645,6 +531,7 @@ API sẽ:
                 copyBtn.classList.add('copied');
                 copyIcon.textContent = '✓';
                 copyText.textContent = 'Copied!';
+                showToast('✅ Đã copy System Prompt!', 'success');
 
                 setTimeout(() => {
                     copyBtn.classList.remove('copied');
@@ -652,8 +539,176 @@ API sẽ:
                     copyText.textContent = 'Copy System Prompt';
                 }, 2000);
             }).catch(err => {
-                alert('Failed to copy: ' + err.message);
+                showToast('❌ Lỗi copy: ' + err.message, 'error');
             });
+        }
+
+        function showResponse(elementId, data, isError = false) {
+            const el = document.getElementById(elementId);
+            el.className = 'response show ' + (isError ? 'error' : 'success');
+            el.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+        function showLoading(button, originalText) {
+            button.disabled = true;
+            button.innerHTML = '<span class="loading"></span> Loading...';
+            button.dataset.originalText = originalText;
+        }
+
+        function resetButton(button) {
+            button.disabled = false;
+            const originalText = button.dataset.originalText;
+            button.innerHTML = originalText;
+        }
+
+        async function testAnalyze() {
+            const btn = event.target.closest('.btn');
+            const path = document.getElementById('analyze-path').value;
+
+            showLoading(btn, '<span>📥</span><span>Download File</span>');
+            try {
+                const res = await fetch(`${API_BASE}/api/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path })
+                });
+
+                if (res.ok) {
+                    const text = await res.text();
+                    lastAnalyzeResult = text;
+
+                    // Download file
+                    const blob = new Blob([text], { type: 'text/plain' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'project.txt';
+                    a.click();
+
+                    showResponse('analyze-response', {
+                        success: true,
+                        message: 'File downloaded!',
+                        files: text.split('\n').filter(l => l.includes('===== FILE:')).length,
+                        size: (text.length / 1024).toFixed(2) + ' KB'
+                    });
+                    showToast('✅ Đã download file!', 'success');
+                } else {
+                    const data = await res.json();
+                    showResponse('analyze-response', data, true);
+                    showToast('❌ Lỗi analyze!', 'error');
+                }
+            } catch (err) {
+                showResponse('analyze-response', { error: err.message }, true);
+                showToast('❌ Lỗi: ' + err.message, 'error');
+            }
+            resetButton(btn);
+        }
+
+        async function copyAnalyzeResult() {
+            const copyBtn = event.target.closest('.btn-copy');
+            const copyIcon = document.getElementById('analyze-copy-icon');
+            const copyText = document.getElementById('analyze-copy-text');
+
+            if (!lastAnalyzeResult) {
+                // Fetch if not already analyzed
+                const path = document.getElementById('analyze-path').value;
+                showLoading(copyBtn, '<span id="analyze-copy-icon">📋</span><span id="analyze-copy-text">Copy to Clipboard</span>');
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/analyze`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path })
+                    });
+
+                    if (res.ok) {
+                        lastAnalyzeResult = await res.text();
+                    } else {
+                        showToast('❌ Lỗi analyze!', 'error');
+                        resetButton(copyBtn);
+                        return;
+                    }
+                } catch (err) {
+                    showToast('❌ Lỗi: ' + err.message, 'error');
+                    resetButton(copyBtn);
+                    return;
+                }
+                resetButton(copyBtn);
+            }
+
+            // Copy to clipboard using ClipboardItem (like reference code)
+            try {
+                const blob = new Blob([lastAnalyzeResult], { type: 'text/plain' });
+                const item = new ClipboardItem({ 'text/plain': blob });
+                await navigator.clipboard.write([item]);
+
+                copyBtn.classList.add('copied');
+                copyIcon.textContent = '✓';
+                copyText.textContent = 'Copied!';
+                showToast('✅ Đã copy project.txt vào clipboard!', 'success');
+
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyIcon.textContent = '📋';
+                    copyText.textContent = 'Copy to Clipboard';
+                }, 2000);
+            } catch (err) {
+                // Fallback to writeText if ClipboardItem fails
+                try {
+                    await navigator.clipboard.writeText(lastAnalyzeResult);
+                    copyBtn.classList.add('copied');
+                    copyIcon.textContent = '✓';
+                    copyText.textContent = 'Copied!';
+                    showToast('✅ Đã copy project.txt vào clipboard!', 'success');
+
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyIcon.textContent = '📋';
+                        copyText.textContent = 'Copy to Clipboard';
+                    }, 2000);
+                } catch (fallbackErr) {
+                    showToast('❌ Lỗi copy: ' + fallbackErr.message, 'error');
+                }
+            }
+        }
+
+        async function testExecute() {
+            const btn = event.target.closest('.btn');
+            const bash = document.getElementById('execute-bash').value;
+
+            if (!bash.trim()) {
+                showToast('⚠️ Vui lòng nhập bash script!', 'error');
+                return;
+            }
+
+            showLoading(btn, '<span>▶️</span><span>Execute Script</span>');
+            try {
+                const res = await fetch(`${API_BASE}/api/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bash })
+                });
+                const data = await res.json();
+                showResponse('execute-response', data, !res.ok || !data.success);
+
+                if (data.success) {
+                    showToast('✅ Thực thi thành công!', 'success');
+                } else {
+                    showToast('❌ Thực thi thất bại!', 'error');
+                }
+            } catch (err) {
+                showResponse('execute-response', { error: err.message }, true);
+                showToast('❌ Lỗi: ' + err.message, 'error');
+            }
+            resetButton(btn);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
         // Check server status ONCE on page load
@@ -661,11 +716,8 @@ API sẽ:
             try {
                 const res = await fetch(`${API_BASE}/health`);
                 if (res.ok) {
-                    const data = await res.json();
                     document.getElementById('status').textContent = '● Server Running';
                     document.getElementById('status').style.background = '#10b981';
-                    // Auto-show health check result
-                    showResponse('health-response', data);
                 }
             } catch {
                 document.getElementById('status').textContent = '● Server Offline';
