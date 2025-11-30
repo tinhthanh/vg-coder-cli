@@ -383,10 +383,16 @@
                     <textarea id="execute-bash"
                         placeholder="mkdir -p $(dirname &quot;src/test.js&quot;)&#10;cat <<'EOF' > src/test.js&#10;console.log('Hello World');&#10;EOF"></textarea>
                 </div>
-                <button class="btn" onclick="testExecute()">
-                    <span>▶️</span>
-                    <span>Execute Script</span>
-                </button>
+                <div class="btn-group">
+                    <button class="btn" onclick="testExecute()">
+                        <span>▶️</span>
+                        <span>Execute Script</span>
+                    </button>
+                    <button class="btn" onclick="executeFromClipboard()">
+                        <span>📋</span>
+                        <span>Execute from Clipboard</span>
+                    </button>
+                </div>
                 <div class="response" id="execute-response"></div>
             </div>
         </div>
@@ -775,6 +781,65 @@ API sẽ:
             }
             resetButton(btn);
         }
+
+        async function executeFromClipboard() {
+            const btn = event.target.closest('.btn');
+
+            showLoading(btn, '<span>📋</span><span>Execute from Clipboard</span>');
+
+            try {
+                // Read from clipboard
+                const clipboardText = await navigator.clipboard.readText();
+
+                // Check if clipboard is empty
+                if (!clipboardText || !clipboardText.trim()) {
+                    showToast('⚠️ Clipboard trống! Vui lòng copy bash script trước.', 'error');
+                    showResponse('execute-response', {
+                        error: 'Clipboard is empty',
+                        message: 'Please copy a bash script to clipboard first'
+                    }, true);
+                    resetButton(btn);
+                    return;
+                }
+
+                // Display clipboard content in textarea for reference
+                document.getElementById('execute-bash').value = clipboardText;
+
+                // Execute the script (API will validate syntax first)
+                const res = await fetch(`${API_BASE}/api/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bash: clipboardText })
+                });
+                const data = await res.json();
+                showResponse('execute-response', data, !res.ok || !data.success);
+
+                if (data.success) {
+                    showToast('✅ Thực thi từ clipboard thành công!', 'success');
+                } else {
+                    // Check if it's a syntax error
+                    if (data.syntaxError) {
+                        showToast('❌ Lỗi syntax! Kiểm tra bash script.', 'error');
+                    } else {
+                        showToast('❌ Thực thi thất bại!', 'error');
+                    }
+                }
+            } catch (err) {
+                // Handle clipboard permission errors
+                if (err.name === 'NotAllowedError') {
+                    showToast('❌ Không có quyền truy cập clipboard!', 'error');
+                    showResponse('execute-response', {
+                        error: 'Clipboard permission denied',
+                        message: 'Please allow clipboard access in your browser settings'
+                    }, true);
+                } else {
+                    showResponse('execute-response', { error: err.message }, true);
+                    showToast('❌ Lỗi: ' + err.message, 'error');
+                }
+            }
+            resetButton(btn);
+        }
+
 
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');

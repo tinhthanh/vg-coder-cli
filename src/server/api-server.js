@@ -237,8 +237,13 @@ class ApiServer {
           console.log(chalk.green(`✓ Bash execution completed in ${result.executionTime}ms`));
           res.json(result);
         } else {
+          // Check if it's a syntax error
+          const isSyntaxError = result.error === 'Syntax validation failed';
           console.log(chalk.red(`✗ Bash execution failed: ${result.error || 'Exit code ' + result.exitCode}`));
-          res.status(400).json(result);
+          res.status(400).json({
+            ...result,
+            syntaxError: isSyntaxError
+          });
         }
 
       } catch (error) {
