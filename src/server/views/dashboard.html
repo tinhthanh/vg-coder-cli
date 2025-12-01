@@ -3,83 +3,118 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>VG Coder API Dashboard</title>
     <style>
+        :root {
+            --ios-bg: #F2F2F7;
+            --ios-card: #FFFFFF;
+            --ios-blue: #007AFF;
+            --ios-green: #34C759;
+            --ios-red: #FF3B30;
+            --ios-gray: #8E8E93;
+            --ios-gray-light: #E5E5EA;
+            --ios-input-bg: #F2F2F7;
+            --ios-separator: #C6C6C8;
+            --safe-area-top: env(safe-area-inset-top);
+            --safe-area-bottom: env(safe-area-inset-bottom);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--ios-bg);
+            color: #000;
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
+            padding-bottom: calc(20px + var(--safe-area-bottom));
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 800px;
             margin: 0 auto;
+            padding: 20px;
+            padding-top: calc(20px + var(--safe-area-top));
         }
 
+        /* Header iOS Style */
         .header {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: left;
+            margin-bottom: 24px;
+            padding: 0 4px;
         }
 
         .header h1 {
-            color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            color: #000;
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
         }
 
         .header p {
-            color: #666;
-            font-size: 1.1em;
+            color: var(--ios-gray);
+            font-size: 17px;
+            line-height: 1.4;
+            margin-bottom: 12px;
         }
 
         .status {
-            display: inline-block;
-            padding: 8px 16px;
-            background: #10b981;
-            color: white;
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            background: rgba(52, 199, 89, 0.15);
+            color: var(--ios-green);
             border-radius: 20px;
-            font-size: 0.9em;
-            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 5px;
         }
 
-        .system-prompt-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        /* Card Style (Inset Grouped) */
+        .system-prompt-card,
+        .endpoint-card {
+            background: var(--ios-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            position: relative;
         }
 
+        /* System Prompt */
         .system-prompt-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
             cursor: pointer;
-            user-select: none;
+            padding: 4px 0;
         }
 
         .system-prompt-header h2 {
-            color: #667eea;
-            font-size: 1.5em;
+            color: #000;
+            font-size: 20px;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
         .toggle-icon {
-            transition: transform 0.3s ease;
+            color: var(--ios-gray);
+            font-size: 14px;
+            transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .toggle-icon.open {
@@ -89,72 +124,73 @@
         .system-prompt-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease;
+            transition: max-height 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.3s;
+            opacity: 0;
         }
 
         .system-prompt-content.open {
             max-height: 2000px;
+            opacity: 1;
+            margin-top: 16px;
         }
 
         .prompt-text {
-            background: #f9fafb;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            max-height: 400px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-        }
-
-        .endpoints {
-            display: grid;
-            gap: 20px;
-        }
-
-        .endpoint-card {
-            background: white;
+            background: var(--ios-input-bg);
+            border: none;
             border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 16px;
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            color: #333;
+            -webkit-overflow-scrolling: touch;
         }
 
+        /* Endpoints */
         .endpoint-header {
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            border-bottom: 0.5px solid var(--ios-separator);
+            padding-bottom: 12px;
         }
 
         .method {
-            padding: 8px 16px;
+            padding: 4px 10px;
             border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.9em;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .method.post {
-            background: #10b981;
+            background: var(--ios-green);
             color: white;
         }
 
         .endpoint-path {
-            font-family: 'Courier New', monospace;
-            color: #333;
-            font-size: 1.2em;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            color: #000;
+            font-size: 16px;
             font-weight: 600;
+            word-break: break-all;
         }
 
         .endpoint-desc {
-            color: #666;
+            color: var(--ios-gray);
             margin-bottom: 20px;
-            line-height: 1.6;
-            font-size: 1.05em;
+            font-size: 15px;
+            line-height: 1.4;
         }
 
+        /* Forms */
         .form-group {
             margin-bottom: 20px;
         }
@@ -162,118 +198,164 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
-            font-weight: 600;
-            font-size: 1em;
+            color: #000;
+            font-weight: 500;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            opacity: 0.6;
         }
 
         .form-group input,
         .form-group textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 1em;
-            font-family: 'Courier New', monospace;
-            transition: border-color 0.3s ease;
+            padding: 14px;
+            background: var(--ios-input-bg);
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            /* Prevent zoom on iOS */
+            font-family: 'SF Mono', 'Menlo', monospace;
+            color: #000;
+            transition: background 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
         }
 
         .form-group input:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            background: #E5E5EA;
+            /* Slightly darker on focus */
         }
 
         .form-group textarea {
-            min-height: 150px;
-            resize: vertical;
+            min-height: 120px;
+            resize: none;
         }
 
+        /* Buttons */
         .btn-group {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 24px;
+            flex-direction: column;
+            /* Stack on mobile by default */
+        }
+
+        @media (min-width: 640px) {
+            .btn-group {
+                flex-direction: row;
+            }
         }
 
         .btn {
-            background: #667eea;
+            background: var(--ios-blue);
             color: white;
             border: none;
-            padding: 14px 28px;
-            border-radius: 8px;
+            padding: 14px 20px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 1em;
+            font-size: 17px;
             font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
+            transition: transform 0.1s, opacity 0.2s;
+            display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
         }
 
         .btn:disabled {
-            background: #9ca3af;
+            background: var(--ios-gray-light);
+            color: var(--ios-gray);
             cursor: not-allowed;
             transform: none;
         }
 
         .btn-copy {
-            background: #10b981;
+            background: rgba(0, 122, 255, 0.1);
+            color: var(--ios-blue);
         }
 
-        .btn-copy:hover {
-            background: #059669;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        /* Specific override for prompt copy button to look nice */
+        .system-prompt-content .btn-copy {
+            margin-top: 8px;
+        }
+
+        .btn-copy:active {
+            background: rgba(0, 122, 255, 0.2);
         }
 
         .btn-copy.copied {
-            background: #6366f1;
+            background: var(--ios-green);
+            color: white;
         }
 
+        /* Response Area */
         .response {
             margin-top: 20px;
-            padding: 20px;
-            border-radius: 8px;
-            background: #f9fafb;
-            border-left: 4px solid #667eea;
+            padding: 16px;
+            border-radius: 12px;
+            background: #1C1C1E;
+            /* Dark background for code contrast */
+            color: #fff;
             display: none;
+            font-size: 13px;
+            overflow-x: auto;
+            border-left: none;
+            /* Removed the side border style */
         }
 
         .response.show {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
         .response.success {
-            border-left-color: #10b981;
-            background: #f0fdf4;
+            border: 1px solid rgba(52, 199, 89, 0.3);
         }
 
         .response.error {
-            border-left-color: #ef4444;
-            background: #fef2f2;
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            background: #2C1515;
         }
 
         .response pre {
             margin: 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.95em;
+            font-family: 'SF Mono', 'Menlo', monospace;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
 
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading Spinner */
         .loading {
             display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255, 255, 255, .3);
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
+            border-top-color: currentColor;
+            animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin {
@@ -282,36 +364,59 @@
             }
         }
 
+        /* Toast - iOS Notification Style */
         .toast {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 16px 24px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 600;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 12px 20px;
+            border-radius: 25px;
+            /* Pill shape */
+            color: #000;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            font-weight: 500;
+            font-size: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: auto;
+            max-width: 90%;
+            white-space: nowrap;
             opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.3s ease;
-            z-index: 1000;
+            pointer-events: none;
         }
 
         .toast.show {
+            transform: translateX(-50%) translateY(calc(var(--safe-area-top)));
             opacity: 1;
-            transform: translateY(0);
         }
 
-        .toast.success {
-            background: #10b981;
+        /* Icons in toast */
+        .toast::before {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
 
-        .toast.error {
-            background: #ef4444;
+        .toast.success::before {
+            background: var(--ios-green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M5 13l4 4L19 7'/%3E%3C/svg%3E") center/12px no-repeat;
         }
 
-        .toast.info {
-            background: #3b82f6;
+        .toast.error::before {
+            background: var(--ios-red) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 18L18 6M6 6l12 12'/%3E%3C/svg%3E") center/12px no-repeat;
+        }
+
+        .toast.info::before {
+            background: var(--ios-blue);
         }
     </style>
 </head>
@@ -319,9 +424,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 VG Coder API Dashboard</h1>
-            <p>Phân tích dự án và thực thi bash scripts</p>
-            <span class="status" id="status">● Server Running</span>
+            <span class="status" id="status">● Server Starting...</span>
+            <div style="height: 10px;"></div>
+            <h1>VG Coder</h1>
+            <p>API Dashboard & Automation</p>
         </div>
 
         <!-- System Prompt Section -->
@@ -329,7 +435,7 @@
             <div class="system-prompt-header" onclick="toggleSystemPrompt()">
                 <h2>
                     <span>📝</span>
-                    <span>AI System Prompt</span>
+                    <span>System Prompt</span>
                 </h2>
                 <span class="toggle-icon" id="toggle-icon">▼</span>
             </div>
@@ -349,19 +455,19 @@
                     <span class="method post">POST</span>
                     <span class="endpoint-path">/api/analyze</span>
                 </div>
-                <p class="endpoint-desc">📊 Phân tích dự án và lấy toàn bộ source code</p>
+                <p class="endpoint-desc">Phân tích dự án và lấy toàn bộ source code.</p>
                 <div class="form-group">
-                    <label>📁 Project Path:</label>
-                    <input type="text" id="analyze-path" value="." placeholder=".">
+                    <label>Path</label>
+                    <input type="text" id="analyze-path" value="." placeholder="Project path (e.g. .)">
                 </div>
                 <div class="btn-group">
                     <button class="btn" onclick="testAnalyze()">
                         <span>📥</span>
-                        <span>Download File</span>
+                        <span>Download</span>
                     </button>
                     <button class="btn btn-copy" onclick="copyAnalyzeResult()">
                         <span id="analyze-copy-icon">📋</span>
-                        <span id="analyze-copy-text">Copy to Clipboard</span>
+                        <span id="analyze-copy-text">Copy Text</span>
                     </button>
                     <button class="btn btn-copy" onclick="copyAnalyzeAsFile()">
                         <span id="analyze-file-icon">📄</span>
@@ -377,20 +483,20 @@
                     <span class="method post">POST</span>
                     <span class="endpoint-path">/api/execute</span>
                 </div>
-                <p class="endpoint-desc">⚡ Thực thi bash script với syntax validation</p>
+                <p class="endpoint-desc">Thực thi bash script với syntax validation.</p>
                 <div class="form-group">
-                    <label>💻 Bash Script:</label>
+                    <label>Bash Script</label>
                     <textarea id="execute-bash"
-                        placeholder="mkdir -p $(dirname &quot;src/test.js&quot;)&#10;cat <<'EOF' > src/test.js&#10;console.log('Hello World');&#10;EOF"></textarea>
+                        placeholder="mkdir -p src/test&#10;echo 'Hello' > src/test/hello.txt"></textarea>
                 </div>
                 <div class="btn-group">
                     <button class="btn" onclick="testExecute()">
                         <span>▶️</span>
-                        <span>Execute Script</span>
+                        <span>Run Script</span>
                     </button>
                     <button class="btn" onclick="executeFromClipboard()">
                         <span>📋</span>
-                        <span>Execute from Clipboard</span>
+                        <span>Paste & Run</span>
                     </button>
                 </div>
                 <div class="response" id="execute-response"></div>
@@ -540,8 +646,8 @@ API sẽ:
             navigator.clipboard.writeText(SYSTEM_PROMPT).then(() => {
                 copyBtn.classList.add('copied');
                 copyIcon.textContent = '✓';
-                copyText.textContent = 'Copied!';
-                showToast('✅ Đã copy System Prompt!', 'success');
+                copyText.textContent = 'Copied';
+                showToast('Đã copy System Prompt', 'success');
 
                 setTimeout(() => {
                     copyBtn.classList.remove('copied');
@@ -549,7 +655,7 @@ API sẽ:
                     copyText.textContent = 'Copy System Prompt';
                 }, 2000);
             }).catch(err => {
-                showToast('❌ Lỗi copy: ' + err.message, 'error');
+                showToast('Lỗi copy: ' + err.message, 'error');
             });
         }
 
@@ -561,7 +667,7 @@ API sẽ:
 
         function showLoading(button, originalText) {
             button.disabled = true;
-            button.innerHTML = '<span class="loading"></span> Loading...';
+            button.innerHTML = '<span class="loading"></span>';
             button.dataset.originalText = originalText;
         }
 
@@ -575,7 +681,7 @@ API sẽ:
             const btn = event.target.closest('.btn');
             const path = document.getElementById('analyze-path').value;
 
-            showLoading(btn, '<span>📥</span><span>Download File</span>');
+            showLoading(btn, btn.innerHTML);
             try {
                 const res = await fetch(`${API_BASE}/api/analyze`, {
                     method: 'POST',
@@ -601,15 +707,15 @@ API sẽ:
                         files: text.split('\n').filter(l => l.includes('===== FILE:')).length,
                         size: (text.length / 1024).toFixed(2) + ' KB'
                     });
-                    showToast('✅ Đã download file!', 'success');
+                    showToast('Đã download file', 'success');
                 } else {
                     const data = await res.json();
                     showResponse('analyze-response', data, true);
-                    showToast('❌ Lỗi analyze!', 'error');
+                    showToast('Lỗi analyze', 'error');
                 }
             } catch (err) {
                 showResponse('analyze-response', { error: err.message }, true);
-                showToast('❌ Lỗi: ' + err.message, 'error');
+                showToast('Lỗi: ' + err.message, 'error');
             }
             resetButton(btn);
         }
@@ -622,7 +728,7 @@ API sẽ:
             if (!lastAnalyzeResult) {
                 // Fetch if not already analyzed
                 const path = document.getElementById('analyze-path').value;
-                showLoading(copyBtn, '<span id="analyze-copy-icon">📋</span><span id="analyze-copy-text">Copy to Clipboard</span>');
+                showLoading(copyBtn, copyBtn.innerHTML);
 
                 try {
                     const res = await fetch(`${API_BASE}/api/analyze`, {
@@ -634,19 +740,19 @@ API sẽ:
                     if (res.ok) {
                         lastAnalyzeResult = await res.text();
                     } else {
-                        showToast('❌ Lỗi analyze!', 'error');
+                        showToast('Lỗi analyze', 'error');
                         resetButton(copyBtn);
                         return;
                     }
                 } catch (err) {
-                    showToast('❌ Lỗi: ' + err.message, 'error');
+                    showToast('Lỗi: ' + err.message, 'error');
                     resetButton(copyBtn);
                     return;
                 }
                 resetButton(copyBtn);
             }
 
-            // Copy to clipboard using ClipboardItem (like reference code)
+            // Copy to clipboard using ClipboardItem
             try {
                 const blob = new Blob([lastAnalyzeResult], { type: 'text/plain' });
                 const item = new ClipboardItem({ 'text/plain': blob });
@@ -654,30 +760,29 @@ API sẽ:
 
                 copyBtn.classList.add('copied');
                 copyIcon.textContent = '✓';
-                copyText.textContent = 'Copied!';
-                showToast('✅ Đã copy project.txt vào clipboard!', 'success');
+                copyText.textContent = 'Copied';
+                showToast('Đã copy project.txt', 'success');
 
                 setTimeout(() => {
                     copyBtn.classList.remove('copied');
                     copyIcon.textContent = '📋';
-                    copyText.textContent = 'Copy to Clipboard';
+                    copyText.textContent = 'Copy Text';
                 }, 2000);
             } catch (err) {
-                // Fallback to writeText if ClipboardItem fails
                 try {
                     await navigator.clipboard.writeText(lastAnalyzeResult);
                     copyBtn.classList.add('copied');
                     copyIcon.textContent = '✓';
-                    copyText.textContent = 'Copied!';
-                    showToast('✅ Đã copy project.txt vào clipboard!', 'success');
+                    copyText.textContent = 'Copied';
+                    showToast('Đã copy project.txt', 'success');
 
                     setTimeout(() => {
                         copyBtn.classList.remove('copied');
                         copyIcon.textContent = '📋';
-                        copyText.textContent = 'Copy to Clipboard';
+                        copyText.textContent = 'Copy Text';
                     }, 2000);
                 } catch (fallbackErr) {
-                    showToast('❌ Lỗi copy: ' + fallbackErr.message, 'error');
+                    showToast('Lỗi copy: ' + fallbackErr.message, 'error');
                 }
             }
         }
@@ -687,11 +792,9 @@ API sẽ:
                 type: "application/octet-stream"
             });
 
-            // ClipboardItem cần type key phải trùng blob.type
             const item = new ClipboardItem(
                 { [blob.type]: blob },
                 {
-                    // Không phải chuẩn, nhưng Chrome hỗ trợ unofficial metadata
                     type: "application/octet-stream",
                     presentationStyle: "attachment",
                     name: filename
@@ -709,7 +812,7 @@ API sẽ:
             if (!lastAnalyzeResult) {
                 // Fetch if not already analyzed
                 const path = document.getElementById('analyze-path').value;
-                showLoading(copyBtn, '<span id="analyze-file-icon">📄</span><span id="analyze-file-text">Copy as File</span>');
+                showLoading(copyBtn, copyBtn.innerHTML);
 
                 try {
                     const res = await fetch(`${API_BASE}/api/analyze`, {
@@ -721,12 +824,12 @@ API sẽ:
                     if (res.ok) {
                         lastAnalyzeResult = await res.text();
                     } else {
-                        showToast('❌ Lỗi analyze!', 'error');
+                        showToast('Lỗi analyze', 'error');
                         resetButton(copyBtn);
                         return;
                     }
                 } catch (err) {
-                    showToast('❌ Lỗi: ' + err.message, 'error');
+                    showToast('Lỗi: ' + err.message, 'error');
                     resetButton(copyBtn);
                     return;
                 }
@@ -738,8 +841,8 @@ API sẽ:
 
                 copyBtn.classList.add('copied');
                 copyIcon.textContent = '✓';
-                copyText.textContent = 'Copied!';
-                showToast('✅ Đã copy project.txt như file!', 'success');
+                copyText.textContent = 'Copied';
+                showToast('Đã copy file', 'success');
 
                 setTimeout(() => {
                     copyBtn.classList.remove('copied');
@@ -747,7 +850,7 @@ API sẽ:
                     copyText.textContent = 'Copy as File';
                 }, 2000);
             } catch (err) {
-                showToast('❌ Lỗi copy: ' + err.message, 'error');
+                showToast('Lỗi copy: ' + err.message, 'error');
             }
         }
 
@@ -756,11 +859,11 @@ API sẽ:
             const bash = document.getElementById('execute-bash').value;
 
             if (!bash.trim()) {
-                showToast('⚠️ Vui lòng nhập bash script!', 'error');
+                showToast('Vui lòng nhập bash script', 'error');
                 return;
             }
 
-            showLoading(btn, '<span>▶️</span><span>Execute Script</span>');
+            showLoading(btn, btn.innerHTML);
             try {
                 const res = await fetch(`${API_BASE}/api/execute`, {
                     method: 'POST',
@@ -771,13 +874,13 @@ API sẽ:
                 showResponse('execute-response', data, !res.ok || !data.success);
 
                 if (data.success) {
-                    showToast('✅ Thực thi thành công!', 'success');
+                    showToast('Thực thi thành công', 'success');
                 } else {
-                    showToast('❌ Thực thi thất bại!', 'error');
+                    showToast('Thực thi thất bại', 'error');
                 }
             } catch (err) {
                 showResponse('execute-response', { error: err.message }, true);
-                showToast('❌ Lỗi: ' + err.message, 'error');
+                showToast('Lỗi: ' + err.message, 'error');
             }
             resetButton(btn);
         }
@@ -785,15 +888,13 @@ API sẽ:
         async function executeFromClipboard() {
             const btn = event.target.closest('.btn');
 
-            showLoading(btn, '<span>📋</span><span>Execute from Clipboard</span>');
+            showLoading(btn, btn.innerHTML);
 
             try {
-                // Read from clipboard
                 const clipboardText = await navigator.clipboard.readText();
 
-                // Check if clipboard is empty
                 if (!clipboardText || !clipboardText.trim()) {
-                    showToast('⚠️ Clipboard trống! Vui lòng copy bash script trước.', 'error');
+                    showToast('Clipboard trống!', 'error');
                     showResponse('execute-response', {
                         error: 'Clipboard is empty',
                         message: 'Please copy a bash script to clipboard first'
@@ -802,10 +903,8 @@ API sẽ:
                     return;
                 }
 
-                // Display clipboard content in textarea for reference
                 document.getElementById('execute-bash').value = clipboardText;
 
-                // Execute the script (API will validate syntax first)
                 const res = await fetch(`${API_BASE}/api/execute`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -815,51 +914,51 @@ API sẽ:
                 showResponse('execute-response', data, !res.ok || !data.success);
 
                 if (data.success) {
-                    showToast('✅ Thực thi từ clipboard thành công!', 'success');
+                    showToast('Thực thi từ clipboard OK', 'success');
                 } else {
-                    // Check if it's a syntax error
                     if (data.syntaxError) {
-                        showToast('❌ Lỗi syntax! Kiểm tra bash script.', 'error');
+                        showToast('Lỗi syntax script', 'error');
                     } else {
-                        showToast('❌ Thực thi thất bại!', 'error');
+                        showToast('Thực thi thất bại', 'error');
                     }
                 }
             } catch (err) {
-                // Handle clipboard permission errors
                 if (err.name === 'NotAllowedError') {
-                    showToast('❌ Không có quyền truy cập clipboard!', 'error');
-                    showResponse('execute-response', {
-                        error: 'Clipboard permission denied',
-                        message: 'Please allow clipboard access in your browser settings'
-                    }, true);
+                    showToast('Không có quyền clipboard', 'error');
                 } else {
                     showResponse('execute-response', { error: err.message }, true);
-                    showToast('❌ Lỗi: ' + err.message, 'error');
+                    showToast('Lỗi: ' + err.message, 'error');
                 }
             }
             resetButton(btn);
         }
 
-
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
+            // Reset text content to remove potential icon junk
             toast.textContent = message;
             toast.className = `toast ${type}`;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+
+            // Clear previous timeout if exists
+            if (toast.timeoutId) clearTimeout(toast.timeoutId);
+
+            toast.timeoutId = setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // Check server status ONCE on page load
+        // Check server status
         (async () => {
             try {
                 const res = await fetch(`${API_BASE}/health`);
                 if (res.ok) {
-                    document.getElementById('status').textContent = '● Server Running';
-                    document.getElementById('status').style.background = '#10b981';
+                    document.getElementById('status').textContent = '● Online';
+                    document.getElementById('status').style.background = 'rgba(52, 199, 89, 0.15)';
+                    document.getElementById('status').style.color = 'var(--ios-green)';
                 }
             } catch {
-                document.getElementById('status').textContent = '● Server Offline';
-                document.getElementById('status').style.background = '#ef4444';
+                document.getElementById('status').textContent = '● Offline';
+                document.getElementById('status').style.background = 'rgba(255, 59, 48, 0.15)';
+                document.getElementById('status').style.color = 'var(--ios-red)';
             }
         })();
     </script>
