@@ -8,6 +8,7 @@
     "vg-coder": "./bin/vg-coder.js"
   },
   "scripts": {
+    "install:local": "npm install -g .",
     "start": "node src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",

@@ -32,6 +32,9 @@ class ApiServer {
     this.app.use(bodyParser.json());
     this.app.use(bodyParser.urlencoded({ extended: true }));
     
+    // Serve static files from views directory (CSS, JS)
+    this.app.use(express.static(path.join(__dirname, 'views')));
+    
     // Request logging
     this.app.use((req, res, next) => {
       console.log(chalk.blue(`[${new Date().toISOString()}] ${req.method} ${req.path}`));
