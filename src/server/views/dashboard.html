@@ -68,8 +68,11 @@
                                     Copy link này và dán vào tab mới:
                                     <div class="form-group" style="margin-top: 5px; margin-bottom: 0;">
                                         <div style="display: flex; gap: 5px;">
-                                            <input type="text" id="chrome-url-input" readonly value="chrome://extensions" onclick="this.select()" style="font-family: monospace;">
-                                            <button class="btn btn-copy" style="flex: 0 0 40px; padding: 0;" onclick="copyChromeUrl(event)" title="Copy URL">
+                                            <input type="text" id="chrome-url-input" readonly
+                                                value="chrome://extensions" onclick="this.select()"
+                                                style="font-family: monospace;">
+                                            <button class="btn btn-copy" style="flex: 0 0 40px; padding: 0;"
+                                                onclick="copyChromeUrl(event)" title="Copy URL">
                                                 <span>📋</span>
                                             </button>
                                         </div>
@@ -81,7 +84,8 @@
                             </ol>
                         </div>
                         <div class="form-group">
-                            <input type="text" id="extension-path-input" readonly value="Loading path..." onclick="this.select()">
+                            <input type="text" id="extension-path-input" readonly value="Loading path..."
+                                onclick="this.select()">
                         </div>
                         <button class="btn btn-copy" onclick="copyExtensionPath(event)">
                             <span id="ext-copy-icon">📋</span>
@@ -91,28 +95,7 @@
                 </div>
 
                 <div class="endpoints">
-                    <!-- Analyze -->
-                    <div class="endpoint-card">
-                        <div class="endpoint-header">
-                            <div class="endpoint-title-group">
-                                <span class="method post">POST</span>
-                                <span class="endpoint-path">/analyze</span>
-                            </div>
-                            <button class="btn-icon-head" onclick="testAnalyze(event)" title="Download Project Source">
-                                📥
-                            </button>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" id="analyze-path" value="." placeholder="Project path (e.g. .)">
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn btn-copy" onclick="copyAnalyzeResult(event)">
-                                <span id="analyze-copy-icon">📋</span>
-                                <span id="analyze-copy-text">Copy Text</span>
-                            </button>
-                        </div>
-                        <div class="response" id="analyze-response"></div>
-                    </div>
+
 
                     <!-- Execute Bash -->
                     <div class="endpoint-card">
@@ -164,6 +147,29 @@
                             <div class="tree-content" id="tree-content"></div>
                         </div>
                         <div class="response" id="structure-response" style="display: none;"></div>
+                    </div>
+
+                    <!-- Analyze -->
+                    <div class="endpoint-card">
+                        <div class="endpoint-header">
+                            <div class="endpoint-title-group">
+                                <span class="method post">POST</span>
+                                <span class="endpoint-path">/analyze</span>
+                            </div>
+                            <button class="btn-icon-head" onclick="testAnalyze(event)" title="Download Project Source">
+                                📥
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="analyze-path" value="." placeholder="Project path (e.g. .)">
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-copy" onclick="copyAnalyzeResult(event)">
+                                <span id="analyze-copy-icon">📋</span>
+                                <span id="analyze-copy-text">Copy Text</span>
+                            </button>
+                        </div>
+                        <div class="response" id="analyze-response"></div>
                     </div>
                 </div>
                 <div style="height: 50px;"></div> <!-- Spacer for scrolling -->
