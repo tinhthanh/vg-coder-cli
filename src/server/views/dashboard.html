@@ -117,6 +117,10 @@
                         <span class="method get" style="background: var(--ios-blue); color: white;">GET</span>
                         <span class="endpoint-path">/api/structure</span>
                     </div>
+                    <!-- Button Copy Selected -->
+                    <button class="btn-icon-head" onclick="copySelectedStructure(event)" title="Copy Selected Tree">
+                        📋
+                    </button>
                 </div>
                 <p class="endpoint-desc">Xem cây thư mục và phân tích số lượng Token.</p>
                 <div class="form-group">
@@ -127,6 +131,10 @@
                     <button class="btn" onclick="testStructure(event)">
                         <span>🌳</span>
                         <span>View Structure</span>
+                    </button>
+                    <button class="btn btn-copy" onclick="copySelectedStructure(event)">
+                        <span id="copy-structure-icon">📋</span>
+                        <span id="copy-structure-text">Copy Selected</span>
                     </button>
                 </div>
                 <!-- Tree Container -->

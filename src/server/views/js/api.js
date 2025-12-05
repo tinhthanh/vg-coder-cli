@@ -4,13 +4,14 @@ import { API_BASE } from './config.js';
 /**
  * Analyze project and get source code
  * @param {string} path - Project path to analyze
+ * @param {Array<string>} specificFiles - Optional list of relative paths to filter
  * @returns {Promise<string>} - Project content as text
  */
-export async function analyzeProject(path) {
+export async function analyzeProject(path, specificFiles = null) {
     const res = await fetch(`${API_BASE}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path })
+        body: JSON.stringify({ path, specificFiles })
     });
 
     if (!res.ok) {

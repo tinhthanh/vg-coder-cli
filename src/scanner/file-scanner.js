@@ -106,6 +106,7 @@ class FileScanner {
 
     const node = {
       path: dirPath,
+      relativePath: relativePath,
       name: name,
       size: stats.size,
       type: stats.isDirectory() ? 'directory' : 'file',
@@ -147,47 +148,6 @@ class FileScanner {
 
     return node;
   }
-
-  /**
-   * Get regex for build directories and hidden files to ignore
-   */
-  getBuildIgnoreRegex() {
-    // Create regex pattern for directories to ignore
-    const ignorePatterns = [
-      // Hidden directories (starting with .)
-      '^\\..*',
-
-      // Build directories
-      '^build$',
-      '^target$',
-      '^dist$',
-      '^out$',
-      '^bin$',
-
-      // Dependencies
-      '^node_modules$',
-      '^vendor$',
-
-      // Temporary files
-      '^tmp$',
-      '^temp$',
-
-      // Logs
-      '^logs$',
-      '^log$',
-
-      // Coverage reports
-      '^coverage$'
-    ];
-
-    // Combine all patterns into one regex
-    const combinedPattern = ignorePatterns.join('|');
-    return new RegExp(`(${combinedPattern})`);
-  }
-
-
-
-
 
   /**
    * Trích xuất danh sách files từ tree
@@ -381,69 +341,8 @@ class FileScanner {
    * Tạo nội dung kết hợp từ tất cả files
    */
   async createCombinedContent(files, options = {}) {
-    const {
-      includeStats = true,
-      includeTree = true,
-      headerTemplate = this.getDefaultHeaderTemplate(),
-      separatorTemplate = this.getDefaultSeparatorTemplate()
-    } = options;
-
-    let content = '';
-    
-    // Header với thông tin project
-    if (includeStats) {
-      content += this.generateProjectHeader(files);
-      content += '\n\n';
-    }
-    
-    // Cấu trúc thư mục
-    if (includeTree) {
-      content += this.generateTreeStructure(files);
-      content += '\n\n';
-    }
-    
-    // Nội dung từng file
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      
-      // Header cho file
-      content += headerTemplate
-        .replace('{path}', file.relativePath)
-        .replace('{name}', file.name)
-        .replace('{extension}', file.extension || '')
-        .replace('{size}', file.size)
-        .replace('{lines}', file.lines);
-      
-      content += '\n';
-      content += file.content;
-      content += '\n';
-      
-      // Separator giữa các files
-      if (i < files.length - 1) {
-        content += separatorTemplate;
-        content += '\n';
-      }
-    }
-    
-    return content;
-  }
-
-  /**
-   * Template header mặc định cho file
-   */
-  getDefaultHeaderTemplate() {
-    return `
-================================================================================
-File: {path}
-Size: {size} bytes | Lines: {lines}
-================================================================================`;
-  }
-
-  /**
-   * Template separator mặc định
-   */
-  getDefaultSeparatorTemplate() {
-    return '\n\n';
+    // ... (unchanged)
+    return this.createCombinedContentForAI(files, options);
   }
 
   /**

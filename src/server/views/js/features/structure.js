@@ -1,5 +1,8 @@
-import { getStructure } from '../api.js';
-import { showToast, showLoading, resetButton, showResponse, formatNumber } from '../utils.js';
+import { getStructure, analyzeProject, copyToClipboard } from '../api.js';
+import { showToast, showLoading, resetButton, showResponse, formatNumber, showCopiedState } from '../utils.js';
+
+// Global variable to store current structure data
+let currentStructureData = null;
 
 /**
  * Handle Structure button click logic
@@ -19,13 +22,13 @@ export async function handleStructureView(event) {
 
     try {
         const data = await getStructure(path);
-        
-        // Render Token Badge for Total
-        const totalTokens = data.rootTokens || 0;
-        document.getElementById('total-tokens-badge').textContent = `${formatNumber(totalTokens)} tokens`;
-        
+        currentStructureData = data.structure;
+
         // Render Tree HTML using recursive function
         treeContent.innerHTML = generateTreeHtml(data.structure);
+        
+        // Initial token update
+        updateTotalTokens();
         
         treeContainer.style.display = 'block';
         showToast('Tải cấu trúc thành công', 'success');
@@ -40,8 +43,11 @@ export async function handleStructureView(event) {
 
 /**
  * Toggle folder collapse/expand
+ * Only triggers if clicked on row but NOT on checkbox
  */
 export function handleToggleFolder(event) {
+    if (event.target.type === 'checkbox') return;
+
     // Find closest parent LI
     const li = event.currentTarget.closest('.tree-li');
     if (li && li.classList.contains('has-children')) {
@@ -50,7 +56,115 @@ export function handleToggleFolder(event) {
 }
 
 /**
- * Recursive function to generate Tree HTML
+ * Handle Checkbox Logic (Parent <-> Child sync) & Update Token Total
+ */
+export function handleCheckboxChange(event) {
+    event.stopPropagation();
+    const checkbox = event.target;
+    const isChecked = checkbox.checked;
+    
+    // 1. Sync Children: If this is a folder, update all children checkboxes
+    const li = checkbox.closest('.tree-li');
+    if (li) {
+        const childrenCheckboxes = li.querySelectorAll('.tree-checkbox');
+        childrenCheckboxes.forEach(child => {
+            child.checked = isChecked;
+        });
+    }
+
+    // 2. Recalculate Tokens
+    updateTotalTokens();
+}
+
+/**
+ * Calculate total tokens of CHECKED files only
+ */
+function updateTotalTokens() {
+    // Select all checked checkboxes that are FILES (have data-tokens)
+    const checkedFiles = document.querySelectorAll('.tree-checkbox[data-type="file"]:checked');
+    
+    let total = 0;
+    checkedFiles.forEach(box => {
+        const tokens = parseInt(box.dataset.tokens || '0');
+        total += tokens;
+    });
+
+    // Update Badge
+    const badge = document.getElementById('total-tokens-badge');
+    badge.textContent = `${formatNumber(total)} tokens`;
+    
+    // Optional: Visual styling if 0
+    if (total === 0) {
+        badge.style.color = 'var(--ios-gray)';
+    } else {
+        badge.style.color = ''; // reset to default
+    }
+}
+
+/**
+ * Copy Content of Selected Files (via API)
+ */
+export async function handleCopySelected(event) {
+    const btn = event.target.closest('.btn-copy') || event.target.closest('.btn-icon-head');
+    const icon = document.getElementById('copy-structure-icon') || btn; 
+    const text = document.getElementById('copy-structure-text') || { textContent: '' }; 
+
+    // 1. Get all checked FILE paths
+    const checkedBoxes = document.querySelectorAll('.tree-checkbox[data-type="file"]:checked');
+    const checkedPaths = [];
+    
+    checkedBoxes.forEach(box => {
+        if (box.dataset.path) {
+            checkedPaths.push(box.dataset.path);
+        }
+    });
+
+    if (checkedPaths.length === 0) {
+        showToast('Chưa chọn file nào', 'error');
+        return;
+    }
+
+    // Save original button state
+    const originalText = btn.innerHTML;
+    if (btn.classList.contains('btn-copy')) {
+        showLoading(btn, btn.innerHTML);
+    } else {
+        // For header icon, just show visual feedback
+        btn.style.opacity = '0.5';
+    }
+
+    try {
+        const path = document.getElementById('structure-path').value;
+        
+        // 2. Call Analyze API with specific files
+        const content = await analyzeProject(path, checkedPaths);
+
+        // 3. Copy to clipboard
+        await copyToClipboard(content);
+
+        // UI Feedback
+        if (btn.classList.contains('btn-copy')) {
+            showCopiedState(btn, icon, text, '📋', 'Copy Selected');
+            resetButton(btn);
+        } else {
+            // Header icon feedback
+            btn.style.opacity = '1';
+            const originalIcon = btn.textContent;
+            btn.textContent = '✓';
+            setTimeout(() => btn.textContent = originalIcon, 2000);
+        }
+        
+        showToast(`Đã copy nội dung ${checkedPaths.length} file!`, 'success');
+
+    } catch (err) {
+        resetButton(btn);
+        if (!btn.classList.contains('btn-copy')) btn.style.opacity = '1';
+        showToast('Lỗi copy: ' + err.message, 'error');
+    }
+}
+
+/**
+ * Recursive function to generate Tree HTML with Checkboxes
  */
 function generateTreeHtml(node) {
     if (!node) return '';
@@ -72,13 +186,19 @@ function generateTreeHtml(node) {
     // Build HTML
     let html = `<li class="${liClass}">`;
     
-    // Row content (Clickable for folders)
-    // Note: onclick is global, so we use the window.toggleFolder reference
     const clickAttr = hasChildren ? 'onclick="toggleFolder(event)"' : '';
+    
+    // Add data-tokens and data-type for client-side calculation
     
     html += `
         <div class="tree-item-row" ${clickAttr}>
             <span class="arrow">${arrow}</span>
+            <input type="checkbox" class="tree-checkbox" 
+                   data-path="${node.relativePath || node.path}" 
+                   data-tokens="${tokens}"
+                   data-type="${node.type}"
+                   checked 
+                   onclick="handleCheckboxChange(event)">
             <span class="tree-icon">${icon}</span>
             <span class="tree-name">${node.name}</span>
             <span class="token-badge ${tokenClass}">${formatNumber(tokens)}</span>
@@ -97,6 +217,5 @@ function generateTreeHtml(node) {
 
     html += '</li>';
     
-    // Wrapper for root node to ensure proper UL structure
     return isDir ? `<ul class="tree-ul">${html}</ul>` : html; 
 }

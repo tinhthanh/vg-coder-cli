@@ -29,8 +29,8 @@ class ApiServer {
    */
   setupMiddleware() {
     this.app.use(cors());
-    this.app.use(bodyParser.json());
-    this.app.use(bodyParser.urlencoded({ extended: true }));
+    this.app.use(bodyParser.json({ limit: '50mb' })); // Increase limit for large file lists
+    this.app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
     
     // Serve static files from views directory (CSS, JS)
     this.app.use(express.static(path.join(__dirname, 'views')));
@@ -63,7 +63,7 @@ class ApiServer {
     // Analyze endpoint - returns project.txt file
     this.app.post('/api/analyze', async (req, res) => {
       try {
-        const { path: projectPath, options = {} } = req.body;
+        const { path: projectPath, options = {}, specificFiles } = req.body;
 
         if (!projectPath) {
           return res.status(400).json({
@@ -81,6 +81,9 @@ class ApiServer {
         }
 
         console.log(chalk.yellow(`Analyzing project: ${resolvedPath}`));
+        if (specificFiles) {
+             console.log(chalk.yellow(`Filtering for ${specificFiles.length} specific files`));
+        }
 
         // Detect project type
         const detector = new ProjectDetector(resolvedPath);
@@ -95,8 +98,15 @@ class ApiServer {
         const scanner = new FileScanner(resolvedPath, scannerOptions);
         const scanResult = await scanner.scanProject();
 
+        let filesToProcess = scanResult.files;
+
+        // Filter specific files if requested
+        if (specificFiles && Array.isArray(specificFiles) && specificFiles.length > 0) {
+            filesToProcess = filesToProcess.filter(file => specificFiles.includes(file.relativePath));
+        }
+
         // Create AI-friendly content
-        const aiContent = await scanner.createCombinedContentForAI(scanResult.files, {
+        const aiContent = await scanner.createCombinedContentForAI(filesToProcess, {
           includeStats: true,
           includeTree: true,
           preserveLineNumbers: true
@@ -107,7 +117,7 @@ class ApiServer {
         res.setHeader('Content-Disposition', 'attachment; filename="project.txt"');
         res.send(aiContent);
 
-        console.log(chalk.green(`✓ Analysis completed: ${scanResult.files.length} files`));
+        console.log(chalk.green(`✓ Analysis completed: ${filesToProcess.length} files`));
 
       } catch (error) {
         console.error(chalk.red('Error during analysis:'), error);
@@ -181,7 +191,7 @@ class ApiServer {
       }
     });
 
-    // Structure endpoint (NEW)
+    // Structure endpoint
     this.app.get('/api/structure', async (req, res) => {
       try {
         const projectPath = req.query.path || '.';
@@ -329,24 +339,10 @@ class ApiServer {
         console.log(chalk.green(`\n🚀 VG Coder API Server started!`));
         console.log(chalk.blue(`📡 Listening on: http://localhost:${this.port}`));
         console.log(chalk.cyan(`\n🎨 Dashboard: http://localhost:${this.port}`));
-        console.log(chalk.yellow(`\n📚 Available endpoints:`));
-        console.log(`  GET  /health            - Health check`);
-        console.log(`  POST /api/analyze       - Analyze project (returns project.txt)`);
-        console.log(`  GET  /api/structure      - View file tree & tokens`);
-        console.log(`  GET  /api/info?path=.    - Get project info`);
-        console.log(`  DELETE /api/clean       - Clean output directory`);
-        console.log(`  POST /api/execute       - Execute bash script`);
-        console.log(chalk.gray(`\n💡 Press Ctrl+C to stop the server\n`));
         resolve();
       });
 
       this.server.on('error', (err) => {
-        if (err.code === 'EADDRINUSE') {
-          console.error(chalk.red(`\n❌ Port ${this.port} is already in use!`));
-          console.log(chalk.yellow(`Try using a different port with: vg start -p <port>\n`));
-        } else {
-          console.error(chalk.red('\n❌ Server error:'), err.message);
-        }
         reject(err);
       });
     });

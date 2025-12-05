@@ -3,7 +3,7 @@ import { SYSTEM_PROMPT } from './config.js';
 import { analyzeProject, executeScript, copyToClipboard, readFromClipboard } from './api.js';
 import { showToast, showLoading, resetButton, showResponse, showCopiedState } from './utils.js';
 // Import dedicated feature handlers
-import { handleStructureView, handleToggleFolder } from './features/structure.js';
+import { handleStructureView, handleToggleFolder, handleCheckboxChange, handleCopySelected } from './features/structure.js';
 
 let lastAnalyzeResult = null;
 
@@ -178,3 +178,5 @@ window.executeFromClipboard = executeFromClipboard;
 // Map Structure handlers from feature module to window
 window.testStructure = handleStructureView;
 window.toggleFolder = handleToggleFolder;
+window.handleCheckboxChange = handleCheckboxChange;
+window.copySelectedStructure = handleCopySelected;
