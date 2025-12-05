@@ -1,74 +1,83 @@
-/* Tree View Styles */
+/* Tree View Styles Compact */
 .tree-container {
-    margin-top: 20px;
+    margin-top: 15px;
     background: var(--ios-input-bg);
-    border-radius: 12px;
+    border-radius: 8px;
     overflow: hidden;
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .tree-header {
-    padding: 12px 16px;
-    background: rgba(0,0,0,0.03);
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     font-weight: 600;
     display: flex;
     justify-content: space-between;
     align-items: center;
     color: var(--text-primary);
+    font-size: 12px;
 }
 
 .tree-content {
-    padding: 10px;
+    padding: 5px;
     font-family: 'SF Mono', 'Menlo', monospace;
-    font-size: 13px;
+    font-size: 11px;
+    /* Smaller tree font */
     overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 .tree-ul {
     list-style: none;
-    padding-left: 20px;
+    padding-left: 16px;
+    /* Reduced indentation */
     margin: 0;
     border-left: 1px solid var(--ios-separator);
 }
 
 /* Root level shouldn't have border */
-.tree-content > .tree-ul {
+.tree-content>.tree-ul {
     border-left: none;
     padding-left: 0;
 }
 
 .tree-li {
-    margin: 4px 0;
+    margin: 1px 0;
+    /* Compact spacing */
     position: relative;
 }
 
 .tree-item-row {
     display: flex;
     align-items: center;
-    padding: 4px 8px;
-    border-radius: 6px;
+    padding: 2px 6px;
+    /* Compact row padding */
+    border-radius: 4px;
     cursor: pointer;
     transition: background 0.1s;
+    line-height: 1.2;
 }
 
 .tree-item-row:hover {
-    background: rgba(0,0,0,0.05);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 /* Checkbox Style */
 .tree-checkbox {
-    margin-right: 8px;
+    margin-right: 6px;
     cursor: pointer;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    /* Smaller checkbox */
+    height: 14px;
     accent-color: var(--ios-blue);
 }
 
 .tree-icon {
-    margin-right: 8px;
-    font-size: 14px;
-    width: 16px;
+    margin-right: 6px;
+    font-size: 12px;
+    width: 14px;
     text-align: center;
 }
 
@@ -77,43 +86,60 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-right: 10px;
+    margin-right: 8px;
     color: var(--text-primary);
 }
 
 /* Token Badges */
 .token-badge {
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 4px;
+    font-size: 9px;
+    /* Very small badge */
+    padding: 1px 4px;
+    border-radius: 3px;
     font-weight: 600;
-    min-width: 40px;
+    min-width: 30px;
     text-align: center;
 }
 
-.token-low { background: rgba(52, 199, 89, 0.15); color: var(--ios-green); } /* < 2k */
-.token-med { background: rgba(255, 149, 0, 0.15); color: #FF9500; }         /* 2k - 5k */
-.token-high { background: rgba(255, 59, 48, 0.15); color: var(--ios-red); }  /* > 5k */
-
-/* Folder toggle states */
-.tree-li > .tree-ul {
-    display: block; /* Default expanded */
+.token-low {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--ios-green);
 }
 
-.tree-li.collapsed > .tree-ul {
+/* < 2k */
+.token-med {
+    background: rgba(255, 149, 0, 0.15);
+    color: #FF9500;
+}
+
+/* 2k - 5k */
+.token-high {
+    background: rgba(255, 59, 48, 0.15);
+    color: var(--ios-red);
+}
+
+/* > 5k */
+
+/* Folder toggle states */
+.tree-li>.tree-ul {
+    display: block;
+    /* Default expanded */
+}
+
+.tree-li.collapsed>.tree-ul {
     display: none;
 }
 
 .arrow {
     display: inline-block;
-    width: 12px;
-    font-size: 10px;
+    width: 10px;
+    font-size: 8px;
     color: var(--text-secondary);
     transition: transform 0.2s;
-    margin-right: 4px;
+    margin-right: 2px;
 }
 
-.tree-li.collapsed > .tree-item-row .arrow {
+.tree-li.collapsed>.tree-item-row .arrow {
     transform: rotate(-90deg);
 }
 

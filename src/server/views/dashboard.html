@@ -5,14 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>VG Coder API Dashboard</title>
+    <title>VG Coder - Split View</title>
     <link rel="stylesheet" href="/dashboard.css">
     <link rel="stylesheet" href="/css/structure.css">
     <script>
-        // Pre-load theme to prevent flash
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
@@ -20,138 +17,132 @@
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-content">
-                <span class="status" id="status">● Server Starting...</span>
-                <div style="height: 10px;"></div>
-                <h1>VG Coder</h1>
-                <p>API Dashboard & Automation</p>
+    <div class="split-layout">
+        <!-- CỘT TRÁI: Giao diện VG Coder cũ -->
+        <div class="left-panel">
+            <div class="container">
+                <div class="header">
+                    <div class="header-content">
+                        <span class="status" id="status">● Server Starting...</span>
+                        <div style="height: 5px;"></div>
+                    </div>
+                    <button class="theme-toggle" id="theme-toggle" title="Toggle Dark Mode">
+                        <span id="theme-icon">🌙</span>
+                    </button>
+                </div>
+
+                <!-- System Prompt Section -->
+                <div class="system-prompt-card">
+                    <div class="system-prompt-header" onclick="toggleSystemPrompt()">
+                        <div class="header-title-group">
+                            <button class="btn-icon-head" onclick="copySystemPromptFromHeader(event)"
+                                title="Copy System Prompt">
+                                📋
+                            </button>
+                            <h2>System Prompt</h2>
+                        </div>
+                        <span class="toggle-icon" id="toggle-icon">▼</span>
+                    </div>
+                    <div class="system-prompt-content" id="system-prompt-content">
+                        <div class="prompt-text" id="prompt-text"></div>
+                        <button class="btn btn-copy" onclick="copySystemPrompt(event)">
+                            <span id="copy-icon">📋</span>
+                            <span id="copy-text">Copy System Prompt</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="endpoints">
+                    <!-- Analyze -->
+                    <div class="endpoint-card">
+                        <div class="endpoint-header">
+                            <div class="endpoint-title-group">
+                                <span class="method post">POST</span>
+                                <span class="endpoint-path">/analyze</span>
+                            </div>
+                            <button class="btn-icon-head" onclick="testAnalyze(event)" title="Download Project Source">
+                                📥
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="analyze-path" value="." placeholder="Project path (e.g. .)">
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-copy" onclick="copyAnalyzeResult(event)">
+                                <span id="analyze-copy-icon">📋</span>
+                                <span id="analyze-copy-text">Copy Text</span>
+                            </button>
+                        </div>
+                        <div class="response" id="analyze-response"></div>
+                    </div>
+
+                    <!-- Execute Bash -->
+                    <div class="endpoint-card">
+                        <div class="endpoint-header">
+                            <div class="endpoint-title-group">
+                                <span class="method post">POST</span>
+                                <span class="endpoint-path">/execute</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="execute-bash"
+                                placeholder="mkdir -p src/test&#10;echo 'Hello' > src/test/hello.txt"></textarea>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn" onclick="testExecute(event)">
+                                <span>▶️</span> Run
+                            </button>
+                            <button class="btn" onclick="executeFromClipboard(event)">
+                                <span>📋</span> Paste & Run
+                            </button>
+                        </div>
+                        <div class="response" id="execute-response"></div>
+                    </div>
+
+                    <!-- Structure -->
+                    <div class="endpoint-card">
+                        <div class="endpoint-header">
+                            <div class="endpoint-title-group">
+                                <span class="method get" style="background: var(--ios-blue); color: white;">GET</span>
+                                <span class="endpoint-path">/structure</span>
+                            </div>
+                            <button class="btn-icon-head" onclick="copySelectedStructure(event)" title="Copy Selected">
+                                📋
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="structure-path" value="." placeholder="Project path">
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn" onclick="testStructure(event)">
+                                <span>🌳</span> View
+                            </button>
+                        </div>
+                        <div class="tree-container" id="structure-tree" style="display: none;">
+                            <div class="tree-header">
+                                <span>Tree</span>
+                                <span class="tree-total-tokens" id="total-tokens-badge">0 tokens</span>
+                            </div>
+                            <div class="tree-content" id="tree-content"></div>
+                        </div>
+                        <div class="response" id="structure-response" style="display: none;"></div>
+                    </div>
+                </div>
+                <div style="height: 50px;"></div> <!-- Spacer for scrolling -->
             </div>
-            <button class="theme-toggle" id="theme-toggle" title="Toggle Dark Mode">
-                <span id="theme-icon">🌙</span>
-            </button>
         </div>
 
-        <!-- System Prompt Section -->
-        <div class="system-prompt-card">
-            <div class="system-prompt-header" onclick="toggleSystemPrompt()">
-                <div class="header-title-group">
-                    <button class="btn-icon-head" onclick="copySystemPromptFromHeader(event)" title="Copy System Prompt">
-                        📋
-                    </button>
-                    <h2>System Prompt</h2>
-                </div>
-                <span class="toggle-icon" id="toggle-icon">▼</span>
+        <!-- CỘT PHẢI: Iframe ChatGPT -->
+        <div class="right-panel">
+            <div class="iframe-placeholder">
+                <p>⚠️ Nếu trang trắng, hãy cài Extension <b>"Ignore X-Frame-Options"</b></p>
+                <a href="https://chatgpt.com" target="_blank" class="link-fallback">Mở ChatGPT tab mới ↗</a>
             </div>
-            <div class="system-prompt-content" id="system-prompt-content">
-                <div class="prompt-text" id="prompt-text"></div>
-                <button class="btn btn-copy" onclick="copySystemPrompt(event)">
-                    <span id="copy-icon">📋</span>
-                    <span id="copy-text">Copy System Prompt</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="endpoints">
-            <!-- Analyze -->
-            <div class="endpoint-card">
-                <div class="endpoint-header">
-                    <!-- Left side: Method + Path -->
-                    <div class="endpoint-title-group">
-                        <span class="method post">POST</span>
-                        <span class="endpoint-path">/api/analyze</span>
-                    </div>
-                    <!-- Right side: Download Icon -->
-                    <button class="btn-icon-head" onclick="testAnalyze(event)" title="Download Project Source">
-                        📥
-                    </button>
-                </div>
-                <p class="endpoint-desc">Phân tích dự án và lấy toàn bộ source code.</p>
-                <div class="form-group">
-                    <label>Path</label>
-                    <input type="text" id="analyze-path" value="." placeholder="Project path (e.g. .)">
-                </div>
-                <div class="btn-group">
-                    <!-- Big Download button removed as it's now in the header -->
-                    <button class="btn btn-copy" onclick="copyAnalyzeResult(event)">
-                        <span id="analyze-copy-icon">📋</span>
-                        <span id="analyze-copy-text">Copy Text</span>
-                    </button>
-                </div>
-                <div class="response" id="analyze-response"></div>
-            </div>
-
-            <!-- Execute Bash -->
-            <div class="endpoint-card">
-                <div class="endpoint-header">
-                    <div class="endpoint-title-group">
-                        <span class="method post">POST</span>
-                        <span class="endpoint-path">/api/execute</span>
-                    </div>
-                    <!-- Could add an execute icon here later if needed -->
-                </div>
-                <p class="endpoint-desc">Thực thi bash script với syntax validation.</p>
-                <div class="form-group">
-                    <label>Bash Script</label>
-                    <textarea id="execute-bash"
-                        placeholder="mkdir -p src/test&#10;echo 'Hello' > src/test/hello.txt"></textarea>
-                </div>
-                <div class="btn-group">
-                    <button class="btn" onclick="testExecute(event)">
-                        <span>▶️</span>
-                        <span>Run Script</span>
-                    </button>
-                    <button class="btn" onclick="executeFromClipboard(event)">
-                        <span>📋</span>
-                        <span>Paste & Run</span>
-                    </button>
-                </div>
-                <div class="response" id="execute-response"></div>
-            </div>
-
-            <!-- Structure & Tokens (NEW) -->
-            <div class="endpoint-card">
-                <div class="endpoint-header">
-                    <div class="endpoint-title-group">
-                        <span class="method get" style="background: var(--ios-blue); color: white;">GET</span>
-                        <span class="endpoint-path">/api/structure</span>
-                    </div>
-                    <!-- Button Copy Selected -->
-                    <button class="btn-icon-head" onclick="copySelectedStructure(event)" title="Copy Selected Tree">
-                        📋
-                    </button>
-                </div>
-                <p class="endpoint-desc">Xem cây thư mục và phân tích số lượng Token.</p>
-                <div class="form-group">
-                    <label>Path</label>
-                    <input type="text" id="structure-path" value="." placeholder="Project path">
-                </div>
-                <div class="btn-group">
-                    <button class="btn" onclick="testStructure(event)">
-                        <span>🌳</span>
-                        <span>View Structure</span>
-                    </button>
-                    <button class="btn btn-copy" onclick="copySelectedStructure(event)">
-                        <span id="copy-structure-icon">📋</span>
-                        <span id="copy-structure-text">Copy Selected</span>
-                    </button>
-                </div>
-                <!-- Tree Container -->
-                <div class="tree-container" id="structure-tree" style="display: none;">
-                    <div class="tree-header">
-                        <span>Project Tree</span>
-                        <span class="tree-total-tokens" id="total-tokens-badge">0 tokens</span>
-                    </div>
-                    <div class="tree-content" id="tree-content"></div>
-                </div>
-                <div class="response" id="structure-response" style="display: none;"></div>
-            </div>
+            <iframe src="https://chatgpt.com" title="ChatGPT Integration"></iframe>
         </div>
     </div>
 
     <div class="toast" id="toast"></div>
-
     <script type="module" src="/js/main.js"></script>
 </body>
 
