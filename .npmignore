@@ -1,49 +1,8 @@
-# Test files
-tests/
-*.test.js
-coverage/
-
-# Development files
-.vscode/
-.idea/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Temporary files
-tmp/
-temp/
-
-# Example projects
-hdb-signature-service/
-example-projects/
-
-# Output directories
-vg-output/
-output/
-
-# Development dependencies
 node_modules/
-
-# Git
 .git/
-.gitignore
-
-# Documentation (keep README.md)
-docs/
-*.md
-!README.md
-
-# Config files
-.eslintrc*
-.prettierrc*
-jest.config.js
-nodemon.json
-
-# Environment files
-.env*
+.github/
+tests/
+.env
+vg-output/
+.DS_Store
+# Do NOT ignore src/server/views/vg-coder/ here, we want it published!

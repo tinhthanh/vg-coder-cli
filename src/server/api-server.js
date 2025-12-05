@@ -60,6 +60,21 @@ class ApiServer {
       });
     });
 
+    // NEW: Get Extension Path
+    this.app.get('/api/extension-path', (req, res) => {
+      try {
+        const extensionPath = path.join(__dirname, 'views', 'vg-coder');
+        const exists = fs.existsSync(extensionPath);
+        
+        res.json({
+          path: extensionPath,
+          exists: exists
+        });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     // Analyze endpoint - returns project.txt file
     this.app.post('/api/analyze', async (req, res) => {
       try {

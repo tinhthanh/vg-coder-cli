@@ -359,3 +359,22 @@ MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 - 📊 Code analysis and token counting
 - 🌐 HTML export with syntax highlighting
 - 📋 Clipboard integration
+
+Repo extension: 
+https://github.com/tinhthanh/vetgo-auto
+vg-coder.zip
+📁 Directory Structure:
+vg-coder/
+├── assets
+│   ├── icon128.png (.png)
+│   ├── icon16.png (.png)
+│   └── icon48.png (.png)
+├── background.js (.js)
+├── background.js.LICENSE.txt (.txt)
+├── controller.js (.js)
+├── manifest.json (.json)
+├── options.css (.css)
+├── options.html (.html)
+├── options.js (.js)
+└── rules.json (.json)
+

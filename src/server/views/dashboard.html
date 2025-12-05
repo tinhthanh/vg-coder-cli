@@ -52,6 +52,44 @@
                     </div>
                 </div>
 
+                <!-- Extension Installation Guide -->
+                <div class="system-prompt-card" id="extension-card">
+                    <div class="system-prompt-header" onclick="toggleExtensionGuide()">
+                        <div class="header-title-group">
+                            <span style="font-size: 16px;">🧩</span>
+                            <h2>Cài đặt Chrome Extension</h2>
+                        </div>
+                        <span class="toggle-icon" id="ext-toggle-icon">▼</span>
+                    </div>
+                    <div class="system-prompt-content" id="extension-content">
+                        <div class="extension-steps">
+                            <ol>
+                                <li style="margin-bottom: 8px;">
+                                    Copy link này và dán vào tab mới:
+                                    <div class="form-group" style="margin-top: 5px; margin-bottom: 0;">
+                                        <div style="display: flex; gap: 5px;">
+                                            <input type="text" id="chrome-url-input" readonly value="chrome://extensions" onclick="this.select()" style="font-family: monospace;">
+                                            <button class="btn btn-copy" style="flex: 0 0 40px; padding: 0;" onclick="copyChromeUrl(event)" title="Copy URL">
+                                                <span>📋</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li>Bật <b>Developer mode</b> (Góc phải trên cùng)</li>
+                                <li>Chọn <b>Load unpacked</b></li>
+                                <li>Dán đường dẫn bên dưới vào:</li>
+                            </ol>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="extension-path-input" readonly value="Loading path..." onclick="this.select()">
+                        </div>
+                        <button class="btn btn-copy" onclick="copyExtensionPath(event)">
+                            <span id="ext-copy-icon">📋</span>
+                            <span id="ext-copy-text">Copy Path</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="endpoints">
                     <!-- Analyze -->
                     <div class="endpoint-card">

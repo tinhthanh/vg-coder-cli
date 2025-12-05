@@ -13,7 +13,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "dev": "nodemon src/index.js",
-    "push": "npm pack && npm publish"
+    "build": "node scripts/build.js",
+    "push": "npm run build && npm pack && npm publish"
   },
   "keywords": [
     "cli",
@@ -61,7 +62,8 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
-    "@types/jest": "^29.5.8"
+    "@types/jest": "^29.5.8",
+    "adm-zip": "^0.5.10"
   },
   "engines": {
     "node": ">=16.0.0"
