@@ -8,6 +8,7 @@
     <title>VG Coder - Split View</title>
     <link rel="stylesheet" href="/dashboard.css">
     <link rel="stylesheet" href="/css/structure.css">
+    <link rel="stylesheet" href="/css/iframe.css">
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme') || 'light';
@@ -18,7 +19,7 @@
 
 <body>
     <div class="split-layout">
-        <!-- CỘT TRÁI: Giao diện VG Coder cũ -->
+        <!-- CỘT TRÁI: Giao diện VG Coder -->
         <div class="left-panel">
             <div class="container">
                 <div class="header">
@@ -95,8 +96,6 @@
                 </div>
 
                 <div class="endpoints">
-
-
                     <!-- Execute Bash -->
                     <div class="endpoint-card">
                         <div class="endpoint-header">
@@ -176,13 +175,25 @@
             </div>
         </div>
 
-        <!-- CỘT PHẢI: Iframe ChatGPT -->
+        <!-- CỘT PHẢI: AI Iframe with Selector -->
         <div class="right-panel">
-            <div class="iframe-placeholder">
-                <p>⚠️ Nếu trang trắng, hãy cài Extension <b>"Ignore X-Frame-Options"</b></p>
-                <a href="https://chatgpt.com" target="_blank" class="link-fallback">Mở ChatGPT tab mới ↗</a>
+            <div class="ai-header">
+                <div class="ai-select-group">
+                    <span style="font-size: 16px;">🤖</span>
+                    <select id="ai-provider-select" class="ai-select">
+                        <!-- Options filled by JS -->
+                    </select>
+                </div>
+                <a id="ai-external-link" href="#" target="_blank" class="btn-icon-head" title="Open in new tab">↗</a>
             </div>
-            <iframe src="https://chatgpt.com" title="ChatGPT Integration"></iframe>
+            
+            <div class="ai-iframe-container">
+                <div class="iframe-placeholder">
+                    <p>⚠️ Nếu trang trắng, hãy cài Extension <b>"Ignore X-Frame-Options"</b></p>
+                    <a id="ai-placeholder-link" href="#" target="_blank" class="link-fallback">Mở tab mới ↗</a>
+                </div>
+                <iframe id="ai-iframe" src="" title="AI Integration"></iframe>
+            </div>
         </div>
     </div>
 

@@ -43,9 +43,7 @@ body {
     background-color: var(--ios-bg);
     color: var(--text-primary);
     height: 100vh;
-    /* Full viewport height */
     overflow: hidden;
-    /* Disable body scroll */
     font-size: 13px;
 }
 
@@ -59,12 +57,9 @@ body {
 /* Left Panel: VG Coder Tool */
 .left-panel {
     flex: 0 0 450px;
-    /* Fixed width: 450px */
     max-width: 50vw;
-    /* Max 50% on small screens */
     height: 100%;
     overflow-y: auto;
-    /* Scrollable independently */
     background: var(--ios-bg);
     border-right: 1px solid var(--ios-separator);
     position: relative;
@@ -74,48 +69,9 @@ body {
 .container {
     padding: 15px;
     padding-top: 15px;
-    /* Removed max-width/margin centering since it's inside panel */
 }
 
-/* Right Panel: ChatGPT Iframe */
-.right-panel {
-    flex: 1;
-    /* Take remaining space */
-    height: 100%;
-    background: #fff;
-    position: relative;
-}
-
-.right-panel iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    position: relative;
-    z-index: 2;
-    /* Sit above placeholder */
-}
-
-/* Placeholder underneath iframe (visible if iframe fails to load) */
-.iframe-placeholder {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: var(--text-secondary);
-    z-index: 1;
-    width: 100%;
-}
-
-.link-fallback {
-    color: var(--ios-blue);
-    text-decoration: none;
-    margin-top: 10px;
-    display: inline-block;
-}
-
-/* --- EXISTING COMPACT STYLES (Preserved & Adjusted) --- */
-
+/* --- COMPONENT STYLES --- */
 .header {
     display: flex;
     justify-content: space-between;
@@ -176,6 +132,11 @@ body {
     border: none;
     border-radius: 6px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text-primary);
 }
 
 .system-prompt-content {
@@ -321,16 +282,13 @@ body {
     position: fixed;
     bottom: 20px;
     left: 20px;
-    /* Move toast to bottom left */
     transform: translateY(100px);
-    /* Adjust animation */
 }
 
 .toast.show {
     transform: translateY(0);
 }
 
-/* Mobile Responsiveness */
 @media (max-width: 768px) {
     .split-layout {
         flex-direction: column;
@@ -343,10 +301,5 @@ body {
         height: 50vh;
         border-right: none;
         border-bottom: 1px solid var(--ios-separator);
-    }
-
-    .right-panel {
-        flex: 1;
-        height: 50vh;
     }
 }

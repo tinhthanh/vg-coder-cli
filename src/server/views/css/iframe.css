@@ -1,0 +1,84 @@
+/* Right Panel Layout */
+.right-panel {
+    flex: 1;
+    height: 100%;
+    background: #fff;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* AI Header Styles */
+.ai-header {
+    height: 50px;
+    background: var(--ios-bg);
+    border-bottom: 1px solid var(--ios-separator);
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.ai-select-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.ai-select {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--ios-separator);
+    background: var(--ios-card);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 200px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Iframe Container */
+.ai-iframe-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    background: #fff;
+}
+
+.right-panel iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: relative;
+    z-index: 2;
+}
+
+/* Placeholder underneath iframe */
+.iframe-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-secondary);
+    z-index: 1;
+    width: 100%;
+}
+
+.link-fallback {
+    color: var(--ios-blue);
+    text-decoration: none;
+    margin-top: 10px;
+    display: inline-block;
+}
+
+/* Mobile Responsive adjustment for right panel */
+@media (max-width: 768px) {
+    .right-panel {
+        flex: 1;
+        height: 50vh;
+    }
+}

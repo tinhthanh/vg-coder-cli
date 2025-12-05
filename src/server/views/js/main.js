@@ -3,6 +3,7 @@ import { SYSTEM_PROMPT } from './config.js';
 import { checkHealth } from './api.js';
 import './handlers.js'; // Import to register global functions
 import { showToast, showCopiedState } from './utils.js';
+import { initIframeManager } from './features/iframe-manager.js';
 
 /**
  * Initialize application on DOM ready
@@ -19,6 +20,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Load Extension Path
     loadExtensionPath();
+
+    // Initialize Iframe Manager (New Feature)
+    initIframeManager();
 });
 
 /**
