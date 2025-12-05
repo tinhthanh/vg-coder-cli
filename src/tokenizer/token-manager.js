@@ -94,6 +94,58 @@ class TokenManager {
   }
 
   /**
+   * Phân tích và điền thông tin token vào cấu trúc cây thư mục
+   * Tính toán token cho từng file và tổng hợp cho folder
+   */
+  analyzeTree(tree, files) {
+    // Tạo map để lookup content file nhanh hơn
+    const fileMap = new Map();
+    files.forEach(f => {
+      if (f.content) {
+        fileMap.set(f.path, f.content);
+      }
+    });
+
+    const traverse = (node) => {
+      if (!node) return 0;
+
+      // Nếu là file
+      if (node.type === 'file') {
+        const content = fileMap.get(node.path);
+        // Nếu không có content (binary hoặc error), token là 0
+        node.tokens = content ? this.countTokens(content) : 0;
+        return node.tokens;
+      }
+
+      // Nếu là directory có con
+      if (node.children) {
+        let sum = 0;
+        
+        // Sắp xếp: Folder trước, File sau
+        node.children.sort((a, b) => {
+          if (a.type === b.type) return a.name.localeCompare(b.name);
+          return a.type === 'directory' ? -1 : 1;
+        });
+
+        // Đệ quy tính tổng token của con
+        node.children.forEach(child => {
+          sum += traverse(child);
+        });
+
+        node.tokens = sum;
+        return sum;
+      }
+
+      // Nếu là node rỗng hoặc loại khác
+      node.tokens = 0;
+      return 0;
+    };
+
+    traverse(tree);
+    return tree;
+  }
+
+  /**
    * Chia nhỏ content thành chunks
    */
   async chunkContent(content, metadata = {}) {
@@ -247,8 +299,6 @@ class TokenManager {
     let currentTokens = 0;
     let chunkIndex = 0;
     
-    // Không thêm header "Large File" nữa để UI sạch hơn
-
     for (const line of lines) {
       const lineTokens = this.countTokens(line + '\n');
 

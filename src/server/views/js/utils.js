@@ -70,3 +70,13 @@ export function showCopiedState(button, icon, text, originalIcon, originalText) 
         text.textContent = originalText;
     }, 2000);
 }
+
+/**
+ * Format number with commas (handles undefined/null)
+ * @param {number} num - Number to format
+ * @returns {string} Formatted string
+ */
+export function formatNumber(num) {
+    if (num === undefined || num === null) return '0';
+    return num.toLocaleString('en-US');
+}

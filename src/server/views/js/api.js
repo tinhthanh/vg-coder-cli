@@ -56,6 +56,22 @@ export async function checkHealth() {
 }
 
 /**
+ * Get project structure with tokens
+ * @param {string} path - Project path
+ * @returns {Promise<Object>} - Structure data
+ */
+export async function getStructure(path) {
+    const res = await fetch(`${API_BASE}/api/structure?path=${encodeURIComponent(path)}`);
+    
+    if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to get structure');
+    }
+
+    return await res.json();
+}
+
+/**
  * Copy content as file to clipboard
  * @param {string} filename - Filename for the clipboard item
  * @param {string} content - Content to copy

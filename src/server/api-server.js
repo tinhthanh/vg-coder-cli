@@ -181,6 +181,50 @@ class ApiServer {
       }
     });
 
+    // Structure endpoint (NEW)
+    this.app.get('/api/structure', async (req, res) => {
+      try {
+        const projectPath = req.query.path || '.';
+        const resolvedPath = path.resolve(projectPath);
+
+        // Validate path
+        if (!await fs.pathExists(resolvedPath)) {
+          return res.status(404).json({
+            error: `Project path does not exist: ${projectPath}`
+          });
+        }
+
+        console.log(chalk.yellow(`Analyzing structure for: ${resolvedPath}`));
+
+        // 1. Scan files
+        const scanner = new FileScanner(resolvedPath);
+        const scanResult = await scanner.scanProject();
+
+        // 2. Tokenize tree
+        const tokenManager = new TokenManager();
+        const enrichedTree = tokenManager.analyzeTree(scanResult.tree, scanResult.files);
+        
+        tokenManager.cleanup();
+
+        // 3. Return result
+        res.json({
+          path: resolvedPath,
+          totalFiles: scanResult.files.length,
+          rootTokens: enrichedTree.tokens,
+          structure: enrichedTree
+        });
+
+        console.log(chalk.green(`✓ Structure analysis completed: ${scanResult.files.length} files`));
+
+      } catch (error) {
+        console.error(chalk.red('Error getting structure:'), error);
+        res.status(500).json({
+          error: 'Failed to get structure',
+          message: error.message
+        });
+      }
+    });
+
     // Clean endpoint
     this.app.delete('/api/clean', async (req, res) => {
       try {
@@ -286,11 +330,12 @@ class ApiServer {
         console.log(chalk.blue(`📡 Listening on: http://localhost:${this.port}`));
         console.log(chalk.cyan(`\n🎨 Dashboard: http://localhost:${this.port}`));
         console.log(chalk.yellow(`\n📚 Available endpoints:`));
-        console.log(`  GET  /health           - Health check`);
-        console.log(`  POST /api/analyze      - Analyze project (returns project.txt)`);
-        console.log(`  GET  /api/info?path=.  - Get project info`);
-        console.log(`  DELETE /api/clean      - Clean output directory`);
-        console.log(`  POST /api/execute      - Execute bash script`);
+        console.log(`  GET  /health            - Health check`);
+        console.log(`  POST /api/analyze       - Analyze project (returns project.txt)`);
+        console.log(`  GET  /api/structure      - View file tree & tokens`);
+        console.log(`  GET  /api/info?path=.    - Get project info`);
+        console.log(`  DELETE /api/clean       - Clean output directory`);
+        console.log(`  POST /api/execute       - Execute bash script`);
         console.log(chalk.gray(`\n💡 Press Ctrl+C to stop the server\n`));
         resolve();
       });

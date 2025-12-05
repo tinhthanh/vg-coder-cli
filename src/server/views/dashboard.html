@@ -9,6 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>VG Coder API Dashboard</title>
     <link rel="stylesheet" href="/dashboard.css">
+    <link rel="stylesheet" href="/css/structure.css">
     <script>
         // Pre-load theme to prevent flash
         (function() {
@@ -45,7 +46,7 @@
             </div>
             <div class="system-prompt-content" id="system-prompt-content">
                 <div class="prompt-text" id="prompt-text"></div>
-                <button class="btn btn-copy" onclick="copySystemPrompt()">
+                <button class="btn btn-copy" onclick="copySystemPrompt(event)">
                     <span id="copy-icon">📋</span>
                     <span id="copy-text">Copy System Prompt</span>
                 </button>
@@ -62,7 +63,7 @@
                         <span class="endpoint-path">/api/analyze</span>
                     </div>
                     <!-- Right side: Download Icon -->
-                    <button class="btn-icon-head" onclick="testAnalyze()" title="Download Project Source">
+                    <button class="btn-icon-head" onclick="testAnalyze(event)" title="Download Project Source">
                         📥
                     </button>
                 </div>
@@ -73,7 +74,7 @@
                 </div>
                 <div class="btn-group">
                     <!-- Big Download button removed as it's now in the header -->
-                    <button class="btn btn-copy" onclick="copyAnalyzeResult()">
+                    <button class="btn btn-copy" onclick="copyAnalyzeResult(event)">
                         <span id="analyze-copy-icon">📋</span>
                         <span id="analyze-copy-text">Copy Text</span>
                     </button>
@@ -97,16 +98,46 @@
                         placeholder="mkdir -p src/test&#10;echo 'Hello' > src/test/hello.txt"></textarea>
                 </div>
                 <div class="btn-group">
-                    <button class="btn" onclick="testExecute()">
+                    <button class="btn" onclick="testExecute(event)">
                         <span>▶️</span>
                         <span>Run Script</span>
                     </button>
-                    <button class="btn" onclick="executeFromClipboard()">
+                    <button class="btn" onclick="executeFromClipboard(event)">
                         <span>📋</span>
                         <span>Paste & Run</span>
                     </button>
                 </div>
                 <div class="response" id="execute-response"></div>
+            </div>
+
+            <!-- Structure & Tokens (NEW) -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-title-group">
+                        <span class="method get" style="background: var(--ios-blue); color: white;">GET</span>
+                        <span class="endpoint-path">/api/structure</span>
+                    </div>
+                </div>
+                <p class="endpoint-desc">Xem cây thư mục và phân tích số lượng Token.</p>
+                <div class="form-group">
+                    <label>Path</label>
+                    <input type="text" id="structure-path" value="." placeholder="Project path">
+                </div>
+                <div class="btn-group">
+                    <button class="btn" onclick="testStructure(event)">
+                        <span>🌳</span>
+                        <span>View Structure</span>
+                    </button>
+                </div>
+                <!-- Tree Container -->
+                <div class="tree-container" id="structure-tree" style="display: none;">
+                    <div class="tree-header">
+                        <span>Project Tree</span>
+                        <span class="tree-total-tokens" id="total-tokens-badge">0 tokens</span>
+                    </div>
+                    <div class="tree-content" id="tree-content"></div>
+                </div>
+                <div class="response" id="structure-response" style="display: none;"></div>
             </div>
         </div>
     </div>
