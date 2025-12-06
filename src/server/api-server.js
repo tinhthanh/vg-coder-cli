@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs-extra');
 const chalk = require('chalk');
+const http = require('http');
+const { Server } = require('socket.io');
 const { exec } = require('child_process');
 const util = require('util');
 const execAsync = util.promisify(exec);
@@ -13,15 +15,24 @@ const ProjectDetector = require('../detectors/project-detector');
 const FileScanner = require('../scanner/file-scanner');
 const TokenManager = require('../tokenizer/token-manager');
 const BashExecutor = require('../utils/bash-executor');
+const terminalManager = require('./terminal-manager');
 
 class ApiServer {
   constructor(port = 6868) {
     this.port = port;
     this.app = express();
+    
+    // Create HTTP server for Socket.IO
+    this.httpServer = http.createServer(this.app);
+    this.io = new Server(this.httpServer, {
+        cors: { origin: "*" }
+    });
+    
     this.server = null;
     this.workingDir = process.cwd();
     this.setupMiddleware();
     this.setupRoutes();
+    this.setupSocketIO();
   }
 
   setupMiddleware() {
@@ -31,11 +42,47 @@ class ApiServer {
     this.app.use(express.static(path.join(__dirname, 'views')));
     
     this.app.use((req, res, next) => {
-      // Log request ngắn gọn
       if (!req.path.includes('.')) {
           console.log(chalk.blue(`[REQ] ${req.method} ${req.path}`));
       }
       next();
+    });
+  }
+
+  setupSocketIO() {
+    this.io.on('connection', (socket) => {
+        // Nhận event init với termId
+        // FIX: Thêm default value = {} để tránh crash khi data undefined
+        socket.on('terminal:init', (data) => {
+            if (!data || !data.termId) {
+                // console.warn('[Socket] Ignored invalid terminal:init', data);
+                return;
+            }
+            const { termId, cols, rows } = data;
+            terminalManager.createTerminal(socket, termId, cols, rows, this.workingDir);
+        });
+
+        socket.on('terminal:input', (data) => {
+             if (data && data.termId) {
+                terminalManager.write(data.termId, data.data);
+             }
+        });
+
+        socket.on('terminal:resize', (data) => {
+            if (data && data.termId) {
+                terminalManager.resize(data.termId, data.cols, data.rows);
+            }
+        });
+        
+        socket.on('terminal:kill', (data) => {
+            if (data && data.termId) {
+                terminalManager.kill(data.termId);
+            }
+        });
+
+        socket.on('disconnect', () => {
+            terminalManager.cleanupSocket(socket.id);
+        });
     });
   }
 
@@ -52,37 +99,24 @@ class ApiServer {
       }
     });
 
-    // --- DEBUG GIT DIFF ENDPOINT ---
     this.app.get('/api/git/diff', async (req, res) => {
-      console.log(chalk.yellow('⚡ [GIT] Executing: git diff HEAD'));
       try {
-        // Tăng maxBuffer lên 20MB đề phòng diff lớn
         const { stdout, stderr } = await execAsync('git diff HEAD', { 
             cwd: this.workingDir,
             maxBuffer: 20 * 1024 * 1024 
         });
-        
-        console.log(chalk.green(`✅ [GIT] Success. Output length: ${stdout.length} chars`));
-        if (stderr) console.log(chalk.red(`⚠️ [GIT] Stderr: ${stderr}`));
-
         res.json({ diff: stdout });
-        
       } catch (error) {
         console.error(chalk.red('❌ [GIT] Error:'), error.message);
         res.json({ diff: '', error: error.message });
       }
     });
 
-    // ... (Các endpoint cũ giữ nguyên: analyze, info, structure, clean, execute) ...
-    // Để tiết kiệm không gian, tôi giữ nguyên phần logic cũ của các endpoint khác
-    // trong thực tế bạn không nên xoá chúng.
-    
-    this.app.post('/api/analyze', async (req, res) => { /* Logic cũ... */ 
+    this.app.post('/api/analyze', async (req, res) => {
         const { path: projectPath, options = {}, specificFiles } = req.body;
         if (!projectPath) return res.status(400).json({ error: 'Missing path' });
         const resolvedPath = path.resolve(projectPath);
         if (!await fs.pathExists(resolvedPath)) return res.status(404).json({ error: 'Path not found' });
-        const detector = new ProjectDetector(resolvedPath);
         const scanner = new FileScanner(resolvedPath, {
           extensions: options.extensions ? options.extensions.split(',') : undefined,
           includeHidden: options.includeHidden
@@ -94,7 +128,7 @@ class ApiServer {
         res.send(content);
     });
 
-    this.app.get('/api/info', async (req, res) => { /* Logic cũ... */
+    this.app.get('/api/info', async (req, res) => {
         const projectPath = req.query.path;
         if (!projectPath) return res.status(400).json({ error: 'Missing path' });
         const resolvedPath = path.resolve(projectPath);
@@ -105,7 +139,7 @@ class ApiServer {
         res.json({ path: resolvedPath, primaryType: projectInfo.primary, stats: { totalFiles: scanResult.files.length } });
     });
 
-    this.app.get('/api/structure', async (req, res) => { /* Logic cũ... */
+    this.app.get('/api/structure', async (req, res) => {
         const projectPath = req.query.path || '.';
         const resolvedPath = path.resolve(projectPath);
         const scanner = new FileScanner(resolvedPath);
@@ -115,14 +149,14 @@ class ApiServer {
         res.json({ path: resolvedPath, structure: enrichedTree });
     });
 
-    this.app.post('/api/execute', async (req, res) => { /* Logic cũ... */
+    this.app.post('/api/execute', async (req, res) => {
         const { bash } = req.body;
         const executor = new BashExecutor(this.workingDir);
         const result = await executor.execute(bash);
         res.status(result.success ? 200 : 400).json(result);
     });
     
-    this.app.delete('/api/clean', async (req, res) => { /* Logic cũ... */
+    this.app.delete('/api/clean', async (req, res) => {
         await fs.remove(path.resolve(req.body.output));
         res.json({ success: true });
     });
@@ -130,8 +164,8 @@ class ApiServer {
 
   async start() {
     return new Promise((resolve) => {
-      this.server = this.app.listen(this.port, () => {
-        console.log(chalk.green(`\n🚀 VG Coder API Server started on port ${this.port}`));
+      this.server = this.httpServer.listen(this.port, () => {
+        console.log(chalk.green(`\n🚀 VG Coder API Server & Socket.IO started on port ${this.port}`));
         resolve();
       });
     });

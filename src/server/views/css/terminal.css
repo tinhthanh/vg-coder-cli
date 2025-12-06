@@ -1,0 +1,98 @@
+/* Layer chứa các terminal trôi nổi */
+#floating-terminals-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    z-index: 10000; /* Cao hơn mọi thứ */
+}
+
+/* Style cho từng cửa sổ terminal */
+.floating-terminal {
+    position: absolute;
+    width: 600px;
+    height: 400px;
+    background: #1e1e1e;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    resize: both; /* Cho phép resize cửa sổ */
+    min-width: 300px;
+    min-height: 200px;
+}
+
+/* Header dùng để drag */
+.terminal-header {
+    background: #252526;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    border-bottom: 1px solid #333;
+    user-select: none;
+}
+
+.terminal-header:active {
+    cursor: grabbing;
+}
+
+.terminal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ccc;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.terminal-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.term-btn {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+.term-btn.close {
+    background: #FF5F56;
+}
+.term-btn.close:hover {
+    background: #ff3b30;
+}
+
+.term-btn.minimize {
+    background: #FFBD2E;
+}
+
+.term-btn.maximize {
+    background: #27C93F;
+}
+
+/* Phần nội dung chứa xterm */
+.terminal-body {
+    flex: 1;
+    position: relative;
+    padding: 5px;
+    background: #1e1e1e;
+    overflow: hidden;
+}
+
+/* Scrollbar customization */
+.xterm-viewport::-webkit-scrollbar {
+    width: 8px;
+}
+.xterm-viewport::-webkit-scrollbar-thumb {
+    background: #424242;
+    border-radius: 4px;
+}

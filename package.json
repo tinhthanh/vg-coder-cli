@@ -1,6 +1,6 @@
 {
   "name": "vg-coder-cli",
-  "version": "2.0.12",
+  "version": "2.0.13",
   "description": "🚀 CLI tool to analyze projects, concatenate source files, count tokens, and export HTML with syntax highlighting and copy functionality",
   "main": "src/index.js",
   "bin": {
@@ -21,19 +21,8 @@
     "code-analysis",
     "token-counter",
     "ai-helper",
-    "gitignore",
-    "html-export",
-    "syntax-highlighting",
-    "project-analyzer",
-    "source-code",
-    "tiktoken",
-    "spring-boot",
-    "angular",
-    "react",
-    "vue",
-    "java",
-    "javascript",
-    "typescript"
+    "terminal",
+    "web-terminal"
   ],
   "author": "VG Coder",
   "license": "MIT",
@@ -41,10 +30,6 @@
     "type": "git",
     "url": "https://github.com/tinhthanh/vg-coder-cli.git"
   },
-  "bugs": {
-    "url": "https://github.com/tinhthanh/vg-coder-cli/issues"
-  },
-  "homepage": "https://github.com/tinhthanh/vg-coder-cli#readme",
   "dependencies": {
     "commander": "^11.1.0",
     "directory-tree": "^3.5.1",
@@ -57,7 +42,9 @@
     "ora": "^5.4.1",
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "body-parser": "^1.20.2"
+    "body-parser": "^1.20.2",
+    "node-pty": "^1.0.0",
+    "socket.io": "^4.7.2"
   },
   "devDependencies": {
     "jest": "^29.7.0",

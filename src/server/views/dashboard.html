@@ -10,11 +10,21 @@
     <link rel="stylesheet" href="/css/structure.css">
     <link rel="stylesheet" href="/css/iframe.css">
     <link rel="stylesheet" href="/css/git-view.css">
+    <link rel="stylesheet" href="/css/terminal.css">
     
-    <!-- QUAN TRỌNG: Đã đổi sang github-dark.min.css để chữ có màu sáng -->
+    <!-- Syntax Highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
     
+    <!-- Git Diff -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+    
+    <!-- Terminal Dependencies -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    
+    <!-- Other Libs -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
 
     <script>
@@ -37,6 +47,14 @@
                     </div>
                     <button class="theme-toggle" id="theme-toggle" title="Toggle Dark Mode">
                         <span id="theme-icon">🌙</span>
+                    </button>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="endpoint-card" style="display: flex; gap: 10px; align-items: center; justify-content: space-between;">
+                    <span style="font-weight: 600;">Tools:</span>
+                    <button class="btn" onclick="createNewTerminal()" style="background: #252526; border: 1px solid #444;">
+                        <span>🖥️</span> New Terminal
                     </button>
                 </div>
 
@@ -104,7 +122,7 @@
                 </div>
 
                 <div class="endpoints">
-                    <!-- Execute Bash -->
+                    <!-- Execute Bash (RESTORED) -->
                     <div class="endpoint-card">
                         <div class="endpoint-header">
                             <div class="endpoint-title-group">
@@ -193,7 +211,6 @@
                     </select>
                 </div>
                 
-                <!-- NEW: Git Toggle Button -->
                 <button id="git-view-toggle" class="git-toggle-btn">View Changes</button>
                 <button id="git-refresh-btn" class="btn-icon-head" style="display:none; margin-left:5px;" title="Refresh">↻</button>
                 
@@ -213,9 +230,11 @@
             </div>
         </div>
     </div>
+    
+    <!-- Floating Terminals Container (Fixed on top of everything) -->
+    <div id="floating-terminals-layer"></div>
 
     <div class="toast" id="toast"></div>
     <script type="module" src="/js/main.js"></script>
 </body>
-
 </html>
