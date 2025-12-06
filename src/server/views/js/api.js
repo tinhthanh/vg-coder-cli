@@ -73,6 +73,21 @@ export async function getStructure(path) {
 }
 
 /**
+ * Get Git Diff
+ * @returns {Promise<string>} - Unified diff string
+ */
+export async function getGitDiff() {
+    const res = await fetch(`${API_BASE}/api/git/diff`);
+    const data = await res.json();
+    
+    if (!res.ok) {
+        throw new Error(data.error || 'Failed to get git diff');
+    }
+
+    return data.diff;
+}
+
+/**
  * Copy content as file to clipboard
  * @param {string} filename - Filename for the clipboard item
  * @param {string} content - Content to copy

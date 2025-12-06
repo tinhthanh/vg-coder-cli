@@ -9,6 +9,14 @@
     <link rel="stylesheet" href="/dashboard.css">
     <link rel="stylesheet" href="/css/structure.css">
     <link rel="stylesheet" href="/css/iframe.css">
+    <link rel="stylesheet" href="/css/git-view.css">
+    
+    <!-- QUAN TRỌNG: Đã đổi sang github-dark.min.css để chữ có màu sáng -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+    
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
+
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme') || 'light';
@@ -175,7 +183,7 @@
             </div>
         </div>
 
-        <!-- CỘT PHẢI: AI Iframe with Selector -->
+        <!-- CỘT PHẢI: AI Iframe with Selector & Git View -->
         <div class="right-panel">
             <div class="ai-header">
                 <div class="ai-select-group">
@@ -184,9 +192,18 @@
                         <!-- Options filled by JS -->
                     </select>
                 </div>
+                
+                <!-- NEW: Git Toggle Button -->
+                <button id="git-view-toggle" class="git-toggle-btn">View Changes</button>
+                <button id="git-refresh-btn" class="btn-icon-head" style="display:none; margin-left:5px;" title="Refresh">↻</button>
+                
                 <a id="ai-external-link" href="#" target="_blank" class="btn-icon-head" title="Open in new tab">↗</a>
             </div>
             
+            <!-- Git View Container (Hidden by default) -->
+            <div id="git-view-container" class="git-view-container"></div>
+
+            <!-- AI Iframe Container -->
             <div class="ai-iframe-container">
                 <div class="iframe-placeholder">
                     <p>⚠️ Nếu trang trắng, hãy cài Extension <b>"Ignore X-Frame-Options"</b></p>

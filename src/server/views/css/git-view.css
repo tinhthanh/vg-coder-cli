@@ -1,0 +1,155 @@
+/* --- LAYOUT HEADER --- */
+.git-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 10px;
+    padding-left: 10px;
+    border-left: 1px solid var(--ios-separator);
+    flex-shrink: 0;
+}
+
+.git-toggle-btn {
+    padding: 0 12px;
+    background: transparent;
+    border: 1px solid var(--ios-separator);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    height: 32px;
+    display: flex;
+    align-items: center;
+}
+
+.git-toggle-btn.active {
+    background: var(--ios-blue);
+    color: #fff;
+    border-color: var(--ios-blue);
+}
+
+.git-refresh-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--ios-separator);
+    background: var(--ios-card);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- CONTAINER CHÍNH --- */
+.right-panel {
+    position: relative;
+    /* Quan trọng */
+}
+
+.d2h-file-list {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 99;
+    background-color: #0d1117;
+    overflow: scroll;
+    height: calc(100vh - 46px);
+    width: 446px;
+    top: 46px;
+}
+
+.git-view-container {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    /* Z-index cao nhất */
+    background: #0d1117;
+    /* Nền đen GitHub */
+    display: none;
+    flex-direction: column;
+    overflow: scroll;
+}
+
+.git-view-container.active {
+    display: flex;
+}
+
+/* --- DEBUG / SAFETY NET CSS --- */
+/* Ép toàn bộ text trong vùng code phải có màu sáng */
+.d2h-wrapper * {
+    box-sizing: border-box;
+}
+
+/* Force text color */
+.d2h-code-line-ctn,
+.d2h-code-line,
+.hljs {
+    color: #e6edf3 !important;
+    /* Trắng xám */
+    background: transparent !important;
+}
+
+/* Force line number color */
+.d2h-code-side-linenumber {
+    color: #6e7681 !important;
+    background: #0d1117 !important;
+    border-color: #30363d !important;
+}
+
+/* Fix background diff */
+.d2h-ins {
+    background-color: rgba(46, 160, 67, 0.15) !important;
+}
+
+.d2h-del {
+    background-color: rgba(248, 81, 73, 0.15) !important;
+}
+
+/* Layout */
+.d2h-files-wrapper {
+    flex: 1;
+    overflow: auto;
+    background: #0d1117;
+}
+
+.d2h-file-list-wrapper {
+    width: 250px;
+    flex-shrink: 0;
+    background: #0d1117;
+    border-right: 1px solid #30363d;
+    display: flex;
+    flex-direction: column;
+}
+
+.d2h-file-list-header,
+.d2h-file-header {
+    background: #161b22 !important;
+    border-bottom: 1px solid #30363d !important;
+    color: #e6edf3 !important;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.d2h-file-list a {
+    color: #8b949e !important;
+    text-decoration: none;
+    display: block;
+    padding: 5px 10px;
+}
+
+.d2h-file-list a:hover {
+    color: #58a6ff !important;
+    background: #161b22;
+}
+
+/* Ẩn rác */
+.d2h-file-switch,
+.d2h-tag {
+    display: none !important;
+}

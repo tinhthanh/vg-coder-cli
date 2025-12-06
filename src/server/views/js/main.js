@@ -4,6 +4,7 @@ import { checkHealth } from './api.js';
 import './handlers.js'; // Import to register global functions
 import { showToast, showCopiedState } from './utils.js';
 import { initIframeManager } from './features/iframe-manager.js';
+import { initGitView } from './features/git-view.js';
 
 /**
  * Initialize application on DOM ready
@@ -21,8 +22,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load Extension Path
     loadExtensionPath();
 
-    // Initialize Iframe Manager (New Feature)
+    // Initialize Iframe Manager
     initIframeManager();
+
+    // Initialize Git View
+    initGitView();
 });
 
 /**
