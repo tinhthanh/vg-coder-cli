@@ -23,6 +23,20 @@
     resize: both; /* Cho phép resize cửa sổ */
     min-width: 300px;
     min-height: 200px;
+    transition: height 0.2s ease, width 0.2s ease;
+}
+
+/* --- TRẠNG THÁI MINIMIZED --- */
+.floating-terminal.minimized {
+    height: 36px !important; /* Chỉ hiện header */
+    min-height: 36px !important;
+    width: 200px !important; /* Thu nhỏ chiều ngang */
+    resize: none; /* Không cho resize khi đang minimize */
+    overflow: hidden;
+}
+
+.floating-terminal.minimized .terminal-body {
+    display: none;
 }
 
 /* Header dùng để drag */
@@ -35,6 +49,7 @@
     cursor: grab;
     border-bottom: 1px solid #333;
     user-select: none;
+    height: 36px;
 }
 
 .terminal-header:active {
@@ -49,6 +64,9 @@
     font-family: monospace;
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .terminal-controls {
@@ -62,6 +80,16 @@
     border-radius: 50%;
     border: none;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 8px;
+    color: rgba(0,0,0,0.5);
+}
+
+.term-btn:hover {
+    color: rgba(0,0,0,0.8);
 }
 
 .term-btn.close {
@@ -73,6 +101,9 @@
 
 .term-btn.minimize {
     background: #FFBD2E;
+}
+.term-btn.minimize:hover {
+    background: #ffad08;
 }
 
 .term-btn.maximize {

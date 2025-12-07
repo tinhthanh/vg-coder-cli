@@ -31,9 +31,8 @@ async function toggleGitMode() {
         const rect = gitContainer.getBoundingClientRect();
         console.log('[GitView] Container Size:', rect.width, 'x', rect.height);
 
-        if (!gitContainer.innerHTML.trim()) {
-            await loadGitChanges();
-        }
+        // FIX: Always load changes when opening, removing the empty check
+        await loadGitChanges();
     } else {
         gitContainer.classList.remove('active');
         toggleBtn.classList.remove('active');
@@ -53,6 +52,7 @@ async function loadGitChanges() {
         refreshBtn.disabled = true;
     }
     
+    // Only show loading if we are replacing content or it's empty
     gitContainer.innerHTML = '<div class="git-loading-msg">Loading git changes... (Check Console if stuck)</div>';
 
     try {
