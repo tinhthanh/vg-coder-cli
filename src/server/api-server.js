@@ -52,10 +52,8 @@ class ApiServer {
   setupSocketIO() {
     this.io.on('connection', (socket) => {
         // Nhận event init với termId
-        // FIX: Thêm default value = {} để tránh crash khi data undefined
         socket.on('terminal:init', (data) => {
             if (!data || !data.termId) {
-                // console.warn('[Socket] Ignored invalid terminal:init', data);
                 return;
             }
             const { termId, cols, rows } = data;
@@ -101,11 +99,54 @@ class ApiServer {
 
     this.app.get('/api/git/diff', async (req, res) => {
       try {
-        const { stdout, stderr } = await execAsync('git diff HEAD', { 
+        // 1. Lấy diff của các file đã track (modified, deleted, staged)
+        const { stdout: diffStdout } = await execAsync('git diff HEAD', { 
             cwd: this.workingDir,
             maxBuffer: 20 * 1024 * 1024 
         });
-        res.json({ diff: stdout });
+
+        // 2. Lấy danh sách untracked files (files mới tạo chưa add)
+        const { stdout: untrackedStdout } = await execAsync('git ls-files --others --exclude-standard', {
+            cwd: this.workingDir,
+            maxBuffer: 20 * 1024 * 1024
+        });
+
+        let combinedDiff = diffStdout || '';
+        const untrackedFiles = untrackedStdout.split('\n').filter(f => f.trim());
+
+        // 3. Tạo diff giả lập cho untracked files để hiển thị trên UI
+        if (untrackedFiles.length > 0) {
+            if (combinedDiff && !combinedDiff.endsWith('\n')) combinedDiff += '\n';
+
+            for (const file of untrackedFiles) {
+                try {
+                    const filePath = path.join(this.workingDir, file);
+                    const stat = await fs.stat(filePath);
+                    if (stat.isDirectory()) continue;
+
+                    const content = await fs.readFile(filePath, 'utf8');
+                    
+                    // Tạo header giống git diff
+                    combinedDiff += `diff --git a/${file} b/${file}\n`;
+                    combinedDiff += `new file mode 100644\n`;
+                    combinedDiff += `--- /dev/null\n`;
+                    combinedDiff += `+++ b/${file}\n`;
+                    
+                    if (content.length > 0) {
+                        const lines = content.split('\n');
+                        combinedDiff += `@@ -0,0 +1,${lines.length} @@\n`;
+                        lines.forEach(line => {
+                            combinedDiff += `+${line}\n`;
+                        });
+                    }
+                    combinedDiff += `\n`;
+                } catch (err) {
+                    // Bỏ qua nếu lỗi đọc file (vd: binary)
+                }
+            }
+        }
+
+        res.json({ diff: combinedDiff });
       } catch (error) {
         console.error(chalk.red('❌ [GIT] Error:'), error.message);
         res.json({ diff: '', error: error.message });
