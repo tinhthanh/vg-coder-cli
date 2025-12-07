@@ -1,6 +1,6 @@
 {
   "name": "vg-coder-cli",
-  "version": "2.0.14",
+  "version": "2.0.15",
   "description": "🚀 CLI tool to analyze projects, concatenate source files, count tokens, and export HTML with syntax highlighting and copy functionality",
   "main": "src/index.js",
   "bin": {
@@ -31,26 +31,27 @@
     "url": "https://github.com/tinhthanh/vg-coder-cli.git"
   },
   "dependencies": {
+    "body-parser": "^1.20.2",
+    "chalk": "^4.1.2",
     "commander": "^11.1.0",
+    "cors": "^2.8.5",
     "directory-tree": "^3.5.1",
-    "tiktoken": "^1.0.10",
+    "express": "^4.18.2",
+    "fs-extra": "^11.2.0",
     "highlight.js": "^11.9.0",
     "ignore": "^5.3.0",
-    "fs-extra": "^11.2.0",
-    "path": "^0.12.7",
-    "chalk": "^4.1.2",
-    "ora": "^5.4.1",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "body-parser": "^1.20.2",
     "node-pty": "^1.0.0",
-    "socket.io": "^4.7.2"
+    "ora": "^5.4.1",
+    "path": "^0.12.7",
+    "socket.io": "^4.7.2",
+    "tiktoken": "^1.0.10",
+    "vg-coder-cli": "^2.0.15"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
-    "nodemon": "^3.0.2",
     "@types/jest": "^29.5.8",
-    "adm-zip": "^0.5.10"
+    "adm-zip": "^0.5.10",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
   },
   "engines": {
     "node": ">=16.0.0"
