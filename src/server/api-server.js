@@ -99,7 +99,8 @@ class ApiServer {
     // Get Git Status
     this.app.get('/api/git/status', async (req, res) => {
         try {
-            const { stdout } = await execAsync('git status --porcelain', { cwd: this.workingDir });
+            // FIX: Added -u flag to show individual files in untracked directories
+            const { stdout } = await execAsync('git status --porcelain -u', { cwd: this.workingDir });
             
             const staged = [];
             const unstaged = [];
@@ -209,6 +210,20 @@ class ApiServer {
             cmd = file ? `git diff --cached -- "${file}"` : `git diff --cached`;
         } else {
             if (file) {
+                 // Check if directory to avoid EISDIR (Safety Check)
+                 try {
+                     const filePath = path.join(this.workingDir, file);
+                     if (await fs.pathExists(filePath)) {
+                         const stat = await fs.stat(filePath);
+                         if (stat.isDirectory()) {
+                             return res.json({ diff: '' });
+                         }
+                     }
+                 } catch (e) {
+                     // Ignore stat errors
+                 }
+
+                 // Check untracked
                  const { stdout: isUntracked } = await execAsync(`git ls-files --others --exclude-standard "${file}"`, { cwd: this.workingDir });
                  if (isUntracked.trim()) {
                      const content = await fs.readFile(path.join(this.workingDir, file), 'utf8');
