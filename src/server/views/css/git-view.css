@@ -73,7 +73,7 @@
     user-select: none;
 }
 
-/* --- COMMIT SECTION (NEW) --- */
+/* --- COMMIT SECTION --- */
 .git-commit-section {
     padding: 10px;
     border-bottom: 1px solid #30363d;
@@ -101,7 +101,7 @@
 
 .git-commit-btn {
     width: 100%;
-    background: #0078d4; /* VS Code Blue */
+    background: #0078d4;
     color: white;
     border: none;
     padding: 6px 12px;
@@ -250,6 +250,7 @@
     color: #e6edf3;
 }
 
+/* ACTIONS */
 .git-actions {
     display: none;
     margin-left: 6px;
@@ -274,6 +275,12 @@
 
 .git-btn-action:hover {
     background: #30363d;
+    color: #fff;
+}
+
+/* Destructive Action (Discard) */
+.git-btn-action.destructive:hover {
+    background: #f85149;
     color: #fff;
 }
 

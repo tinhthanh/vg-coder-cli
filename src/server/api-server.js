@@ -157,15 +157,39 @@ class ApiServer {
         }
     });
 
-    // Git Commit (NEW)
+    // Git Discard (NEW)
+    this.app.post('/api/git/discard', async (req, res) => {
+        try {
+            const { files } = req.body; // array or '*'
+            
+            // Discard All
+            if (files.includes('*')) {
+                // Restore tracked files
+                try { await execAsync('git restore .', { cwd: this.workingDir }); } catch (e) {}
+                // Clean untracked files
+                try { await execAsync('git clean -fd', { cwd: this.workingDir }); } catch (e) {}
+            } else {
+                // Discard specific files
+                for (const file of files) {
+                    // Try restore (for tracked modified/deleted)
+                    try { await execAsync(`git restore "${file}"`, { cwd: this.workingDir }); } catch (e) {}
+                    // Try clean (for untracked)
+                    try { await execAsync(`git clean -f "${file}"`, { cwd: this.workingDir }); } catch (e) {}
+                }
+            }
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Discard error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Git Commit
     this.app.post('/api/git/commit', async (req, res) => {
         try {
             const { message } = req.body;
             if (!message) throw new Error('Commit message is required');
-            
-            // Escape double quotes in message
             const safeMessage = message.replace(/"/g, '\\"');
-            
             await execAsync(`git commit -m "${safeMessage}"`, { cwd: this.workingDir });
             res.json({ success: true });
         } catch (error) {

@@ -1,4 +1,4 @@
-import { getGitStatus, getGitDiff, stageFile, unstageFile, commitChanges } from '../api.js';
+import { getGitStatus, getGitDiff, stageFile, unstageFile, commitChanges, discardChange } from '../api.js';
 import { showToast } from '../utils.js';
 
 export function initGitView() {
@@ -64,7 +64,10 @@ async function loadGitData() {
                             <span>CHANGES</span>
                             <span class="git-badge" id="badge-changes">0</span>
                         </div>
-                        <span class="git-btn-action" id="stage-all" title="Stage All">+</span>
+                        <div style="display:flex;gap:5px;">
+                            <span class="git-btn-action destructive" id="discard-all" title="Discard All Changes">↺</span>
+                            <span class="git-btn-action" id="stage-all" title="Stage All">+</span>
+                        </div>
                     </div>
                     <ul class="git-tree-root" id="tree-changes"></ul>
                 </div>
@@ -83,14 +86,16 @@ async function loadGitData() {
              e.stopPropagation();
              await handleUnstage('*');
         });
+        document.getElementById('discard-all').addEventListener('click', async (e) => {
+             e.stopPropagation();
+             await handleDiscard('*');
+        });
         
         // Commit Actions
         const commitBtn = document.getElementById('git-commit-btn');
         const commitInput = document.getElementById('git-commit-message');
         
         commitBtn.addEventListener('click', handleCommit);
-        
-        // Shortcut: Ctrl/Cmd + Enter
         commitInput.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
@@ -136,8 +141,8 @@ async function handleCommit() {
     try {
         await commitChanges(message);
         showToast('Commit successful', 'success');
-        input.value = ''; // Clear input
-        await loadGitData(); // Refresh list
+        input.value = '';
+        await loadGitData();
     } catch (err) {
         showToast('Commit failed: ' + err.message, 'error');
     } finally {
@@ -161,6 +166,7 @@ function renderTrees() {
     // 2. Render Changes
     const treeChanges = document.getElementById('tree-changes');
     document.getElementById('badge-changes').textContent = currentChanges.length;
+    document.getElementById('discard-all').style.display = currentChanges.length > 0 ? 'block' : 'none';
     treeChanges.innerHTML = '';
     
     if (currentChanges.length > 0) {
@@ -173,18 +179,12 @@ function renderTrees() {
 
 function buildFileTree(files) {
     const root = {};
-
     files.forEach(file => {
         const parts = file.path.split('/');
         let current = root;
-
         parts.forEach((part, index) => {
             if (!current[part]) {
-                current[part] = {
-                    name: part,
-                    children: {},
-                    fileData: null 
-                };
+                current[part] = { name: part, children: {}, fileData: null };
             }
             if (index === parts.length - 1) {
                 current[part].fileData = file;
@@ -192,7 +192,6 @@ function buildFileTree(files) {
             current = current[part].children;
         });
     });
-
     return root;
 }
 
@@ -214,7 +213,7 @@ function renderTreeNodes(nodes, container, type, depth) {
         // --- CONTENT ROW ---
         const content = document.createElement('div');
         content.className = 'git-tree-content';
-        content.style.paddingLeft = (depth * 16 + 8) + 'px'; // Indent
+        content.style.paddingLeft = (depth * 16 + 8) + 'px';
 
         // Arrow
         const arrow = document.createElement('span');
@@ -245,6 +244,17 @@ function renderTreeNodes(nodes, container, type, depth) {
             const actions = document.createElement('div');
             actions.className = 'git-actions';
             
+            // Discard Button (Only for Changes)
+            if (type === 'changes') {
+                const discardBtn = document.createElement('button');
+                discardBtn.className = 'git-btn-action destructive';
+                discardBtn.textContent = '↺';
+                discardBtn.title = 'Discard Changes';
+                discardBtn.onclick = (e) => { e.stopPropagation(); handleDiscard(node.fileData.path); };
+                actions.appendChild(discardBtn);
+            }
+
+            // Stage/Unstage Button
             const btn = document.createElement('button');
             btn.className = 'git-btn-action';
             if (type === 'staged') {
@@ -310,6 +320,23 @@ async function handleUnstage(path) {
         await loadGitData();
     } catch (err) {
         showToast('Unstage failed: ' + err.message, 'error');
+    }
+}
+
+async function handleDiscard(path) {
+    const isAll = path === '*';
+    const msg = isAll 
+        ? 'Are you sure you want to discard ALL changes? This is irreversible!' 
+        : `Discard changes to ${path}? This is irreversible!`;
+
+    if (confirm(msg)) {
+        try {
+            await discardChange(path);
+            await loadGitData();
+            showToast('Changes discarded', 'success');
+        } catch (err) {
+            showToast('Discard failed: ' + err.message, 'error');
+        }
     }
 }
 

@@ -77,6 +77,16 @@ export async function unstageFile(files) {
     return res.ok;
 }
 
+export async function discardChange(files) {
+    const res = await fetch(`${API_BASE}/api/git/discard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: Array.isArray(files) ? files : [files] })
+    });
+    if (!res.ok) throw new Error('Discard failed');
+    return res.ok;
+}
+
 export async function commitChanges(message) {
     const res = await fetch(`${API_BASE}/api/git/commit`, {
         method: 'POST',
