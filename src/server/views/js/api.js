@@ -1,52 +1,29 @@
-// API Layer - All API calls centralized here
 import { API_BASE } from './config.js';
 
-/**
- * Analyze project and get source code
- * @param {string} path - Project path to analyze
- * @param {Array<string>} specificFiles - Optional list of relative paths to filter
- * @returns {Promise<string>} - Project content as text
- */
 export async function analyzeProject(path, specificFiles = null) {
     const res = await fetch(`${API_BASE}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path, specificFiles })
     });
-
     if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Analyze failed');
     }
-
     return await res.text();
 }
 
-/**
- * Execute bash script
- * @param {string} bash - Bash script to execute
- * @returns {Promise<Object>} - Execution result
- */
 export async function executeScript(bash) {
     const res = await fetch(`${API_BASE}/api/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bash })
     });
-
     const data = await res.json();
-    
-    if (!res.ok) {
-        throw new Error(data.error || 'Execute failed');
-    }
-
+    if (!res.ok) throw new Error(data.error || 'Execute failed');
     return data;
 }
 
-/**
- * Check server health status
- * @returns {Promise<boolean>} - True if server is healthy
- */
 export async function checkHealth() {
     try {
         const res = await fetch(`${API_BASE}/health`);
@@ -56,78 +33,87 @@ export async function checkHealth() {
     }
 }
 
-/**
- * Get project structure with tokens
- * @param {string} path - Project path
- * @returns {Promise<Object>} - Structure data
- */
 export async function getStructure(path) {
     const res = await fetch(`${API_BASE}/api/structure?path=${encodeURIComponent(path)}`);
-    
     if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to get structure');
     }
-
     return await res.json();
 }
 
-/**
- * Get Git Diff
- * @returns {Promise<string>} - Unified diff string
- */
-export async function getGitDiff() {
-    const res = await fetch(`${API_BASE}/api/git/diff`);
-    const data = await res.json();
-    
-    if (!res.ok) {
-        throw new Error(data.error || 'Failed to get git diff');
-    }
+// --- Git API Wrappers ---
 
+export async function getGitStatus() {
+    const res = await fetch(`${API_BASE}/api/git/status`);
+    if (!res.ok) throw new Error('Failed to fetch status');
+    return await res.json();
+}
+
+export async function getGitDiff(file = null, type = 'working') {
+    let url = `${API_BASE}/api/git/diff?type=${type}`;
+    if (file) url += `&file=${encodeURIComponent(file)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to get git diff');
     return data.diff;
 }
 
-/**
- * Copy content as file to clipboard
- * @param {string} filename - Filename for the clipboard item
- * @param {string} content - Content to copy
- */
-export async function copyAsFile(filename, content) {
-    const blob = new Blob([content], {
-        type: "application/octet-stream"
+export async function stageFile(files) {
+    const res = await fetch(`${API_BASE}/api/git/stage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: Array.isArray(files) ? files : [files] })
     });
+    return res.ok;
+}
 
-    const item = new ClipboardItem(
-        { [blob.type]: blob },
-        {
-            type: "application/octet-stream",
-            presentationStyle: "attachment",
-            name: filename
-        }
-    );
+export async function unstageFile(files) {
+    const res = await fetch(`${API_BASE}/api/git/unstage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: Array.isArray(files) ? files : [files] })
+    });
+    return res.ok;
+}
 
+export async function commitChanges(message) {
+    const res = await fetch(`${API_BASE}/api/git/commit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+    });
+    if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Commit failed');
+    }
+    return true;
+}
+
+// ------------------------
+
+export async function copyAsFile(filename, content) {
+    const blob = new Blob([content], { type: "application/octet-stream" });
+    const item = new ClipboardItem({
+        [blob.type]: blob
+    }, {
+        type: "application/octet-stream",
+        presentationStyle: "attachment",
+        name: filename
+    });
     await navigator.clipboard.write([item]);
 }
 
-/**
- * Copy text to clipboard with fallback
- * @param {string} text - Text to copy
- */
 export async function copyToClipboard(text) {
     try {
         const blob = new Blob([text], { type: 'text/plain' });
         const item = new ClipboardItem({ 'text/plain': blob });
         await navigator.clipboard.write([item]);
     } catch (err) {
-        // Fallback to simple writeText
         await navigator.clipboard.writeText(text);
     }
 }
 
-/**
- * Read text from clipboard
- * @returns {Promise<string>} - Clipboard text content
- */
 export async function readFromClipboard() {
     return await navigator.clipboard.readText();
 }

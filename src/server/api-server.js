@@ -51,11 +51,8 @@ class ApiServer {
 
   setupSocketIO() {
     this.io.on('connection', (socket) => {
-        // Nhận event init với termId
         socket.on('terminal:init', (data) => {
-            if (!data || !data.termId) {
-                return;
-            }
+            if (!data || !data.termId) return;
             const { termId, cols, rows } = data;
             terminalManager.createTerminal(socket, termId, cols, rows, this.workingDir);
         });
@@ -97,61 +94,119 @@ class ApiServer {
       }
     });
 
+    // --- GIT API START ---
+
+    // Get Git Status
+    this.app.get('/api/git/status', async (req, res) => {
+        try {
+            const { stdout } = await execAsync('git status --porcelain', { cwd: this.workingDir });
+            
+            const staged = [];
+            const unstaged = [];
+            const untracked = [];
+
+            const lines = stdout.split('\n').filter(l => l.trim());
+            
+            lines.forEach(line => {
+                const x = line[0];
+                const y = line[1];
+                const path = line.substring(3);
+
+                if (x !== ' ' && x !== '?') {
+                    staged.push({ path, status: x });
+                }
+
+                if (y !== ' ') {
+                    if (x === '?' && y === '?') {
+                        untracked.push({ path, status: 'U' });
+                    } else {
+                        unstaged.push({ path, status: y });
+                    }
+                }
+            });
+
+            const changes = [...unstaged, ...untracked];
+            res.json({ staged, changes });
+        } catch (error) {
+            console.error(chalk.red('❌ [GIT STATUS] Error:'), error.message);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Git Stage
+    this.app.post('/api/git/stage', async (req, res) => {
+        try {
+            const { files } = req.body;
+            const target = files.includes('*') ? '.' : files.map(f => `"${f}"`).join(' ');
+            await execAsync(`git add ${target}`, { cwd: this.workingDir });
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Git Unstage
+    this.app.post('/api/git/unstage', async (req, res) => {
+        try {
+            const { files } = req.body;
+            const target = files.includes('*') ? '' : files.map(f => `"${f}"`).join(' ');
+            await execAsync(`git reset HEAD ${target}`, { cwd: this.workingDir });
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Git Commit (NEW)
+    this.app.post('/api/git/commit', async (req, res) => {
+        try {
+            const { message } = req.body;
+            if (!message) throw new Error('Commit message is required');
+            
+            // Escape double quotes in message
+            const safeMessage = message.replace(/"/g, '\\"');
+            
+            await execAsync(`git commit -m "${safeMessage}"`, { cwd: this.workingDir });
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Get Diff
     this.app.get('/api/git/diff', async (req, res) => {
       try {
-        // 1. Lấy diff của các file đã track (modified, deleted, staged)
-        const { stdout: diffStdout } = await execAsync('git diff HEAD', { 
-            cwd: this.workingDir,
-            maxBuffer: 20 * 1024 * 1024 
-        });
+        const file = req.query.file;
+        const type = req.query.type || 'working';
 
-        // 2. Lấy danh sách untracked files (files mới tạo chưa add)
-        const { stdout: untrackedStdout } = await execAsync('git ls-files --others --exclude-standard', {
-            cwd: this.workingDir,
-            maxBuffer: 20 * 1024 * 1024
-        });
-
-        let combinedDiff = diffStdout || '';
-        const untrackedFiles = untrackedStdout.split('\n').filter(f => f.trim());
-
-        // 3. Tạo diff giả lập cho untracked files để hiển thị trên UI
-        if (untrackedFiles.length > 0) {
-            if (combinedDiff && !combinedDiff.endsWith('\n')) combinedDiff += '\n';
-
-            for (const file of untrackedFiles) {
-                try {
-                    const filePath = path.join(this.workingDir, file);
-                    const stat = await fs.stat(filePath);
-                    if (stat.isDirectory()) continue;
-
-                    const content = await fs.readFile(filePath, 'utf8');
-                    
-                    // Tạo header giống git diff
-                    combinedDiff += `diff --git a/${file} b/${file}\n`;
-                    combinedDiff += `new file mode 100644\n`;
-                    combinedDiff += `--- /dev/null\n`;
-                    combinedDiff += `+++ b/${file}\n`;
-                    
-                    if (content.length > 0) {
-                        const lines = content.split('\n');
-                        combinedDiff += `@@ -0,0 +1,${lines.length} @@\n`;
-                        lines.forEach(line => {
-                            combinedDiff += `+${line}\n`;
-                        });
-                    }
-                    combinedDiff += `\n`;
-                } catch (err) {
-                    // Bỏ qua nếu lỗi đọc file (vd: binary)
-                }
+        let cmd = '';
+        
+        if (type === 'staged') {
+            cmd = file ? `git diff --cached -- "${file}"` : `git diff --cached`;
+        } else {
+            if (file) {
+                 const { stdout: isUntracked } = await execAsync(`git ls-files --others --exclude-standard "${file}"`, { cwd: this.workingDir });
+                 if (isUntracked.trim()) {
+                     const content = await fs.readFile(path.join(this.workingDir, file), 'utf8');
+                     let fakeDiff = `diff --git a/${file} b/${file}\nnew file mode 100644\n--- /dev/null\n+++ b/${file}\n@@ -0,0 +1,${content.split('\n').length} @@\n`;
+                     content.split('\n').forEach(l => fakeDiff += `+${l}\n`);
+                     return res.json({ diff: fakeDiff });
+                 }
+                 cmd = `git diff -- "${file}"`;
+            } else {
+                 cmd = `git diff`;
             }
         }
 
-        res.json({ diff: combinedDiff });
+        const { stdout } = await execAsync(cmd, { cwd: this.workingDir, maxBuffer: 20 * 1024 * 1024 });
+        res.json({ diff: stdout });
       } catch (error) {
-        console.error(chalk.red('❌ [GIT] Error:'), error.message);
+        console.error(chalk.red('❌ [GIT DIFF] Error:'), error.message);
         res.json({ diff: '', error: error.message });
       }
     });
+
+    // --- GIT API END ---
 
     this.app.post('/api/analyze', async (req, res) => {
         const { path: projectPath, options = {}, specificFiles } = req.body;
