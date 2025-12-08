@@ -2,7 +2,7 @@
 .right-panel {
     flex: 1;
     height: 100%;
-    background: #fff;
+    background: #f0f2f5;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -18,6 +18,8 @@
     padding: 0 15px;
     gap: 10px;
     justify-content: space-between;
+    z-index: 20;
+    /* Highest */
 }
 
 .ai-select-group {
@@ -45,40 +47,213 @@
     flex: 1;
     position: relative;
     width: 100%;
-    background: #fff;
+    height: 100%;
+    overflow: hidden;
 }
 
 .right-panel iframe {
     width: 100%;
     height: 100%;
     border: none;
-    position: relative;
-    z-index: 2;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    /* Low z-index */
+    background: white;
 }
 
-/* Placeholder underneath iframe */
+/* Placeholder / Guide (Overlay on top of Iframe) */
 .iframe-placeholder {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: var(--text-secondary);
-    z-index: 1;
+    top: 0;
+    left: 0;
     width: 100%;
+    height: 100%;
+    z-index: 10;
+    /* Higher than iframe to cover error page */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+    backdrop-filter: blur(5px);
+    transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+/* Class to hide guide when user clicks "Done" */
+.iframe-placeholder.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Center Guide Card */
+.extension-guide-center {
+    background: var(--ios-card);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    max-width: 500px;
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--ios-separator);
+    position: relative;
+}
+
+.guide-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.guide-close-btn:hover {
+    background: var(--ios-input-bg);
+    color: var(--text-primary);
+}
+
+.guide-icon {
+    font-size: 40px;
+    margin-bottom: 15px;
+    text-align: center;
+    display: block;
+}
+
+.guide-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.guide-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.guide-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.guide-step {
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.step-number {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: var(--ios-blue);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.url-box,
+.path-box {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    background: var(--ios-input-bg);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--ios-separator);
+}
+
+.guide-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+    padding: 6px;
+    width: 100%;
+}
+
+.guide-btn-copy {
+    background: var(--ios-card);
+    border: 1px solid var(--ios-separator);
+    border-radius: 6px;
+    padding: 0 12px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.guide-btn-copy:hover {
+    background: var(--ios-blue);
+    color: white;
+    border-color: var(--ios-blue);
+}
+
+.guide-footer {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--ios-separator);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.btn-primary-guide {
+    background: var(--ios-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.btn-primary-guide:hover {
+    background: #0062cc;
 }
 
 .link-fallback {
     color: var(--ios-blue);
     text-decoration: none;
-    margin-top: 10px;
-    display: inline-block;
+    font-weight: 500;
+    font-size: 13px;
 }
 
-/* Mobile Responsive adjustment for right panel */
+.link-fallback:hover {
+    text-decoration: underline;
+}
+
 @media (max-width: 768px) {
     .right-panel {
         flex: 1;
         height: 50vh;
+    }
+
+    .extension-guide-center {
+        padding: 20px;
     }
 }

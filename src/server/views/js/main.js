@@ -28,9 +28,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Initialize Terminal System
     initTerminal();
-    
-    // Auto open one terminal on start (Optional)
-    // setTimeout(() => createNewTerminal(), 500);
 });
 
 async function checkServerStatus() {
@@ -75,40 +72,56 @@ async function loadExtensionPath() {
     try {
         const res = await fetch('/api/extension-path');
         const data = await res.json();
-        const input = document.getElementById('extension-path-input');
-        if (data.exists) input.value = data.path;
-        else {
-            input.value = "Error: Extension folder not found.";
-            input.style.color = "var(--ios-red)";
+        // Updated ID for the input in center guide
+        const input = document.getElementById('extension-path-input-center');
+        if (input) {
+            if (data.exists) input.value = data.path;
+            else {
+                input.value = "Error: Extension folder not found.";
+                input.style.color = "var(--ios-red)";
+            }
         }
     } catch (err) {}
 }
 
-window.toggleExtensionGuide = function() {
-    const content = document.getElementById('extension-content');
-    const icon = document.getElementById('ext-toggle-icon');
-    content.classList.toggle('open');
-    icon.classList.toggle('open');
-}
-
 window.copyExtensionPath = function(event) {
-    const input = document.getElementById('extension-path-input');
+    const input = document.getElementById('extension-path-input-center');
     const btn = event.currentTarget;
-    const icon = document.getElementById('ext-copy-icon');
-    const text = document.getElementById('ext-copy-text');
+    const originalText = btn.textContent;
+    
     navigator.clipboard.writeText(input.value).then(() => {
-        showCopiedState(btn, icon, text, '📋', 'Copy Path');
+        btn.textContent = '✓';
+        btn.style.background = 'var(--ios-green)';
+        btn.style.color = 'white';
+        btn.style.borderColor = 'var(--ios-green)';
         showToast('Đã copy đường dẫn extension', 'success');
+        
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        }, 2000);
     });
 }
 
 window.copyChromeUrl = function(event) {
-    const input = document.getElementById('chrome-url-input');
+    const input = document.getElementById('chrome-url-input-center');
     const btn = event.currentTarget;
-    const originalText = btn.innerHTML;
+    const originalText = btn.textContent;
+    
     navigator.clipboard.writeText(input.value).then(() => {
-        btn.innerHTML = '✓';
+        btn.textContent = '✓';
+        btn.style.background = 'var(--ios-green)';
+        btn.style.color = 'white';
+        btn.style.borderColor = 'var(--ios-green)';
         showToast('Đã copy URL', 'success');
-        setTimeout(() => btn.innerHTML = originalText, 1500);
+        
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        }, 2000);
     });
 }

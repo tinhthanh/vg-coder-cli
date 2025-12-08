@@ -11,19 +11,21 @@
     <link rel="stylesheet" href="/css/iframe.css">
     <link rel="stylesheet" href="/css/git-view.css">
     <link rel="stylesheet" href="/css/terminal.css">
-    
+
     <!-- Syntax Highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
-    
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+
     <!-- Git Diff -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
-    
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+
     <!-- Terminal Dependencies -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
-    
+
     <!-- Other Libs -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
 
@@ -49,11 +51,13 @@
                         <span id="theme-icon">🌙</span>
                     </button>
                 </div>
-                
+
                 <!-- Quick Actions -->
-                <div class="endpoint-card" style="display: flex; gap: 10px; align-items: center; justify-content: space-between;">
+                <div class="endpoint-card"
+                    style="display: flex; gap: 10px; align-items: center; justify-content: space-between;">
                     <span style="font-weight: 600;">Tools:</span>
-                    <button class="btn" onclick="createNewTerminal()" style="background: #252526; border: 1px solid #444;">
+                    <button class="btn" onclick="createNewTerminal()"
+                        style="background: #252526; border: 1px solid #444;">
                         <span>🖥️</span> New Terminal
                     </button>
                 </div>
@@ -79,50 +83,8 @@
                     </div>
                 </div>
 
-                <!-- Extension Installation Guide -->
-                <div class="system-prompt-card" id="extension-card">
-                    <div class="system-prompt-header" onclick="toggleExtensionGuide()">
-                        <div class="header-title-group">
-                            <span style="font-size: 16px;">🧩</span>
-                            <h2>Cài đặt Chrome Extension</h2>
-                        </div>
-                        <span class="toggle-icon" id="ext-toggle-icon">▼</span>
-                    </div>
-                    <div class="system-prompt-content" id="extension-content">
-                        <div class="extension-steps">
-                            <ol>
-                                <li style="margin-bottom: 8px;">
-                                    Copy link này và dán vào tab mới:
-                                    <div class="form-group" style="margin-top: 5px; margin-bottom: 0;">
-                                        <div style="display: flex; gap: 5px;">
-                                            <input type="text" id="chrome-url-input" readonly
-                                                value="chrome://extensions" onclick="this.select()"
-                                                style="font-family: monospace;">
-                                            <button class="btn btn-copy" style="flex: 0 0 40px; padding: 0;"
-                                                onclick="copyChromeUrl(event)" title="Copy URL">
-                                                <span>📋</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li>Bật <b>Developer mode</b> (Góc phải trên cùng)</li>
-                                <li>Chọn <b>Load unpacked</b></li>
-                                <li>Dán đường dẫn bên dưới vào:</li>
-                            </ol>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" id="extension-path-input" readonly value="Loading path..."
-                                onclick="this.select()">
-                        </div>
-                        <button class="btn btn-copy" onclick="copyExtensionPath(event)">
-                            <span id="ext-copy-icon">📋</span>
-                            <span id="ext-copy-text">Copy Path</span>
-                        </button>
-                    </div>
-                </div>
-
                 <div class="endpoints">
-                    <!-- Execute Bash (RESTORED) -->
+                    <!-- Execute Bash -->
                     <div class="endpoint-card">
                         <div class="endpoint-header">
                             <div class="endpoint-title-group">
@@ -197,11 +159,11 @@
                         <div class="response" id="analyze-response"></div>
                     </div>
                 </div>
-                <div style="height: 50px;"></div> <!-- Spacer for scrolling -->
+                <div style="height: 50px;"></div>
             </div>
         </div>
 
-        <!-- CỘT PHẢI: AI Iframe with Selector & Git View -->
+        <!-- CỘT PHẢI: AI Iframe -->
         <div class="right-panel">
             <div class="ai-header">
                 <div class="ai-select-group">
@@ -210,31 +172,71 @@
                         <!-- Options filled by JS -->
                     </select>
                 </div>
-                
+
+                <!-- NEW: Toggle Guide Button -->
+                <button id="guide-toggle-btn" class="btn-icon-head" style="margin-left:5px;"
+                    title="Show Installation Guide">🧩</button>
+
                 <button id="git-view-toggle" class="git-toggle-btn">View Changes</button>
-                <button id="git-refresh-btn" class="btn-icon-head" style="display:none; margin-left:5px;" title="Refresh">↻</button>
-                
+                <button id="git-refresh-btn" class="btn-icon-head" style="display:none; margin-left:5px;"
+                    title="Refresh">↻</button>
+
                 <a id="ai-external-link" href="#" target="_blank" class="btn-icon-head" title="Open in new tab">↗</a>
             </div>
-            
-            <!-- Git View Container (Hidden by default) -->
+
+            <!-- Git View Container -->
             <div id="git-view-container" class="git-view-container"></div>
 
             <!-- AI Iframe Container -->
             <div class="ai-iframe-container">
-                <div class="iframe-placeholder">
-                    <p>⚠️ Nếu trang trắng, hãy cài Extension <b>"Ignore X-Frame-Options"</b></p>
-                    <a id="ai-placeholder-link" href="#" target="_blank" class="link-fallback">Mở tab mới ↗</a>
+                <!-- Center Extension Guide (Z-Index 10, covers iframe) -->
+                <div id="iframe-placeholder" class="iframe-placeholder hidden">
+                    <div class="extension-guide-center">
+                        <button class="guide-close-btn" id="guide-close-btn" title="Close Guide">×</button>
+                        <span class="guide-icon">🧩</span>
+                        <h3 class="guide-title">Cài đặt VG Coder Extension</h3>
+                        <p class="guide-desc">
+                            Không thấy trang web? AI Provider chặn hiển thị trong Iframe.<br>
+                            Hãy cài đặt Extension để bỏ qua các giới hạn này.
+                        </p>
+                        <ol class="guide-steps">
+                            <li class="guide-step">
+                                <span class="step-number">1</span>
+                                Copy link và dán vào tab mới:
+                                <div class="url-box">
+                                    <input type="text" id="chrome-url-input-center" class="guide-input" readonly
+                                        value="chrome://extensions" onclick="this.select()">
+                                    <button class="guide-btn-copy" onclick="copyChromeUrl(event)">Copy</button>
+                                </div>
+                            </li>
+                            <li class="guide-step">
+                                <span class="step-number">2</span>
+                                Bật <b>Developer mode</b> (Góc phải trên) &rarr; <b>Load unpacked</b>
+                            </li>
+                            <li class="guide-step">
+                                <span class="step-number">3</span>
+                                Chọn thư mục bên dưới:
+                                <div class="path-box">
+                                    <input type="text" id="extension-path-input-center" class="guide-input" readonly
+                                        value="Loading..." onclick="this.select()">
+                                    <button class="guide-btn-copy" onclick="copyExtensionPath(event)">Copy</button>
+                                </div>
+                            </li>
+                        </ol>
+                        <div class="guide-footer">
+                            <a id="ai-placeholder-link" href="#" target="_blank" class="link-fallback">Mở tab mới ↗</a>
+                            <button id="guide-done-btn" class="btn-primary-guide">Đã xong / Tải lại</button>
+                        </div>
+                    </div>
                 </div>
                 <iframe id="ai-iframe" src="" title="AI Integration"></iframe>
             </div>
         </div>
     </div>
-    
-    <!-- Floating Terminals Container (Fixed on top of everything) -->
-    <div id="floating-terminals-layer"></div>
 
+    <div id="floating-terminals-layer"></div>
     <div class="toast" id="toast"></div>
     <script type="module" src="/js/main.js"></script>
 </body>
+
 </html>
