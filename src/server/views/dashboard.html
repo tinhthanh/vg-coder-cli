@@ -11,14 +11,15 @@
     <link rel="stylesheet" href="/css/iframe.css">
     <link rel="stylesheet" href="/css/git-view.css">
     <link rel="stylesheet" href="/css/terminal.css">
+    <link rel="stylesheet" href="/css/editor.css">
+    <link rel="stylesheet" href="/css/monaco.css">
 
     <!-- Syntax Highlighting -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
 
-    <!-- Git Diff -->
-    <link rel="stylesheet" type="text/css"
-        href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+    <!-- Git Diff CSS (JSDelivr Bundle) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html@3.4.47/bundles/css/diff2html.min.css" />
 
     <!-- Terminal Dependencies -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
@@ -26,8 +27,25 @@
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
 
-    <!-- Other Libs -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
+    <!-- Monaco Editor Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+
+    <!-- FIX: AMD Loader Conflict Patch -->
+    <script>
+        var __amdDefine = window.define;
+        var __amdRequire = window.require;
+        window.define = undefined;
+        window.require = undefined;
+    </script>
+
+    <!-- Git Diff JS (JSDelivr Bundle) -->
+    <script src="https://cdn.jsdelivr.net/npm/diff2html@3.4.47/bundles/js/diff2html-ui.min.js"></script>
+
+    <!-- FIX: Restore AMD Loader -->
+    <script>
+        window.define = __amdDefine;
+        window.require = __amdRequire;
+    </script>
 
     <script>
         (function () {
@@ -163,73 +181,91 @@
             </div>
         </div>
 
-        <!-- CỘT PHẢI: AI Iframe -->
+        <!-- CỘT PHẢI: AI Iframe & Editor -->
         <div class="right-panel">
-            <div class="ai-header">
-                <div class="ai-select-group">
-                    <span style="font-size: 16px;">🤖</span>
-                    <select id="ai-provider-select" class="ai-select">
-                        <!-- Options filled by JS -->
-                    </select>
+            <!-- HEADER MỚI: Tích hợp Tabs & Actions -->
+            <div id="tabs-header" class="tabs-header">
+                <!-- Vùng Tabs Scrollable -->
+                <div class="tabs-scroll-area">
+
+                    <!-- AI Tab (STATIC) -->
+                    <div class="tab-item active" id="ai-tab" onclick="window.switchTab('ai-assistant')"
+                        data-path="ai-assistant">
+                        <span class="tab-icon">🤖</span>
+                        <!-- Select Box nằm ngay trong tên Tab -->
+                        <select id="ai-provider-select" class="ai-provider-select" onclick="event.stopPropagation()">
+                            <!-- Options filled by JS -->
+                        </select>
+                    </div>
+
+                    <!-- Dynamic File Tabs -->
+                    <div id="file-tabs-container" style="display:flex; height:100%;"></div>
                 </div>
 
-                <!-- NEW: Toggle Guide Button -->
-                <button id="guide-toggle-btn" class="btn-icon-head" style="margin-left:5px;"
-                    title="Show Installation Guide">🧩</button>
-
-                <button id="git-view-toggle" class="git-toggle-btn">View Changes</button>
-                <button id="git-refresh-btn" class="btn-icon-head" style="display:none; margin-left:5px;"
-                    title="Refresh">↻</button>
-
-                <a id="ai-external-link" href="#" target="_blank" class="btn-icon-head" title="Open in new tab">↗</a>
+                <!-- Global Actions -->
+                <div class="tabs-actions">
+                    <button id="guide-toggle-btn" class="action-btn-mini" title="Show Installation Guide">🧩</button>
+                    <button id="git-refresh-btn" class="action-btn-mini" style="display:none;"
+                        title="Refresh Git">↻</button>
+                    <button id="git-view-toggle" class="action-btn-mini" title="Toggle Git View">
+                        <span style="font-size:12px">Git</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Git View Container -->
             <div id="git-view-container" class="git-view-container"></div>
 
-            <!-- AI Iframe Container -->
-            <div class="ai-iframe-container">
-                <!-- Center Extension Guide (Z-Index 10, covers iframe) -->
-                <div id="iframe-placeholder" class="iframe-placeholder hidden">
-                    <div class="extension-guide-center">
-                        <button class="guide-close-btn" id="guide-close-btn" title="Close Guide">×</button>
-                        <span class="guide-icon">🧩</span>
-                        <h3 class="guide-title">Cài đặt VG Coder Extension</h3>
-                        <p class="guide-desc">
-                            Không thấy trang web? AI Provider chặn hiển thị trong Iframe.<br>
-                            Hãy cài đặt Extension để bỏ qua các giới hạn này.
-                        </p>
-                        <ol class="guide-steps">
-                            <li class="guide-step">
-                                <span class="step-number">1</span>
-                                Copy link và dán vào tab mới:
-                                <div class="url-box">
-                                    <input type="text" id="chrome-url-input-center" class="guide-input" readonly
-                                        value="chrome://extensions" onclick="this.select()">
-                                    <button class="guide-btn-copy" onclick="copyChromeUrl(event)">Copy</button>
-                                </div>
-                            </li>
-                            <li class="guide-step">
-                                <span class="step-number">2</span>
-                                Bật <b>Developer mode</b> (Góc phải trên) &rarr; <b>Load unpacked</b>
-                            </li>
-                            <li class="guide-step">
-                                <span class="step-number">3</span>
-                                Chọn thư mục bên dưới:
-                                <div class="path-box">
-                                    <input type="text" id="extension-path-input-center" class="guide-input" readonly
-                                        value="Loading..." onclick="this.select()">
-                                    <button class="guide-btn-copy" onclick="copyExtensionPath(event)">Copy</button>
-                                </div>
-                            </li>
-                        </ol>
-                        <div class="guide-footer">
-                            <a id="ai-placeholder-link" href="#" target="_blank" class="link-fallback">Mở tab mới ↗</a>
-                            <button id="guide-done-btn" class="btn-primary-guide">Đã xong / Tải lại</button>
+            <!-- Editor Container -->
+            <div class="editor-container" style="flex: 1; position: relative; overflow: hidden;">
+
+                <!-- AI Iframe -->
+                <div class="ai-iframe-container">
+                    <div id="iframe-placeholder" class="iframe-placeholder hidden">
+                        <div class="extension-guide-center">
+                            <button class="guide-close-btn" id="guide-close-btn" title="Close Guide">×</button>
+                            <span class="guide-icon">🧩</span>
+                            <h3 class="guide-title">Cài đặt VG Coder Extension</h3>
+                            <p class="guide-desc">
+                                Không thấy trang web? AI Provider chặn hiển thị trong Iframe.<br>
+                                Hãy cài đặt Extension để bỏ qua các giới hạn này.
+                            </p>
+                            <ol class="guide-steps">
+                                <li class="guide-step">
+                                    <span class="step-number">1</span>
+                                    Copy link và dán vào tab mới:
+                                    <div class="url-box">
+                                        <input type="text" id="chrome-url-input-center" class="guide-input" readonly
+                                            value="chrome://extensions" onclick="this.select()">
+                                        <button class="guide-btn-copy" onclick="copyChromeUrl(event)">Copy</button>
+                                    </div>
+                                </li>
+                                <li class="guide-step">
+                                    <span class="step-number">2</span>
+                                    Bật <b>Developer mode</b> (Góc phải trên) &rarr; <b>Load unpacked</b>
+                                </li>
+                                <li class="guide-step">
+                                    <span class="step-number">3</span>
+                                    Chọn thư mục bên dưới:
+                                    <div class="path-box">
+                                        <input type="text" id="extension-path-input-center" class="guide-input" readonly
+                                            value="Loading..." onclick="this.select()">
+                                        <button class="guide-btn-copy" onclick="copyExtensionPath(event)">Copy</button>
+                                    </div>
+                                </li>
+                            </ol>
+                            <div class="guide-footer">
+                                <a id="ai-placeholder-link" href="#" target="_blank" class="link-fallback">Mở tab mới
+                                    ↗</a>
+                                <button id="guide-done-btn" class="btn-primary-guide">Đã xong / Tải lại</button>
+                            </div>
                         </div>
                     </div>
+                    <iframe id="ai-iframe" src="" title="AI Integration"></iframe>
                 </div>
-                <iframe id="ai-iframe" src="" title="AI Integration"></iframe>
+
+                <!-- Monaco Editor Container -->
+                <div id="monaco-container" class="monaco-container view-mode-hidden"></div>
             </div>
         </div>
     </div>

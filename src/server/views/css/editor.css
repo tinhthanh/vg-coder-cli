@@ -1,0 +1,161 @@
+/* Container chính cho khu vực Editor */
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--ios-bg);
+    overflow: hidden;
+}
+
+/* Thanh Tabs - Layout Flexbox mới */
+.tabs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Tabs trái, Actions phải */
+    background: #252526;
+    height: 35px;
+    border-bottom: 1px solid #1e1e1e;
+    user-select: none;
+}
+
+/* Khu vực chứa các Tabs (Scrollable) */
+.tabs-scroll-area {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    flex: 1; /* Chiếm phần lớn không gian */
+    height: 100%;
+}
+.tabs-scroll-area::-webkit-scrollbar {
+    height: 0px; /* Ẩn scrollbar cho gọn */
+}
+
+/* Khu vực Actions bên phải */
+.tabs-actions {
+    display: flex;
+    align-items: center;
+    padding: 0 5px;
+    background: #252526;
+    height: 100%;
+    border-left: 1px solid #1e1e1e;
+    box-shadow: -5px 0 10px rgba(0,0,0,0.2); /* Tạo bóng đổ nhẹ ngăn cách */
+    z-index: 5;
+}
+
+/* Style cho Tab Item */
+.tab-item {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    min-width: fit-content;
+    max-width: 200px;
+    height: 100%;
+    background: #2d2d2d;
+    color: #969696;
+    border-right: 1px solid #252526;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.tab-item:hover {
+    background: #383838;
+    color: #e0e0e0;
+}
+
+.tab-item.active {
+    background: #1e1e1e;
+    color: #ffffff;
+    border-top: 1px solid var(--ios-blue);
+}
+
+.tab-icon {
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+.tab-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.tab-close {
+    margin-left: 8px;
+    border-radius: 3px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    font-size: 11px;
+}
+
+.tab-item:hover .tab-close,
+.tab-item.active .tab-close {
+    opacity: 1;
+}
+
+.tab-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Style đặc biệt cho Select Box trong Tab */
+.ai-provider-select {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    max-width: 120px;
+}
+
+.ai-provider-select option {
+    background: #252526;
+    color: white;
+}
+
+/* Action Buttons ở góc phải */
+.action-btn-mini {
+    background: transparent;
+    border: none;
+    color: #cccccc;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    margin-left: 2px;
+}
+
+.action-btn-mini:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+.action-btn-mini.active {
+    background: rgba(0, 122, 255, 0.2);
+    color: var(--ios-blue);
+}
+
+/* Khu vực nội dung Code */
+.editor-body {
+    flex: 1;
+    position: relative;
+    background: #1e1e1e;
+    overflow: hidden;
+}
+
+.view-mode-hidden {
+    display: none !important;
+}

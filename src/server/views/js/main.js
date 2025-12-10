@@ -6,6 +6,8 @@ import { showToast, showCopiedState } from './utils.js';
 import { initIframeManager } from './features/iframe-manager.js';
 import { initGitView } from './features/git-view.js';
 import { initTerminal, createNewTerminal } from './features/terminal.js';
+import { initEditorTabs } from './features/editor-tabs.js';
+import { initMonaco, updateMonacoTheme } from './features/monaco-manager.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Load system prompt text
@@ -28,6 +30,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Initialize Terminal System
     initTerminal();
+
+    // Initialize Monaco & Tabs
+    initMonaco();
+    initEditorTabs();
+    
+    // Set default tab to AI Assistant
+    if (window.switchTab) {
+        window.switchTab('ai-assistant');
+    }
 });
 
 async function checkServerStatus() {
@@ -56,6 +67,7 @@ function initTheme() {
         localStorage.setItem('theme', newTheme);
         currentTheme = newTheme;
         updateThemeIcon(newTheme);
+        updateMonacoTheme(newTheme);
     });
 }
 

@@ -94,12 +94,57 @@ class ApiServer {
       }
     });
 
+    // --- FILE OPERATIONS (NEW) ---
+    
+    // Read raw file content
+    this.app.get('/api/read-file', async (req, res) => {
+        try {
+            const filePath = req.query.path;
+            if (!filePath) return res.status(400).json({ error: 'Missing path' });
+            
+            // Prevent directory traversal (basic check)
+            const resolvedPath = path.resolve(this.workingDir, filePath);
+            if (!resolvedPath.startsWith(this.workingDir)) {
+                // Allow reading but log warning - in dev tool we might want flexibility
+                // For strict mode: return res.status(403).json({ error: 'Access denied' });
+            }
+
+            if (!await fs.pathExists(resolvedPath)) {
+                return res.status(404).json({ error: 'File not found' });
+            }
+
+            const content = await fs.readFile(resolvedPath, 'utf8');
+            res.json({ content, path: filePath });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Save file content
+    this.app.post('/api/save-file', async (req, res) => {
+        try {
+            const { path: filePath, content } = req.body;
+            if (!filePath || content === undefined) return res.status(400).json({ error: 'Missing data' });
+            
+            const resolvedPath = path.resolve(this.workingDir, filePath);
+            
+            // Security check
+            if (!resolvedPath.startsWith(this.workingDir)) {
+                 // For strict mode: return res.status(403).json({ error: 'Access denied' });
+            }
+
+            await fs.writeFile(resolvedPath, content, 'utf8');
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // --- GIT API START ---
 
     // Get Git Status
     this.app.get('/api/git/status', async (req, res) => {
         try {
-            // FIX: Added -u flag to show individual files in untracked directories
             const { stdout } = await execAsync('git status --porcelain -u', { cwd: this.workingDir });
             
             const staged = [];
@@ -158,23 +203,16 @@ class ApiServer {
         }
     });
 
-    // Git Discard (NEW)
+    // Git Discard
     this.app.post('/api/git/discard', async (req, res) => {
         try {
-            const { files } = req.body; // array or '*'
-            
-            // Discard All
+            const { files } = req.body;
             if (files.includes('*')) {
-                // Restore tracked files
                 try { await execAsync('git restore .', { cwd: this.workingDir }); } catch (e) {}
-                // Clean untracked files
                 try { await execAsync('git clean -fd', { cwd: this.workingDir }); } catch (e) {}
             } else {
-                // Discard specific files
                 for (const file of files) {
-                    // Try restore (for tracked modified/deleted)
                     try { await execAsync(`git restore "${file}"`, { cwd: this.workingDir }); } catch (e) {}
-                    // Try clean (for untracked)
                     try { await execAsync(`git clean -f "${file}"`, { cwd: this.workingDir }); } catch (e) {}
                 }
             }
@@ -205,25 +243,17 @@ class ApiServer {
         const type = req.query.type || 'working';
 
         let cmd = '';
-        
         if (type === 'staged') {
             cmd = file ? `git diff --cached -- "${file}"` : `git diff --cached`;
         } else {
             if (file) {
-                 // Check if directory to avoid EISDIR (Safety Check)
                  try {
                      const filePath = path.join(this.workingDir, file);
                      if (await fs.pathExists(filePath)) {
                          const stat = await fs.stat(filePath);
-                         if (stat.isDirectory()) {
-                             return res.json({ diff: '' });
-                         }
+                         if (stat.isDirectory()) return res.json({ diff: '' });
                      }
-                 } catch (e) {
-                     // Ignore stat errors
-                 }
-
-                 // Check untracked
+                 } catch (e) {}
                  const { stdout: isUntracked } = await execAsync(`git ls-files --others --exclude-standard "${file}"`, { cwd: this.workingDir });
                  if (isUntracked.trim()) {
                      const content = await fs.readFile(path.join(this.workingDir, file), 'utf8');
@@ -236,7 +266,6 @@ class ApiServer {
                  cmd = `git diff`;
             }
         }
-
         const { stdout } = await execAsync(cmd, { cwd: this.workingDir, maxBuffer: 20 * 1024 * 1024 });
         res.json({ diff: stdout });
       } catch (error) {
@@ -245,7 +274,7 @@ class ApiServer {
       }
     });
 
-    // --- GIT API END ---
+    // --- GENERAL API ---
 
     this.app.post('/api/analyze', async (req, res) => {
         const { path: projectPath, options = {}, specificFiles } = req.body;

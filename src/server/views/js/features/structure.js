@@ -183,15 +183,29 @@ function generateTreeHtml(node) {
     const arrow = hasChildren ? '▼' : '';
     const liClass = `tree-li ${hasChildren ? 'has-children' : ''}`;
     
+    // Actions
+    // On click: Toggle if folder, Open Tab if file
+    let clickAction = '';
+    let cursorStyle = '';
+
+    if (isDir) {
+        if (hasChildren) {
+            clickAction = 'onclick="toggleFolder(event)"';
+            cursorStyle = 'cursor: pointer;';
+        }
+    } else {
+        // File click -> Open in Editor
+        // Escape backslashes for Windows paths
+        const safePath = (node.relativePath || node.path).replace(/\\/g, '\\\\');
+        clickAction = `onclick="window.openFileTab('${safePath}', '${node.name}')"`;
+        cursorStyle = 'cursor: pointer; color: var(--text-primary);';
+    }
+    
     // Build HTML
     let html = `<li class="${liClass}">`;
     
-    const clickAttr = hasChildren ? 'onclick="toggleFolder(event)"' : '';
-    
-    // Add data-tokens and data-type for client-side calculation
-    
     html += `
-        <div class="tree-item-row" ${clickAttr}>
+        <div class="tree-item-row" ${isDir ? clickAction : ''}>
             <span class="arrow">${arrow}</span>
             <input type="checkbox" class="tree-checkbox" 
                    data-path="${node.relativePath || node.path}" 
@@ -200,7 +214,7 @@ function generateTreeHtml(node) {
                    checked 
                    onclick="handleCheckboxChange(event)">
             <span class="tree-icon">${icon}</span>
-            <span class="tree-name">${node.name}</span>
+            <span class="tree-name" style="${cursorStyle}" ${!isDir ? clickAction : ''}>${node.name}</span>
             <span class="token-badge ${tokenClass}">${formatNumber(tokens)}</span>
         </div>
     `;

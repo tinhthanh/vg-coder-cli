@@ -9,7 +9,7 @@ const AI_PROVIDERS = [
 export function initIframeManager() {
     const select = document.getElementById('ai-provider-select');
     const iframe = document.getElementById('ai-iframe');
-    const externalLink = document.getElementById('ai-external-link');
+    // Removed externalLink reference
     const placeholderLink = document.getElementById('ai-placeholder-link');
     
     // Guide elements
@@ -42,9 +42,11 @@ export function initIframeManager() {
             iframe.src = provider.url;
         }, 50);
 
-        externalLink.href = provider.url;
-        placeholderLink.href = provider.url;
-        placeholderLink.textContent = `Mở ${provider.name} tab mới ↗`;
+        // Update placeholder link only (external link removed from UI)
+        if (placeholderLink) {
+            placeholderLink.href = provider.url;
+            placeholderLink.textContent = `Mở ${provider.name} tab mới ↗`;
+        }
         
         localStorage.setItem('ai_provider', providerId);
     };
@@ -60,11 +62,11 @@ export function initIframeManager() {
     // --- GUIDE TOGGLE LOGIC ---
 
     const showGuide = () => {
-        guideContainer.classList.remove('hidden');
+        if (guideContainer) guideContainer.classList.remove('hidden');
     };
 
     const hideGuide = () => {
-        guideContainer.classList.add('hidden');
+        if (guideContainer) guideContainer.classList.add('hidden');
     };
 
     const reloadIframe = () => {

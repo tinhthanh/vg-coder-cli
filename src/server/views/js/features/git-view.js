@@ -344,6 +344,15 @@ async function loadDiffView(filePath, type) {
     const viewer = document.getElementById('git-diff-viewer');
     viewer.innerHTML = '<div class="git-empty-state">Loading diff...</div>';
     
+    // SAFE CHECK FOR UI LIBRARY
+    // We check window.Diff2HtmlUI first (standard for bundles)
+    const UIConstructor = window.Diff2HtmlUI;
+
+    if (!UIConstructor) {
+        viewer.innerHTML = '<div class="git-empty-state" style="color:#f85149">Error: Diff2HtmlUI library not loaded correctly.<br>Please check your internet connection or CDN availability.</div>';
+        return;
+    }
+    
     try {
         const diff = await getGitDiff(filePath, type === 'staged' ? 'staged' : 'working');
         
@@ -353,7 +362,7 @@ async function loadDiffView(filePath, type) {
         }
 
         viewer.innerHTML = '';
-        const ui = new Diff2HtmlUI(viewer, diff, {
+        const ui = new UIConstructor(viewer, diff, {
             drawFileList: false,
             matching: 'lines',
             outputFormat: 'side-by-side',
