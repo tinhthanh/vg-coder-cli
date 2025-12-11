@@ -372,13 +372,13 @@ class VGCoderCLI {
    */
   async handleStart(options) {
     try {
-      const port = parseInt(options.port);
-      const server = new ApiServer(port);
+      const initialPort = parseInt(options.port);
+      const server = new ApiServer(initialPort);
       
       await server.start();
       
-      // Auto-open browser to dashboard
-      const dashboardUrl = `http://localhost:${port}`;
+      // Auto-open browser to dashboard using actual port from server
+      const dashboardUrl = `http://localhost:${server.port}`;
       const { exec } = require('child_process');
       const platform = process.platform;
       

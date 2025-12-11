@@ -46,13 +46,15 @@ async function checkServerStatus() {
     const isHealthy = await checkHealth();
     
     if (isHealthy) {
-        statusEl.textContent = '● Online';
-        statusEl.style.background = 'rgba(52, 199, 89, 0.15)';
+        statusEl.textContent = '●';
+        statusEl.style.background = 'transparent';
         statusEl.style.color = 'var(--ios-green)';
+        statusEl.style.fontSize = '14px';
     } else {
-        statusEl.textContent = '● Offline';
-        statusEl.style.background = 'rgba(255, 59, 48, 0.15)';
+        statusEl.textContent = '●';
+        statusEl.style.background = 'transparent';
         statusEl.style.color = 'var(--ios-red)';
+        statusEl.style.fontSize = '14px';
     }
 }
 

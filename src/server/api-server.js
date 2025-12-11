@@ -327,11 +327,43 @@ class ApiServer {
   }
 
   async start() {
-    return new Promise((resolve) => {
-      this.server = this.httpServer.listen(this.port, () => {
-        console.log(chalk.green(`\n🚀 VG Coder API Server & Socket.IO started on port ${this.port}`));
-        resolve();
-      });
+    return new Promise((resolve, reject) => {
+        const tryPort = (port) => {
+            const onError = (e) => {
+                if (e.code === 'EADDRINUSE') {
+                    console.log(chalk.yellow(`⚠️  Port ${port} is busy, trying ${port + 1}...`));
+                    this.httpServer.close();
+                    tryPort(port + 1);
+                } else {
+                    this.httpServer.removeListener('error', onError);
+                    reject(e);
+                }
+            };
+
+            this.httpServer.once('error', onError);
+
+            this.server = this.httpServer.listen(port, () => {
+                this.httpServer.removeListener('error', onError);
+                
+                // Update actual port
+                this.port = this.server.address().port;
+
+                const projectName = path.basename(this.workingDir);
+                const startTime = new Date().toLocaleString();
+                
+                console.log(chalk.green('\n──────────────────────────────────────────────────'));
+                console.log(`🚀 ${chalk.bold('VG Coder Server')}    ${chalk.green('● Online')}`);
+                console.log(chalk.gray('──────────────────────────────────────────────────'));
+                console.log(`📁 Project:   ${chalk.cyan(projectName)}`);
+                console.log(`⏰ Started:   ${chalk.yellow(startTime)}`);
+                console.log(`📡 URL:       ${chalk.blue(`http://localhost:${this.port}`)}`);
+                console.log(chalk.green('──────────────────────────────────────────────────\n'));
+                
+                resolve();
+            });
+        };
+
+        tryPort(this.port);
     });
   }
 
