@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check server status
     await checkServerStatus();
 
+    // Load Project Info
+    await loadProjectInfo();
+
     // Initialize Theme
     initTheme();
 
@@ -49,12 +52,34 @@ async function checkServerStatus() {
         statusEl.textContent = '●';
         statusEl.style.background = 'transparent';
         statusEl.style.color = 'var(--ios-green)';
-        statusEl.style.fontSize = '14px';
     } else {
         statusEl.textContent = '●';
         statusEl.style.background = 'transparent';
         statusEl.style.color = 'var(--ios-red)';
-        statusEl.style.fontSize = '14px';
+    }
+}
+
+async function loadProjectInfo() {
+    try {
+        // Fetch info for current directory (.)
+        const res = await fetch('/api/info?path=.');
+        const data = await res.json();
+        
+        const projectNameEl = document.getElementById('project-name');
+        const projectMetaEl = document.getElementById('project-meta');
+        
+        // Extract folder name from path
+        const fullPath = data.path;
+        // Handle both Windows (\) and Unix (/) paths
+        const folderName = fullPath.split(/[\\/]/).pop();
+        
+        projectNameEl.textContent = folderName;
+        projectMetaEl.textContent = `${data.primaryType} • ${fullPath}`;
+        
+    } catch (err) {
+        console.error('Failed to load project info:', err);
+        document.getElementById('project-name').textContent = 'Unknown Project';
+        document.getElementById('project-meta').textContent = 'Error loading info';
     }
 }
 
