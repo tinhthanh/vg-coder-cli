@@ -3,7 +3,8 @@ const AI_PROVIDERS = [
     { id: 'kimi', name: 'Kimi AI', url: 'https://www.kimi.com' },
     { id: 'deepseek', name: 'DeepSeek', url: 'https://chat.deepseek.com' },
     { id: 'gemini', name: 'Google Gemini', url: 'https://gemini.google.com/app' },
-    { id: 'aistudio', name: 'Google AI Studio', url: 'https://aistudio.google.com/prompts/new_chat' }
+    { id: 'aistudio', name: 'Google AI Studio', url: 'https://aistudio.google.com/prompts/new_chat' },
+    { id: 'gork', name: 'Gork', url: 'https://grok.com' },
 ];
 
 export function initIframeManager() {

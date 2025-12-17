@@ -1,6 +1,6 @@
 {
   "name": "vg-coder-cli",
-  "version": "2.0.20",
+  "version": "2.0.22",
   "description": "🚀 CLI tool to analyze projects, concatenate source files, count tokens, and export HTML with syntax highlighting and copy functionality",
   "main": "src/index.js",
   "bin": {
@@ -44,6 +44,7 @@
     "ora": "^5.4.1",
     "path": "^0.12.7",
     "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2",
     "tiktoken": "^1.0.10",
     "vg-coder-cli": "^2.0.15"
   },
