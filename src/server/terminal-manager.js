@@ -5,7 +5,16 @@ class TerminalManager {
     constructor() {
         // Map: termId -> { process: pty, socketId: string }
         this.sessions = new Map();
-        this.shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
+        // Use full path to shell to avoid posix_spawnp errors
+        if (os.platform() === 'win32') {
+            this.shell = 'powershell.exe';
+        } else if (os.platform() === 'darwin') {
+            // macOS - use zsh (default shell since Catalina)
+            this.shell = process.env.SHELL || '/bin/zsh';
+        } else {
+            // Linux and others
+            this.shell = process.env.SHELL || '/bin/bash';
+        }
     }
 
     createTerminal(socket, termId, cols = 80, rows = 24, cwd) {
