@@ -7,7 +7,6 @@ module.exports = {
   entry: {
     background: join(__dirname, 'src/background.ts'),
     controller: join(__dirname, 'src/controller.ts'),
-    options: join(__dirname, 'src/options.ts'),
     sidepanel: join(__dirname, 'src/sidepanel.ts'),
   },
   module: {
@@ -33,14 +32,6 @@ module.exports = {
         },
         {
           from: join(__dirname, 'rules.json'),
-          to: join(__dirname, 'dist')
-        },
-        {
-          from: join(__dirname, 'src/options.html'),
-          to: join(__dirname, 'dist')
-        },
-        {
-          from: join(__dirname, 'src/options.css'),
           to: join(__dirname, 'dist')
         },
         {
