@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VetGo Pro - Cấu hình</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>⚙️ Cấu hình VetGo Pro</h1>
+    <p class="subtitle">Quản lý cài đặt môi trường cho extension</p>
+
+    <div id="message" class="message"></div>
+
+    <div class="current-value">
+      <strong>Môi trường hiện tại:</strong> <span id="currentEnv">Đang tải...</span>
+    </div>
+
+    <form id="configForm">
+      <div class="form-group">
+        <label for="environmentName">Tên môi trường (Environment Name)</label>
+        <input type="text" id="environmentName" name="environmentName"
+          placeholder="Nhập tên môi trường (ví dụ: midjourney, production, test)" required />
+        <p class="hint">Tên môi trường sẽ được sử dụng để load scripts từ Firebase: ENV/{environmentName}/script</p>
+      </div>
+
+      <div class="form-group">
+        <label for="firebaseConfig">Cấu hình Firebase (JSON)</label>
+        <textarea id="firebaseConfig" name="firebaseConfig" rows="8" 
+          placeholder='{"apiKey": "...", "authDomain": "...", "databaseURL": "..."}'
+          style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: monospace; font-size: 13px;"></textarea>
+        <p class="hint">Để trống để sử dụng cấu hình mặc định của hệ thống. Nhập JSON object chứa apiKey, authDomain, databaseURL...</p>
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="btn-primary">💾 Lưu cấu hình</button>
+        <button type="button" id="resetBtn" class="btn-secondary">🔄 Đặt lại mặc định</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+
+</html>

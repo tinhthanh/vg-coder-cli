@@ -13,6 +13,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "dev": "nodemon src/index.js",
+    "build:extension": "cd vetgo-auto && npm run build",
+    "build:copy": "node scripts/build.js",
     "build": "node scripts/build.js",
     "push": "npm run build && npm pack && npm publish"
   },
