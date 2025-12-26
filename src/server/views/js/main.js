@@ -8,6 +8,7 @@ import { initGitView } from './features/git-view.js';
 import { initTerminal, createNewTerminal } from './features/terminal.js';
 import { initEditorTabs } from './features/editor-tabs.js';
 import { initMonaco, updateMonacoTheme } from './features/monaco-manager.js';
+import { initResizeHandler } from './features/resize.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Load system prompt text
@@ -35,8 +36,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTerminal();
 
     // Initialize Monaco & Tabs
+    // Initialize Monaco & Tabs
     initMonaco();
     initEditorTabs();
+
+    // Initialize Resize Handler
+    initResizeHandler();
     
     // Set default tab to AI Assistant
     if (window.switchTab) {

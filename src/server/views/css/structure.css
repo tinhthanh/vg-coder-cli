@@ -25,8 +25,9 @@
     font-size: 11px;
     /* Smaller tree font */
     overflow-x: auto;
-    max-height: 400px;
+    max-height: 600px;
     overflow-y: auto;
+    width: 100%; /* Take full width */
 }
 
 .tree-ul {
@@ -58,6 +59,7 @@
     cursor: pointer;
     transition: background 0.1s;
     line-height: 1.2;
+    width: 100%; /* Ensure row takes full width */
 }
 
 .tree-item-row:hover {
@@ -99,6 +101,7 @@
     font-weight: 600;
     min-width: 30px;
     text-align: center;
+    flex-shrink: 0; /* Always keep badge visible */
 }
 
 .token-low {

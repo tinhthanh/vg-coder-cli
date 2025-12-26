@@ -274,6 +274,52 @@ class ApiServer {
       }
     });
 
+    // --- TREE STATE API ---
+
+    // Save tree state (excluded paths)
+    this.app.post('/api/tree-state/save', async (req, res) => {
+        try {
+            const { excludedPaths } = req.body;
+            if (!Array.isArray(excludedPaths)) {
+                return res.status(400).json({ error: 'excludedPaths must be an array' });
+            }
+
+            // Create .vg directory if it doesn't exist
+            const vgDir = path.join(this.workingDir, '.vg');
+            await fs.ensureDir(vgDir);
+
+            // Save state to .vg/tree-state.json
+            const stateFile = path.join(vgDir, 'tree-state.json');
+            await fs.writeJson(stateFile, { excludedPaths }, { spaces: 2 });
+
+            console.log(chalk.green(`✓ Saved tree state: ${excludedPaths.length} excluded items`));
+            res.json({ success: true, count: excludedPaths.length });
+        } catch (error) {
+            console.error(chalk.red('❌ [TREE STATE SAVE] Error:'), error.message);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Load tree state
+    this.app.get('/api/tree-state/load', async (req, res) => {
+        try {
+            const stateFile = path.join(this.workingDir, '.vg', 'tree-state.json');
+            
+            // Check if state file exists
+            if (!await fs.pathExists(stateFile)) {
+                return res.json({ excludedPaths: [] });
+            }
+
+            // Read and return state
+            const state = await fs.readJson(stateFile);
+            res.json({ excludedPaths: state.excludedPaths || [] });
+        } catch (error) {
+            console.error(chalk.red('❌ [TREE STATE LOAD] Error:'), error.message);
+            // Return empty state on error instead of failing
+            res.json({ excludedPaths: [] });
+        }
+    });
+
     // --- GENERAL API ---
 
     this.app.post('/api/analyze', async (req, res) => {

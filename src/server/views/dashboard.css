@@ -61,14 +61,37 @@ body {
     height: 100%;
     overflow-y: auto;
     background: var(--ios-bg);
-    border-right: 1px solid var(--ios-separator);
     position: relative;
     z-index: 10;
+    /* allow resize override */
+    flex: 0 0 450px; 
+}
+
+/* Resize Handler */
+.resize-handler {
+    width: 16px;
+    cursor: col-resize;
+    background: transparent;
+    z-index: 100;
+    margin-left: -3px; /* Overlap border */
+    position: relative;
+}
+
+.resize-handler:hover,
+body.resizing .resize-handler {
+    background: var(--ios-blue);
+    opacity: 0.5;
+}
+
+body.resizing {
+    cursor: col-resize;
+    user-select: none;
 }
 
 .container {
     padding: 15px;
     padding-top: 15px;
+    padding-right: 0px;
 }
 
 /* --- COMPONENT STYLES --- */

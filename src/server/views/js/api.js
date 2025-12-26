@@ -100,6 +100,30 @@ export async function commitChanges(message) {
     return true;
 }
 
+// --- Tree State API ---
+
+export async function saveTreeState(excludedPaths) {
+    const res = await fetch(`${API_BASE}/api/tree-state/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ excludedPaths })
+    });
+    if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save tree state');
+    }
+    return await res.json();
+}
+
+export async function loadTreeState() {
+    const res = await fetch(`${API_BASE}/api/tree-state/load`);
+    if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to load tree state');
+    }
+    return await res.json();
+}
+
 // ------------------------
 
 export async function copyAsFile(filename, content) {
