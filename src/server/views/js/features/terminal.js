@@ -46,12 +46,34 @@ export function createNewTerminal() {
     wrapper.style.left = `${400 + offset}px`;
     wrapper.style.zIndex = ++maxZIndex;
 
-    // HTML Template - Đã thêm sự kiện onclick cho nút Minimize
+    // HTML Template - Đã thêm Copy Buttons
     wrapper.innerHTML = `
         <div class="terminal-header" id="header-${termId}" ondblclick="window.toggleMinimize('${termId}')">
             <div class="terminal-title-group">
                 <span>>_</span> Terminal (${activeTerminals.size + 1})
             </div>
+            
+            <!-- Copy Button Group -->
+            <div class="terminal-copy-group" id="copy-group-${termId}">
+                <button class="copy-btn copy-smart" onclick="window.copyTerminalLog('${termId}', 'smart')" title="Smart Copy (optimized for 3000 tokens)">
+                    🧠 <span class="token-badge" id="badge-smart-${termId}">0</span>
+                </button>
+                <button class="copy-btn copy-errors" onclick="window.copyTerminalLog('${termId}', 'errors')" title="Errors Only (with context)">
+                    ⚠️ <span class="token-badge" id="badge-errors-${termId}">0</span>
+                </button>
+                <button class="copy-btn copy-recent" onclick="window.copyTerminalLog('${termId}', 'recent')" title="Recent 200 lines">
+                    📄 <span class="token-badge" id="badge-recent-${termId}">0</span>
+                </button>
+                <button class="copy-btn copy-all" onclick="window.copyTerminalLog('${termId}', 'all')" title="Copy All">
+                    📦 <span class="token-badge" id="badge-all-${termId}">0</span>
+                </button>
+            </div>
+            
+            <!-- Clear Button -->
+            <button class="term-btn-clear" onclick="window.clearTerminal('${termId}')" title="Clear Terminal">
+                🗑️
+            </button>
+            
             <div class="terminal-controls">
                 <button class="term-btn minimize" onclick="window.toggleMinimize('${termId}')" title="Minimize/Restore">-</button>
                 <button class="term-btn maximize" onclick="window.toggleMaximize('${termId}')" title="Maximize">+</button>
@@ -111,15 +133,69 @@ export function createNewTerminal() {
     // 4. Make Draggable
     makeDraggable(wrapper, document.getElementById(`header-${termId}`));
 
-    // 5. Store Session
-    activeTerminals.set(termId, { term, fitAddon, element: wrapper });
+    // 5. Store Session with log buffer
+    activeTerminals.set(termId, { 
+        term, 
+        fitAddon, 
+        element: wrapper,
+        logBuffer: [], // Local buffer for quick access
+        partialLine: '' // Buffer for incomplete lines
+    });
 
-    // 6. Init Backend Process
+    // 6. Setup log buffer capture and token count updates
+    // Listen to terminal's onData event (this fires for user input)
+    // We need to listen to the actual output from the backend
+    socket.on('terminal:data', ({ termId: dataTermId, data }) => {
+        if (dataTermId !== termId) return;
+        
+        const session = activeTerminals.get(termId);
+        if (!session) return;
+
+        // Strip ANSI codes
+        const cleanData = data.replace(
+            // eslint-disable-next-line no-control-regex
+            /\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07|\x1b\][^\x1b]*\x1b\\/g,
+            ''
+        );
+        
+        // Accumulate partial line
+        session.partialLine += cleanData;
+        
+        // Split by newlines and process complete lines
+        const lines = session.partialLine.split(/\r?\n/);
+        
+        // Keep the last incomplete line in partialLine
+        session.partialLine = lines.pop() || '';
+        
+        // Add complete lines to buffer
+        lines.forEach(line => {
+            if (line.trim().length > 0) {
+                session.logBuffer.push(line);
+                // Maintain max 10000 lines
+                if (session.logBuffer.length > 10000) {
+                    session.logBuffer.shift();
+                }
+            }
+        });
+        
+        // Update token counts (debounced)
+        if (lines.length > 0) {
+            updateTokenCounts(termId);
+        }
+    });
+
+    // 7. Init Backend Process
     socket.emit('terminal:init', { 
         termId, 
         cols: term.cols, 
         rows: term.rows 
     });
+    
+    // 8. Initial token count update
+    setTimeout(() => updateTokenCounts(termId), 100);
+    
+    // Return termId so caller can use it
+    return termId;
 }
 
 /**
@@ -245,8 +321,166 @@ function makeDraggable(element, handle) {
     }
 }
 
+/**
+ * Copy terminal log with specified strategy
+ * @param {string} termId - Terminal ID
+ * @param {string} strategy - 'smart' | 'errors' | 'recent' | 'all'
+ */
+async function copyTerminalLog(termId, strategy) {
+    const session = activeTerminals.get(termId);
+    if (!session || !session.logBuffer || session.logBuffer.length === 0) {
+        showToast('⚠️ No logs to copy', 'warning');
+        return;
+    }
+
+    try {
+        // Use SmartCopyEngine to generate content
+        let result;
+        const lines = session.logBuffer;
+
+        switch (strategy) {
+            case 'smart':
+                result = window.SmartCopyEngine.generateSmartCopy(lines, 3000);
+                break;
+            case 'errors':
+                result = window.SmartCopyEngine.generateErrorsOnly(lines);
+                break;
+            case 'recent':
+                result = window.SmartCopyEngine.generateRecent(lines, 200);
+                break;
+            case 'all':
+                result = window.SmartCopyEngine.generateCopyAll(lines);
+                break;
+            default:
+                result = window.SmartCopyEngine.generateSmartCopy(lines, 3000);
+        }
+
+        // Copy to clipboard
+        await navigator.clipboard.writeText(result.content);
+
+        // Show success toast with details
+        const strategyNames = {
+            smart: '🧠 Smart',
+            errors: '⚠️ Errors',
+            recent: '📄 Recent',
+            all: '📦 All'
+        };
+
+        let message = `✅ Copied ${result.tokens} tokens (${strategyNames[strategy]})`;
+        
+        if (result.stats && result.stats.message) {
+            message += `\n${result.stats.message}`;
+        }
+
+        if (result.warning) {
+            message += `\n${result.warning}`;
+        }
+
+        showToast(message, 'success');
+
+    } catch (error) {
+        console.error('Copy failed:', error);
+        showToast('❌ Failed to copy logs', 'error');
+    }
+}
+
+/**
+ * Update token count badges for a terminal
+ * Debounced to avoid excessive updates
+ */
+let updateTokenCountsTimeout = null;
+function updateTokenCounts(termId) {
+    // Debounce updates
+    clearTimeout(updateTokenCountsTimeout);
+    updateTokenCountsTimeout = setTimeout(() => {
+        const session = activeTerminals.get(termId);
+        if (!session || !session.logBuffer) return;
+
+        const analysis = window.SmartCopyEngine.analyzeLogBuffer(session.logBuffer);
+
+        // Update badges
+        updateBadge(`badge-smart-${termId}`, analysis.smart.tokens);
+        updateBadge(`badge-errors-${termId}`, analysis.errors.tokens);
+        updateBadge(`badge-recent-${termId}`, analysis.recent.tokens);
+        updateBadge(`badge-all-${termId}`, analysis.all.tokens);
+    }, 500); // 500ms debounce
+}
+
+/**
+ * Update a single badge element
+ */
+function updateBadge(badgeId, tokens) {
+    const badge = document.getElementById(badgeId);
+    if (badge) {
+        badge.textContent = formatTokenCount(tokens);
+    }
+}
+
+/**
+ * Format token count for display
+ */
+function formatTokenCount(tokens) {
+    if (tokens === 0) return '0';
+    if (tokens < 1000) return tokens.toString();
+    if (tokens < 10000) return (tokens / 1000).toFixed(1) + 'k';
+    return Math.floor(tokens / 1000) + 'k';
+}
+
+/**
+ * Show toast notification
+ */
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.className = 'toast show';
+    
+    if (type === 'success') {
+        toast.style.background = '#28a745';
+    } else if (type === 'error') {
+        toast.style.background = '#dc3545';
+    } else if (type === 'warning') {
+        toast.style.background = '#ffc107';
+        toast.style.color = '#000';
+    } else {
+        toast.style.background = '#007bff';
+    }
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+/**
+ * Clear terminal display and log buffer
+ * @param {string} termId - Terminal ID
+ */
+function clearTerminal(termId) {
+    const session = activeTerminals.get(termId);
+    if (!session) return;
+
+    // Clear the xterm display
+    session.term.clear();
+    
+    // Clear the log buffer
+    session.logBuffer = [];
+    session.partialLine = '';
+    
+    // Reset token counts to 0
+    updateBadge(`badge-smart-${termId}`, 0);
+    updateBadge(`badge-errors-${termId}`, 0);
+    updateBadge(`badge-recent-${termId}`, 0);
+    updateBadge(`badge-all-${termId}`, 0);
+    
+    // Show toast notification
+    showToast('🗑️ Terminal cleared', 'info');
+}
+
 // Global Exports for HTML onclick
 window.createNewTerminal = createNewTerminal;
 window.closeTerminal = closeTerminalUI;
 window.toggleMinimize = toggleMinimize;
 window.toggleMaximize = toggleMaximize;
+window.copyTerminalLog = copyTerminalLog;
+window.clearTerminal = clearTerminal;

@@ -348,3 +348,270 @@ body.resizing {
         border-bottom: 1px solid var(--ios-separator);
     }
 }
+
+/* --- SAVED COMMANDS STYLES --- */
+.saved-commands-panel {
+    margin-bottom: 12px;
+}
+
+.saved-commands-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.saved-commands-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.command-icon-header {
+    font-size: 16px;
+}
+
+.saved-commands-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-new-terminal {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--ios-gray-light);
+    border: 1px solid var(--ios-separator);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-new-terminal:hover {
+    background: var(--ios-separator);
+    transform: scale(1.05);
+}
+
+.btn-add-command {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--ios-blue);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-add-command:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+.saved-commands-content {
+    margin-top: 0;
+}
+
+.commands-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.command-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--ios-input-bg);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.command-card:hover {
+    background: var(--ios-gray-light);
+    border-color: var(--ios-blue);
+    transform: translateX(2px);
+}
+
+.command-card-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.command-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.command-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.command-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.command-text {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.command-card-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.command-card:hover .command-card-actions {
+    opacity: 1;
+}
+
+.command-action-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.command-action-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--ios-card);
+    border-radius: 12px;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.modal-content .form-group {
+    margin-bottom: 15px;
+}
+
+.modal-content .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.modal-content .form-group input {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--ios-input-bg);
+    border: 1px solid var(--ios-separator);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.modal-content .form-group input:focus {
+    outline: none;
+    border-color: var(--ios-blue);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-actions .btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-actions .btn:first-child {
+    background: var(--ios-gray-light);
+    color: var(--text-primary);
+}
+
+.modal-actions .btn:first-child:hover {
+    background: var(--ios-separator);
+}
+
+.modal-actions .btn-primary {
+    background: var(--ios-blue);
+    color: white;
+}
+
+.modal-actions .btn-primary:hover {
+    opacity: 0.9;
+}
+
+.endpoint-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toggle-icon {
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+}

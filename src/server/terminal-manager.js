@@ -1,10 +1,15 @@
 const os = require('os');
 const pty = require('node-pty');
+const path = require('path');
+const { stripAnsiCodes, classifyLogLine, extractErrors } = require(path.join(__dirname, 'views/js/utils/log-utils'));
 
 class TerminalManager {
     constructor() {
         // Map: termId -> { process: pty, socketId: string }
         this.sessions = new Map();
+        // Map: termId -> Array of log lines (circular buffer, max 10000)
+        this.logBuffers = new Map();
+        this.MAX_LOG_LINES = 10000;
         // Use full path to shell to avoid posix_spawnp errors
         if (os.platform() === 'win32') {
             this.shell = 'powershell.exe';
@@ -32,8 +37,15 @@ class TerminalManager {
                 socketId: socket.id
             });
 
+            // Initialize log buffer for this terminal
+            this.logBuffers.set(termId, []);
+
             // Gửi dữ liệu kèm theo termId để Frontend biết của cửa sổ nào
             term.onData((data) => {
+                // Store in log buffer (strip ANSI for storage)
+                this.addToLogBuffer(termId, data);
+                
+                // Send raw data to frontend (keep ANSI for display)
                 socket.emit('terminal:data', { termId, data });
             });
 
@@ -41,6 +53,8 @@ class TerminalManager {
                 if (this.sessions.has(termId)) {
                     socket.emit('terminal:exit', { termId });
                     this.sessions.delete(termId);
+                    // Clean up log buffer
+                    this.logBuffers.delete(termId);
                 }
             });
 
@@ -83,8 +97,93 @@ class TerminalManager {
             if (session.socketId === socketId) {
                 session.process.kill();
                 this.sessions.delete(termId);
+                this.logBuffers.delete(termId);
             }
         }
+    }
+
+    /**
+     * Add data to log buffer (circular buffer with max 10000 lines)
+     * @param {string} termId - Terminal ID
+     * @param {string} data - Raw terminal data (may contain ANSI codes)
+     */
+    addToLogBuffer(termId, data) {
+        if (!this.logBuffers.has(termId)) {
+            this.logBuffers.set(termId, []);
+        }
+
+        const buffer = this.logBuffers.get(termId);
+        
+        // Strip ANSI codes before storing
+        const cleanData = stripAnsiCodes(data);
+        
+        // Split by newlines and add to buffer
+        const lines = cleanData.split(/\r?\n/);
+        
+        lines.forEach(line => {
+            // Only add non-empty lines
+            if (line.trim().length > 0) {
+                buffer.push(line);
+                
+                // Maintain circular buffer - remove oldest if exceeds limit
+                if (buffer.length > this.MAX_LOG_LINES) {
+                    buffer.shift();
+                }
+            }
+        });
+    }
+
+    /**
+     * Get log buffer for a terminal
+     * @param {string} termId - Terminal ID
+     * @returns {string[]} Array of log lines
+     */
+    getLogBuffer(termId) {
+        return this.logBuffers.get(termId) || [];
+    }
+
+    /**
+     * Analyze log buffer and return statistics
+     * @param {string} termId - Terminal ID
+     * @returns {Object} Analysis with error counts, line counts, etc.
+     */
+    analyzeLogBuffer(termId) {
+        const lines = this.getLogBuffer(termId);
+        
+        if (lines.length === 0) {
+            return {
+                totalLines: 0,
+                errorLines: 0,
+                warningLines: 0,
+                normalLines: 0,
+                errors: []
+            };
+        }
+
+        let errorCount = 0;
+        let warningCount = 0;
+        let normalCount = 0;
+
+        lines.forEach(line => {
+            const type = classifyLogLine(line);
+            if (type === 'ERROR') errorCount++;
+            else if (type === 'WARNING') warningCount++;
+            else normalCount++;
+        });
+
+        const errors = extractErrors(lines, 2);
+
+        return {
+            totalLines: lines.length,
+            errorLines: errorCount,
+            warningLines: warningCount,
+            normalLines: normalCount,
+            errors: errors.map(e => ({
+                line: e.line,
+                type: e.type,
+                lineIndex: e.lineIndex
+            }))
+        };
     }
 }
 

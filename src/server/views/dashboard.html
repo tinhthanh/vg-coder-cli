@@ -76,14 +76,32 @@
                     </button>
                 </div>
 
-                <!-- Quick Actions -->
-                <div class="endpoint-card"
-                    style="display: flex; gap: 10px; align-items: center; justify-content: space-between;">
-                    <span style="font-weight: 600;">Tools:</span>
-                    <button class="btn" onclick="createNewTerminal()"
-                        style="background: #252526; border: 1px solid #444;">
-                        <span>🖥️</span> New Terminal
-                    </button>
+                <!-- Saved Commands Panel -->
+                <div class="endpoint-card saved-commands-panel">
+                    <div class="saved-commands-header">
+                        <div class="saved-commands-title">
+                            <span class="command-icon-header">💾</span>
+                            <span>Saved Commands</span>
+                        </div>
+                        <div class="saved-commands-actions">
+                            <button class="btn-new-terminal" onclick="createNewTerminal()" title="New Terminal">
+                                🖥️
+                            </button>
+                            <button class="btn-add-command" onclick="openAddCommandModal()" title="Add Command">
+                                ➕
+                            </button>
+                        </div>
+                    </div>
+                    <div class="saved-commands-content" id="saved-commands-content">
+                        <div id="commands-list" class="commands-list">
+                            <!-- Commands will be rendered here -->
+                        </div>
+                        <div class="empty-state" id="commands-empty-state" style="display: none;">
+                            <p style="color: #888; text-align: center; padding: 15px 10px; font-size: 12px; margin: 0;">
+                                Click ➕ to add a command
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- System Prompt Section -->
@@ -280,6 +298,36 @@
 
     <div id="floating-terminals-layer"></div>
     <div class="toast" id="toast"></div>
+    
+    <!-- Add/Edit Command Modal -->
+    <div id="command-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3 id="modal-title">Add Command</h3>
+            <form id="command-form">
+                <div class="form-group">
+                    <label>Icon (emoji)</label>
+                    <input type="text" id="command-icon" placeholder="🚀" maxlength="2" required>
+                </div>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="command-name" placeholder="Run Dev Server" required>
+                </div>
+                <div class="form-group">
+                    <label>Command</label>
+                    <input type="text" id="command-text" placeholder="npm run dev" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn" onclick="closeCommandModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Smart Log Copy Utilities -->
+    <script src="/js/utils/log-utils.js"></script>
+    <script src="/js/utils/smart-copy-engine.js"></script>
+    
     <script type="module" src="/js/main.js"></script>
 </body>
 

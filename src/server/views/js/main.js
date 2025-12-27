@@ -9,6 +9,7 @@ import { initTerminal, createNewTerminal } from './features/terminal.js';
 import { initEditorTabs } from './features/editor-tabs.js';
 import { initMonaco, updateMonacoTheme } from './features/monaco-manager.js';
 import { initResizeHandler } from './features/resize.js';
+import { initSavedCommands } from './features/commands.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Load system prompt text
@@ -42,6 +43,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initialize Resize Handler
     initResizeHandler();
+    
+    // Initialize Saved Commands
+    initSavedCommands();
     
     // Set default tab to AI Assistant
     if (window.switchTab) {

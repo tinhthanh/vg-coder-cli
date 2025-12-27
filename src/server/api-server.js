@@ -274,6 +274,82 @@ class ApiServer {
       }
     });
 
+    // --- TERMINAL LOG API ---
+
+    // Get terminal logs
+    this.app.get('/api/terminal/:termId/logs', (req, res) => {
+        try {
+            const { termId } = req.params;
+            const logs = terminalManager.getLogBuffer(termId);
+            
+            res.json({ 
+                termId,
+                logs, 
+                totalLines: logs.length 
+            });
+        } catch (error) {
+            console.error(chalk.red('❌ [TERMINAL LOGS] Error:'), error.message);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Analyze terminal logs
+    this.app.post('/api/terminal/:termId/analyze', (req, res) => {
+        try {
+            const { termId } = req.params;
+            const analysis = terminalManager.analyzeLogBuffer(termId);
+            
+            res.json({ 
+                termId,
+                ...analysis
+            });
+        } catch (error) {
+            console.error(chalk.red('❌ [TERMINAL ANALYZE] Error:'), error.message);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // --- SAVED COMMANDS API ---
+
+    // Load saved commands
+    this.app.get('/api/commands/load', async (req, res) => {
+        try {
+            const commandsFile = path.join(this.workingDir, '.vg', 'commands.json');
+            
+            if (!await fs.pathExists(commandsFile)) {
+                return res.json({ commands: [] });
+            }
+
+            const data = await fs.readJson(commandsFile);
+            res.json({ commands: data.commands || [] });
+        } catch (error) {
+            console.error(chalk.red('❌ [COMMANDS LOAD] Error:'), error.message);
+            res.json({ commands: [] });
+        }
+    });
+
+    // Save commands
+    this.app.post('/api/commands/save', async (req, res) => {
+        try {
+            const { commands } = req.body;
+            if (!Array.isArray(commands)) {
+                return res.status(400).json({ error: 'commands must be an array' });
+            }
+
+            const vgDir = path.join(this.workingDir, '.vg');
+            await fs.ensureDir(vgDir);
+
+            const commandsFile = path.join(vgDir, 'commands.json');
+            await fs.writeJson(commandsFile, { commands }, { spaces: 2 });
+
+            console.log(chalk.green(`✓ Saved ${commands.length} commands`));
+            res.json({ success: true, count: commands.length });
+        } catch (error) {
+            console.error(chalk.red('❌ [COMMANDS SAVE] Error:'), error.message);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // --- TREE STATE API ---
 
     // Save tree state (excluded paths)
