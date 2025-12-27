@@ -1,8 +1,44 @@
+# Dependencies
 node_modules/
+
+# Git
 .git/
 .github/
+.gitignore
+
+# Tests and Coverage
 tests/
+coverage/
+*.test.js
+*.spec.js
+jest.config.js
+
+# Development files
 .env
+.env.*
 vg-output/
 .DS_Store
-# Do NOT ignore src/server/views/vg-coder/ here, we want it published!
+.vscode/
+.idea/
+
+# Build artifacts
+*.tgz
+vg-coder-cli-*.tgz
+
+# Gemini artifacts
+.gemini/
+
+# VG internal
+.vg/
+
+# Documentation (keep README.md, remove others if not needed)
+DEVELOPMENT.md
+SYSTEM_PROMPT.md
+
+# Do NOT ignore these - needed for published package:
+# - src/
+# - bin/
+# - scripts/postinstall.js
+# - package.json
+# - README.md
+
