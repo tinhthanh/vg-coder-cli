@@ -422,7 +422,7 @@ body.resizing {
         flex: none;
         width: 100%;
         max-width: 100%;
-        height: 50vh;
+        height: 100vh;
         border-right: none;
         border-bottom: 1px solid var(--ios-separator);
     }

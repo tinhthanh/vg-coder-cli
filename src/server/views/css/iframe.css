@@ -251,6 +251,7 @@
     .right-panel {
         flex: 1;
         height: 50vh;
+        display: none;
     }
 
     .extension-guide-center {

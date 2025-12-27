@@ -37,13 +37,17 @@ export function initIframeManager() {
     const updateProvider = (providerId) => {
         const provider = AI_PROVIDERS.find(p => p.id === providerId) || AI_PROVIDERS[0];
         
+        // Add VG Coder context parameter to prevent nested iframe injection
+        const urlWithParam = new URL(provider.url);
+        urlWithParam.searchParams.set('vg_coder_context', 'true');
+        
         // Reset iframe source to trigger reload
         iframe.src = 'about:blank';
         setTimeout(() => {
-            iframe.src = provider.url;
+            iframe.src = urlWithParam.toString();
         }, 50);
 
-        // Update placeholder link only (external link removed from UI)
+        // Update placeholder link (without the parameter for direct access)
         if (placeholderLink) {
             placeholderLink.href = provider.url;
             placeholderLink.textContent = `Mở ${provider.name} tab mới ↗`;
