@@ -60,20 +60,39 @@
         <!-- CỘT TRÁI: Giao diện VG Coder -->
         <div class="left-panel">
             <div class="container">
+                <!-- Header Layout Redesign -->
                 <div class="header">
-                    <div class="header-content">
-                        <!-- Status Dot -->
-                        <span class="status" id="status" style="font-size: 14px;">●</span>
-                        
-                        <!-- NEW: Project Info Section -->
-                        <div class="project-info">
-                            <div class="project-name" id="project-name">Loading...</div>
-                            <div class="project-meta" id="project-meta">...</div>
+                    <!-- Top Row: Status, Switcher (Title), Actions -->
+                    <div class="header-top-row">
+                        <div class="header-left-group">
+                            <span class="status" id="status" style="font-size: 14px;">●</span>
+                            
+                            <!-- Project Switcher takes primary spot -->
+                            <div class="project-switcher">
+                                <select id="project-selector" class="project-selector" onchange="window.switchProject(this.value)" title="Switch Project">
+                                    <option value="">Loading...</option>
+                                </select>
+                                <span class="project-count" id="project-count">1 project</span>
+                            </div>
+                        </div>
+
+                        <!-- Right Actions -->
+                        <div class="header-actions">
+                            <button class="stop-server-btn" id="stop-server-btn" onclick="window.stopServer()" title="Stop Server">
+                                🛑
+                            </button>
+                            <button class="theme-toggle" id="theme-toggle" title="Toggle Dark Mode">
+                                <span id="theme-icon">🌙</span>
+                            </button>
                         </div>
                     </div>
-                    <button class="theme-toggle" id="theme-toggle" title="Toggle Dark Mode">
-                        <span id="theme-icon">🌙</span>
-                    </button>
+
+                    <!-- Bottom Row: Meta Info (Path/Type) -->
+                    <div class="header-bottom-row">
+                        <div class="project-meta" id="project-meta">...</div>
+                        <!-- Hidden element to keep JS happy -->
+                        <div id="project-name" style="display: none;"></div>
+                    </div>
                 </div>
 
                 <!-- Saved Commands Panel -->

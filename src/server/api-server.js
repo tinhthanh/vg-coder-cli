@@ -16,6 +16,7 @@ const FileScanner = require('../scanner/file-scanner');
 const TokenManager = require('../tokenizer/token-manager');
 const BashExecutor = require('../utils/bash-executor');
 const terminalManager = require('./terminal-manager');
+const projectManager = require('./project-manager');
 
 class ApiServer {
   constructor(port = 6868) {
@@ -29,7 +30,8 @@ class ApiServer {
     });
     
     this.server = null;
-    this.workingDir = process.cwd();
+    this.workingDir = process.cwd(); // Fallback for backward compatibility
+    this.projectManager = projectManager; // Reference to singleton
     this.setupMiddleware();
     this.setupRoutes();
     this.setupSocketIO();
@@ -40,6 +42,14 @@ class ApiServer {
     this.app.use(bodyParser.json({ limit: '50mb' }));
     this.app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
     this.app.use(express.static(path.join(__dirname, 'views')));
+    
+    // Project context middleware
+    this.app.use((req, res, next) => {
+      const activeProject = this.projectManager.getActiveProject();
+      req.projectContext = activeProject;
+      req.workingDir = activeProject ? activeProject.workingDir : this.workingDir;
+      next();
+    });
     
     this.app.use((req, res, next) => {
       if (!req.path.includes('.')) {
@@ -53,8 +63,22 @@ class ApiServer {
     this.io.on('connection', (socket) => {
         socket.on('terminal:init', (data) => {
             if (!data || !data.termId) return;
-            const { termId, cols, rows } = data;
-            terminalManager.createTerminal(socket, termId, cols, rows, this.workingDir);
+            const { termId, cols, rows, projectId } = data;
+            
+            // Get working directory from project context
+            let cwd;
+            if (projectId) {
+              // Use specific project
+              const projects = this.projectManager.getAllProjects();
+              const project = projects.find(p => p.id === projectId);
+              cwd = project ? project.workingDir : this.workingDir;
+            } else {
+              // Use active project
+              const activeProject = this.projectManager.getActiveProject();
+              cwd = activeProject ? activeProject.workingDir : this.workingDir;
+            }
+            
+            terminalManager.createTerminal(socket, termId, cols, rows, cwd, projectId);
         });
 
         socket.on('terminal:input', (data) => {
@@ -94,6 +118,91 @@ class ApiServer {
       }
     });
 
+    // --- MULTI-PROJECT MANAGEMENT API ---
+
+    // List all projects
+    this.app.get('/api/projects', (req, res) => {
+      try {
+        const projects = this.projectManager.getAllProjects();
+        const activeProject = this.projectManager.getActiveProject();
+        res.json({ 
+          projects,
+          activeProjectId: activeProject ? activeProject.id : null,
+          totalProjects: projects.length
+        });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Register new project (for follower join)
+    this.app.post('/api/projects/register', (req, res) => {
+      try {
+        const { workingDir, name } = req.body;
+        if (!workingDir) {
+          return res.status(400).json({ error: 'Missing workingDir' });
+        }
+
+        const projectId = this.projectManager.registerProject(workingDir);
+        const projects = this.projectManager.getAllProjects();
+
+        // Emit socket event to notify all clients about new project
+        this.io.emit('project:registered', { projectId, name });
+
+        res.json({ 
+          success: true, 
+          projectId,
+          totalProjects: projects.length
+        });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Switch active project
+    this.app.post('/api/projects/switch', (req, res) => {
+      try {
+        const { projectId } = req.body;
+        if (!projectId) {
+          return res.status(400).json({ error: 'Missing projectId' });
+        }
+
+        const success = this.projectManager.switchProject(projectId);
+        
+        if (success) {
+          const activeProject = this.projectManager.getActiveProject();
+          
+          // Emit socket event to notify all clients
+          this.io.emit('project:switched', { 
+            projectId, 
+            projectName: activeProject.name 
+          });
+
+          res.json({ success: true, project: activeProject });
+        } else {
+          res.status(404).json({ error: 'Project not found' });
+        }
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Remove project
+    this.app.delete('/api/projects/:id', (req, res) => {
+      try {
+        const projectId = req.params.id;
+        this.projectManager.removeProject(projectId);
+        
+        // Emit socket event
+        this.io.emit('project:removed', { projectId });
+
+        res.json({ success: true });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+
     // --- FILE OPERATIONS (NEW) ---
     
     // Read raw file content
@@ -103,8 +212,8 @@ class ApiServer {
             if (!filePath) return res.status(400).json({ error: 'Missing path' });
             
             // Prevent directory traversal (basic check)
-            const resolvedPath = path.resolve(this.workingDir, filePath);
-            if (!resolvedPath.startsWith(this.workingDir)) {
+            const resolvedPath = path.resolve(req.workingDir, filePath);
+            if (!resolvedPath.startsWith(req.workingDir)) {
                 // Allow reading but log warning - in dev tool we might want flexibility
                 // For strict mode: return res.status(403).json({ error: 'Access denied' });
             }
@@ -126,10 +235,10 @@ class ApiServer {
             const { path: filePath, content } = req.body;
             if (!filePath || content === undefined) return res.status(400).json({ error: 'Missing data' });
             
-            const resolvedPath = path.resolve(this.workingDir, filePath);
+            const resolvedPath = path.resolve(req.workingDir, filePath);
             
             // Security check
-            if (!resolvedPath.startsWith(this.workingDir)) {
+            if (!resolvedPath.startsWith(req.workingDir)) {
                  // For strict mode: return res.status(403).json({ error: 'Access denied' });
             }
 
@@ -145,7 +254,7 @@ class ApiServer {
     // Get Git Status
     this.app.get('/api/git/status', async (req, res) => {
         try {
-            const { stdout } = await execAsync('git status --porcelain -u', { cwd: this.workingDir });
+            const { stdout } = await execAsync('git status --porcelain -u', { cwd: req.workingDir });
             
             const staged = [];
             const unstaged = [];
@@ -184,7 +293,7 @@ class ApiServer {
         try {
             const { files } = req.body;
             const target = files.includes('*') ? '.' : files.map(f => `"${f}"`).join(' ');
-            await execAsync(`git add ${target}`, { cwd: this.workingDir });
+            await execAsync(`git add ${target}`, { cwd: req.workingDir });
             res.json({ success: true });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -196,7 +305,7 @@ class ApiServer {
         try {
             const { files } = req.body;
             const target = files.includes('*') ? '' : files.map(f => `"${f}"`).join(' ');
-            await execAsync(`git reset HEAD ${target}`, { cwd: this.workingDir });
+            await execAsync(`git reset HEAD ${target}`, { cwd: req.workingDir });
             res.json({ success: true });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -208,12 +317,12 @@ class ApiServer {
         try {
             const { files } = req.body;
             if (files.includes('*')) {
-                try { await execAsync('git restore .', { cwd: this.workingDir }); } catch (e) {}
-                try { await execAsync('git clean -fd', { cwd: this.workingDir }); } catch (e) {}
+                try { await execAsync('git restore .', { cwd: req.workingDir }); } catch (e) {}
+                try { await execAsync('git clean -fd', { cwd: req.workingDir }); } catch (e) {}
             } else {
                 for (const file of files) {
-                    try { await execAsync(`git restore "${file}"`, { cwd: this.workingDir }); } catch (e) {}
-                    try { await execAsync(`git clean -f "${file}"`, { cwd: this.workingDir }); } catch (e) {}
+                    try { await execAsync(`git restore "${file}"`, { cwd: req.workingDir }); } catch (e) {}
+                    try { await execAsync(`git clean -f "${file}"`, { cwd: req.workingDir }); } catch (e) {}
                 }
             }
             res.json({ success: true });
@@ -229,7 +338,7 @@ class ApiServer {
             const { message } = req.body;
             if (!message) throw new Error('Commit message is required');
             const safeMessage = message.replace(/"/g, '\\"');
-            await execAsync(`git commit -m "${safeMessage}"`, { cwd: this.workingDir });
+            await execAsync(`git commit -m "${safeMessage}"`, { cwd: req.workingDir });
             res.json({ success: true });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -246,17 +355,17 @@ class ApiServer {
         if (type === 'staged') {
             cmd = file ? `git diff --cached -- "${file}"` : `git diff --cached`;
         } else {
-            if (file) {
+             if (file) {
                  try {
-                     const filePath = path.join(this.workingDir, file);
+                     const filePath = path.join(req.workingDir, file);
                      if (await fs.pathExists(filePath)) {
                          const stat = await fs.stat(filePath);
                          if (stat.isDirectory()) return res.json({ diff: '' });
                      }
                  } catch (e) {}
-                 const { stdout: isUntracked } = await execAsync(`git ls-files --others --exclude-standard "${file}"`, { cwd: this.workingDir });
+                 const { stdout: isUntracked } = await execAsync(`git ls-files --others --exclude-standard "${file}"`, { cwd: req.workingDir });
                  if (isUntracked.trim()) {
-                     const content = await fs.readFile(path.join(this.workingDir, file), 'utf8');
+                     const content = await fs.readFile(path.join(req.workingDir, file), 'utf8');
                      let fakeDiff = `diff --git a/${file} b/${file}\nnew file mode 100644\n--- /dev/null\n+++ b/${file}\n@@ -0,0 +1,${content.split('\n').length} @@\n`;
                      content.split('\n').forEach(l => fakeDiff += `+${l}\n`);
                      return res.json({ diff: fakeDiff });
@@ -266,7 +375,7 @@ class ApiServer {
                  cmd = `git diff`;
             }
         }
-        const { stdout } = await execAsync(cmd, { cwd: this.workingDir, maxBuffer: 20 * 1024 * 1024 });
+        const { stdout } = await execAsync(cmd, { cwd: req.workingDir, maxBuffer: 20 * 1024 * 1024 });
         res.json({ diff: stdout });
       } catch (error) {
         console.error(chalk.red('❌ [GIT DIFF] Error:'), error.message);
@@ -314,7 +423,7 @@ class ApiServer {
     // Load saved commands
     this.app.get('/api/commands/load', async (req, res) => {
         try {
-            const commandsFile = path.join(this.workingDir, '.vg', 'commands.json');
+            const commandsFile = path.join(req.workingDir, '.vg', 'commands.json');
             
             if (!await fs.pathExists(commandsFile)) {
                 return res.json({ commands: [] });
@@ -336,7 +445,7 @@ class ApiServer {
                 return res.status(400).json({ error: 'commands must be an array' });
             }
 
-            const vgDir = path.join(this.workingDir, '.vg');
+            const vgDir = path.join(req.workingDir, '.vg');
             await fs.ensureDir(vgDir);
 
             const commandsFile = path.join(vgDir, 'commands.json');
@@ -361,7 +470,7 @@ class ApiServer {
             }
 
             // Create .vg directory if it doesn't exist
-            const vgDir = path.join(this.workingDir, '.vg');
+            const vgDir = path.join(req.workingDir, '.vg');
             await fs.ensureDir(vgDir);
 
             // Save state to .vg/tree-state.json
@@ -379,7 +488,7 @@ class ApiServer {
     // Load tree state
     this.app.get('/api/tree-state/load', async (req, res) => {
         try {
-            const stateFile = path.join(this.workingDir, '.vg', 'tree-state.json');
+            const stateFile = path.join(req.workingDir, '.vg', 'tree-state.json');
             
             // Check if state file exists
             if (!await fs.pathExists(stateFile)) {
@@ -401,7 +510,7 @@ class ApiServer {
     this.app.post('/api/analyze', async (req, res) => {
         const { path: projectPath, options = {}, specificFiles } = req.body;
         if (!projectPath) return res.status(400).json({ error: 'Missing path' });
-        const resolvedPath = path.resolve(projectPath);
+        const resolvedPath = path.resolve(req.workingDir, projectPath);
         if (!await fs.pathExists(resolvedPath)) return res.status(404).json({ error: 'Path not found' });
         const scanner = new FileScanner(resolvedPath, {
           extensions: options.extensions ? options.extensions.split(',') : undefined,
@@ -415,9 +524,8 @@ class ApiServer {
     });
 
     this.app.get('/api/info', async (req, res) => {
-        const projectPath = req.query.path;
-        if (!projectPath) return res.status(400).json({ error: 'Missing path' });
-        const resolvedPath = path.resolve(projectPath);
+        const projectPath = req.query.path || '.';
+        const resolvedPath = path.resolve(req.workingDir, projectPath);
         const detector = new ProjectDetector(resolvedPath);
         const projectInfo = await detector.detectAll();
         const scanner = new FileScanner(resolvedPath);
@@ -427,7 +535,7 @@ class ApiServer {
 
     this.app.get('/api/structure', async (req, res) => {
         const projectPath = req.query.path || '.';
-        const resolvedPath = path.resolve(projectPath);
+        const resolvedPath = path.resolve(req.workingDir, projectPath);
         const scanner = new FileScanner(resolvedPath);
         const scanResult = await scanner.scanProject();
         const tokenManager = new TokenManager();
@@ -437,7 +545,7 @@ class ApiServer {
 
     this.app.post('/api/execute', async (req, res) => {
         const { bash } = req.body;
-        const executor = new BashExecutor(this.workingDir);
+        const executor = new BashExecutor(req.workingDir);
         const result = await executor.execute(bash);
         res.status(result.success ? 200 : 400).json(result);
     });
@@ -445,6 +553,24 @@ class ApiServer {
     this.app.delete('/api/clean', async (req, res) => {
         await fs.remove(path.resolve(req.body.output));
         res.json({ success: true });
+    });
+
+    // Shutdown server endpoint
+    this.app.post('/api/shutdown', async (req, res) => {
+        try {
+            console.log(chalk.yellow('\n🛑 Shutdown requested via API...'));
+            
+            // Send response first
+            res.json({ success: true, message: 'Server shutting down...' });
+            
+            // Give time for response to be sent
+            setTimeout(async () => {
+                await this.stop();
+                process.exit(0);
+            }, 500);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
     });
   }
 
@@ -490,7 +616,17 @@ class ApiServer {
   }
 
   async stop() {
-    if (this.server) this.server.close();
+    console.log(chalk.yellow('Stopping server...'));
+    
+    // Release leader lock
+    await this.projectManager.releaseLock();
+    
+    // Close server
+    if (this.server) {
+      this.server.close();
+    }
+    
+    console.log(chalk.green('✓ Server stopped'));
   }
 }
 

@@ -10,6 +10,7 @@ import { initEditorTabs } from './features/editor-tabs.js';
 import { initMonaco, updateMonacoTheme } from './features/monaco-manager.js';
 import { initResizeHandler } from './features/resize.js';
 import { initSavedCommands } from './features/commands.js';
+import { initProjectSwitcher } from './features/project-switcher.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Load system prompt text
@@ -47,10 +48,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize Saved Commands
     initSavedCommands();
     
+    // Initialize Project Switcher
+    await initProjectSwitcher();
+    
     // Set default tab to AI Assistant
     if (window.switchTab) {
         window.switchTab('ai-assistant');
     }
+});
+
+// Global event handler for project switches
+window.addEventListener('project-switched', async (event) => {
+    const { projectId, projectName, project } = event.detail;
+    console.log(`Project switched to: ${projectName}`);
+    
+    // Reload project info
+    await loadProjectInfo();
+    
+    // Filter terminal visibility (show only terminals for active project)
+    if (window.updateTerminalVisibility) {
+        window.updateTerminalVisibility(projectId);
+    }
+    
+    // Reload saved commands for new project
+    if (window.loadSavedCommands) {
+        await window.loadSavedCommands();
+    }
+    
+    // Reset tree view (hide it)
+    const treeContainer = document.getElementById('structure-tree');
+    if (treeContainer) {
+        treeContainer.style.display = 'none';
+    }
+    
+    // Clear tree content
+    const treeContent = document.getElementById('tree-content');
+    if (treeContent) {
+        treeContent.innerHTML = '';
+    }
+    
+    // TODO: Refresh other context-dependent components
+    // - Git view refresh
 });
 
 async function checkServerStatus() {
@@ -172,4 +210,27 @@ window.copyChromeUrl = function(event) {
             btn.style.borderColor = '';
         }, 2000);
     });
+}
+
+window.stopServer = async function() {
+    if (!confirm('Are you sure you want to stop the server?')) {
+        return;
+    }
+    
+    try {
+        await fetch('/api/shutdown', { method: 'POST' });
+        showToast('Server stopped successfully', 'success');
+        
+        // Show a message that server is stopped
+        setTimeout(() => {
+            document.body.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; gap: 20px;">
+                    <h2>🛑 Server Stopped</h2>
+                    <p>You can close this tab now.</p>
+                </div>
+            `;
+        }, 1000);
+    } catch (error) {
+        console.error('Failed to stop server:', error);
+    }
 }

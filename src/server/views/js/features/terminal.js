@@ -184,12 +184,33 @@ export function createNewTerminal() {
         }
     });
 
-    // 7. Init Backend Process
-    socket.emit('terminal:init', { 
-        termId, 
-        cols: term.cols, 
-        rows: term.rows 
-    });
+    // 7. Get current project ID from API
+    let currentProjectId = null;
+    fetch('/api/projects')
+        .then(res => res.json())
+        .then(data => {
+            currentProjectId = data.activeProjectId;
+            
+            // Store in session
+            activeTerminals.get(termId).projectId = currentProjectId;
+            
+            // Init Backend Process with projectId
+            socket.emit('terminal:init', { 
+                termId, 
+                cols: term.cols, 
+                rows: term.rows,
+                projectId: currentProjectId
+            });
+        })
+        .catch(err => {
+            console.error('Failed to get project info:', err);
+            // Fallback without projectId
+            socket.emit('terminal:init', { 
+                termId, 
+                cols: term.cols, 
+                rows: term.rows
+            });
+        });
     
     // 8. Initial token count update
     setTimeout(() => updateTokenCounts(termId), 100);
@@ -477,6 +498,22 @@ function clearTerminal(termId) {
     showToast('🗑️ Terminal cleared', 'info');
 }
 
+/**
+ * Update terminal visibility based on active project
+ * @param {string} activeProjectId - Active project ID
+ */
+function updateTerminalVisibility(activeProjectId) {
+    activeTerminals.forEach((session, termId) => {
+        const shouldShow = !session.projectId || session.projectId === activeProjectId;
+        session.element.style.display = shouldShow ? 'block' : 'none';
+    });
+    
+    const visibleCount = Array.from(activeTerminals.values())
+        .filter(s => s.element.style.display !== 'none').length;
+    
+    console.log(`Updated terminal visibility: ${visibleCount} visible for project ${activeProjectId}`);
+}
+
 // Global Exports for HTML onclick
 window.createNewTerminal = createNewTerminal;
 window.closeTerminal = closeTerminalUI;
@@ -484,3 +521,4 @@ window.toggleMinimize = toggleMinimize;
 window.toggleMaximize = toggleMaximize;
 window.copyTerminalLog = copyTerminalLog;
 window.clearTerminal = clearTerminal;
+window.updateTerminalVisibility = updateTerminalVisibility;

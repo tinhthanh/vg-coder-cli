@@ -22,6 +22,7 @@ async function loadSavedCommands() {
         const response = await fetch('/api/commands/load');
         const data = await response.json();
         savedCommands = data.commands || [];
+        renderCommands(); // Re-render after loading
     } catch (error) {
         console.error('Failed to load commands:', error);
         savedCommands = [];
@@ -214,6 +215,7 @@ window.editCommand = editCommand;
 window.closeCommandModal = closeCommandModal;
 window.deleteCommand = deleteCommand;
 window.runSavedCommand = runSavedCommand;
+window.loadSavedCommands = loadSavedCommands; // Export for project switching
 
 // Setup form submit handler
 if (typeof document !== 'undefined') {
@@ -225,4 +227,4 @@ if (typeof document !== 'undefined') {
     });
 }
 
-export { openAddCommandModal, editCommand, deleteCommand, runSavedCommand };
+export { openAddCommandModal, editCommand, deleteCommand, runSavedCommand, loadSavedCommands };

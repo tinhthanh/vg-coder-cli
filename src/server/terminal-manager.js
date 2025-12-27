@@ -5,7 +5,7 @@ const { stripAnsiCodes, classifyLogLine, extractErrors } = require(path.join(__d
 
 class TerminalManager {
     constructor() {
-        // Map: termId -> { process: pty, socketId: string }
+        // Map: termId -> { process: pty, socketId: string, projectId: string }
         this.sessions = new Map();
         // Map: termId -> Array of log lines (circular buffer, max 10000)
         this.logBuffers = new Map();
@@ -22,7 +22,7 @@ class TerminalManager {
         }
     }
 
-    createTerminal(socket, termId, cols = 80, rows = 24, cwd) {
+    createTerminal(socket, termId, cols = 80, rows = 24, cwd, projectId = null) {
         try {
             const term = pty.spawn(this.shell, [], {
                 name: 'xterm-256color',
@@ -34,7 +34,8 @@ class TerminalManager {
 
             this.sessions.set(termId, {
                 process: term,
-                socketId: socket.id
+                socketId: socket.id,
+                projectId: projectId  // Store project association
             });
 
             // Initialize log buffer for this terminal
@@ -184,6 +185,33 @@ class TerminalManager {
                 lineIndex: e.lineIndex
             }))
         };
+    }
+
+    /**
+     * Get all terminal IDs for a specific project
+     * @param {string} projectId - Project ID
+     * @returns {string[]} Array of terminal IDs
+     */
+    getProjectTerminals(projectId) {
+        const terminals = [];
+        for (const [termId, session] of this.sessions.entries()) {
+            if (session.projectId === projectId) {
+                terminals.push(termId);
+            }
+        }
+        return terminals;
+    }
+
+    /**
+     * Clean up all terminals for a project
+     * @param {string} projectId - Project ID
+     */
+    cleanupProject(projectId) {
+        const terminalsToRemove = this.getProjectTerminals(projectId);
+        terminalsToRemove.forEach(termId => {
+            this.kill(termId);
+        });
+        console.log(`Cleaned up ${terminalsToRemove.length} terminal(s) for project ${projectId}`);
     }
 }
 

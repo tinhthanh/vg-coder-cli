@@ -372,10 +372,42 @@ class VGCoderCLI {
    */
   async handleStart(options) {
     try {
+      const projectPath = process.cwd();
       const initialPort = parseInt(options.port);
+      const projectManager = require('./server/project-manager');
+      
+      // Check if leader exists
+      const leaderInfo = await projectManager.checkLeader();
+      
+      if (leaderInfo) {
+        // Leader exists - join as follower
+        console.log(chalk.blue(`\n🔍 Found existing server at port ${leaderInfo.port}`));
+        const joined = await projectManager.joinLeader(leaderInfo, projectPath);
+        
+        if (joined) {
+          // Successfully joined, no need to start new server
+          return;
+        } else {
+          // Failed to join, fallback to starting new server
+          console.log(chalk.yellow('⚠️  Failed to join leader, starting new server...'));
+        }
+      }
+      
+      // No leader or failed to join - become leader
+      console.log(chalk.blue('\n🚀 No existing server found, becoming leader...'));
+      
       const server = new ApiServer(initialPort);
       
+      // Try to acquire lock before starting
+      const lockAcquired = await projectManager.acquireLock(initialPort);
+      if (!lockAcquired) {
+        throw new Error('Failed to acquire leader lock');
+      }
+      
       await server.start();
+      
+      // Register current project
+      server.projectManager.registerProject(projectPath);
       
       // Auto-open browser to dashboard using actual port from server
       const dashboardUrl = `http://localhost:${server.port}`;
@@ -402,6 +434,10 @@ class VGCoderCLI {
       // Handle graceful shutdown
       const shutdown = async () => {
         console.log(chalk.yellow('\n\nShutting down server...'));
+        
+        // Release lock
+        await projectManager.releaseLock();
+        
         await server.stop();
         process.exit(0);
       };
