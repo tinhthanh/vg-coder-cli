@@ -24,12 +24,40 @@ class TerminalManager {
 
     createTerminal(socket, termId, cols = 80, rows = 24, cwd, projectId = null) {
         try {
+            const fs = require('fs');
+            const targetCwd = cwd || process.cwd();
+            
+            console.log('[Terminal] Creating terminal with shell:', this.shell);
+            console.log('[Terminal] CWD:', targetCwd);
+            console.log('[Terminal] SHELL env var:', process.env.SHELL);
+            console.log('[Terminal] Platform:', os.platform());
+            
+            // Verify shell exists and is executable
+            if (!fs.existsSync(this.shell)) {
+                throw new Error(`Shell not found at path: ${this.shell}`);
+            }
+            
+            // Verify CWD exists
+            if (!fs.existsSync(targetCwd)) {
+                throw new Error(`Working directory not found: ${targetCwd}`);
+            }
+            
+            // Ensure PATH includes common binary directories
+            const env = {
+                ...process.env,
+                PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+                TERM: 'xterm-256color'
+            };
+            
+            console.log('[Terminal] Environment PATH:', env.PATH);
+            console.log('[Terminal] Spawning with args:', { shell: this.shell, cwd: targetCwd });
+            
             const term = pty.spawn(this.shell, [], {
                 name: 'xterm-256color',
                 cols: cols,
                 rows: rows,
-                cwd: cwd || process.cwd(),
-                env: process.env
+                cwd: targetCwd,
+                env: env
             });
 
             this.sessions.set(termId, {
