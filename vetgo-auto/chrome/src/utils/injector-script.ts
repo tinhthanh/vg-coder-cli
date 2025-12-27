@@ -54,6 +54,17 @@ export const VG_CODER_INJECTOR_SCRIPT = `
     localStorage.setItem(CONFIG.STORAGE_KEY_WIDTH, width);
   }
   
+  function updateBodyMargin(width) {
+    if (!document.body.style.transition.includes('margin')) {
+      document.body.style.transition = 'margin-left 0.3s ease';
+    }
+    document.body.style.marginLeft = width;
+  }
+  
+  function removeBodyMargin() {
+    document.body.style.marginLeft = '0';
+  }
+  
   function injectStyles() {
     const style = document.createElement('style');
     style.textContent = '#' + CONFIG.CONTAINER_ID + ' {' +
@@ -166,6 +177,7 @@ export const VG_CODER_INJECTOR_SCRIPT = `
         const widthPercent = (newWidth / window.innerWidth) * 100;
         container.style.width = widthPercent + '%';
         setWidth(widthPercent + '%');
+        updateBodyMargin(widthPercent + '%');
       }
     });
     document.addEventListener('mouseup', () => {
@@ -189,12 +201,14 @@ export const VG_CODER_INJECTOR_SCRIPT = `
         controls.classList.remove('fullscreen');
         btnFullscreen.innerHTML = '▣';
         btnFullscreen.title = 'Fullscreen (100%)';
+        updateBodyMargin(CONFIG.DEFAULT_WIDTH);
       } else {
         setState(CONFIG.STATE_FULLSCREEN);
         container.style.width = CONFIG.FULLSCREEN_WIDTH;
         controls.classList.add('fullscreen');
         btnFullscreen.innerHTML = '◧';
         btnFullscreen.title = 'Default (45%)';
+        updateBodyMargin(CONFIG.FULLSCREEN_WIDTH);
       }
     });
     btnCollapse.addEventListener('click', () => {
@@ -209,6 +223,7 @@ export const VG_CODER_INJECTOR_SCRIPT = `
         btnFullscreen.classList.remove('hidden');
         btnFullscreen.innerHTML = '▣';
         btnFullscreen.title = 'Fullscreen (100%)';
+        updateBodyMargin(CONFIG.DEFAULT_WIDTH);
       } else {
         const wasFullscreen = currentState === CONFIG.STATE_FULLSCREEN;
         setState(CONFIG.STATE_COLLAPSED);
@@ -219,6 +234,7 @@ export const VG_CODER_INJECTOR_SCRIPT = `
         btnFullscreen.classList.add('hidden');
         btnCollapse.innerHTML = '▶';
         btnCollapse.title = 'Expand';
+        removeBodyMargin();
       }
     });
   }
@@ -240,6 +256,11 @@ export const VG_CODER_INJECTOR_SCRIPT = `
     document.body.appendChild(container);
     initResize(container, resizeHandle, controls);
     initControls(container, controls);
+    const currentState = getState();
+    if (currentState !== CONFIG.STATE_COLLAPSED) {
+      const width = currentState === CONFIG.STATE_FULLSCREEN ? CONFIG.FULLSCREEN_WIDTH : getWidth();
+      updateBodyMargin(width);
+    }
     console.log('✅ VG Coder iframe injected successfully');
   }
   if (document.readyState === 'loading') {
