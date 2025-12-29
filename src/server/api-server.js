@@ -199,6 +199,45 @@ class ApiServer {
         } catch (error) { res.status(500).json({ error: error.message }); }
     });
 
+    // Git Diff
+    this.app.get('/api/git/diff', async (req, res) => {
+      try {
+        const file = req.query.file;
+        const type = req.query.type || 'working';
+
+        let cmd = '';
+        if (type === 'staged') {
+            cmd = file ? `git diff --cached -- "${file}"` : `git diff --cached`;
+        } else {
+             if (file) {
+                 try {
+                     const filePath = path.join(req.workingDir, file);
+                     if (await fs.pathExists(filePath)) {
+                         const stat = await fs.stat(filePath);
+                         if (stat.isDirectory()) return res.json({ diff: '' });
+                     }
+                 } catch (e) {}
+                 
+                 const { stdout: isUntracked } = await execAsync(`git ls-files --others --exclude-standard "${file}"`, { cwd: req.workingDir });
+                 if (isUntracked.trim()) {
+                     const content = await fs.readFile(path.join(req.workingDir, file), 'utf8');
+                     let fakeDiff = `diff --git a/${file} b/${file}\nnew file mode 100644\n--- /dev/null\n+++ b/${file}\n@@ -0,0 +1,${content.split('\n').length} @@\n`;
+                     content.split('\n').forEach(l => fakeDiff += `+${l}\n`);
+                     return res.json({ diff: fakeDiff });
+                 }
+                 cmd = `git diff -- "${file}"`;
+            } else {
+                 cmd = `git diff`;
+            }
+        }
+        const { stdout } = await execAsync(cmd, { cwd: req.workingDir, maxBuffer: 20 * 1024 * 1024 });
+        res.json({ diff: stdout });
+      } catch (error) {
+        console.error(chalk.red('❌ [GIT DIFF] Error:'), error.message);
+        res.json({ diff: '', error: error.message });
+      }
+    });
+
     // Tree State API
     this.app.post('/api/tree-state/save', async (req, res) => {
         try {

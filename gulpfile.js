@@ -18,6 +18,9 @@ const PATHS = {
 let cssContent = '';
 gulp.task('css', function() {
     return gulp.src([
+        'node_modules/xterm/css/xterm.css',
+        'node_modules/diff2html/bundles/css/diff2html.min.css',
+        'node_modules/highlight.js/styles/github-dark.css', // ADDED: Highlight.js CSS
         `${PATHS.src}/dashboard.css`,
         `${PATHS.src}/css/*.css`
     ])
@@ -70,31 +73,24 @@ gulp.task('build', gulp.series('css', 'html', 'js', function(done) {
         return;
     }
 
-    // 1. Host Element (Full screen overlay, pointer-events: none allows clicking through)
     const host = document.createElement('div');
     host.id = CONTAINER_ID;
-    // z-index extremely high to be on top of everything
     host.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:2147483647; pointer-events:none;";
     document.body.appendChild(host);
 
-    // 2. Shadow DOM
     const shadow = host.attachShadow({ mode: 'open' });
     window.__VG_CODER_ROOT__ = shadow;
 
-    // 3. Inject CSS
     const style = document.createElement('style');
     style.textContent = \`${cssContent.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`;
     shadow.appendChild(style);
 
-    // 4. Inject HTML Wrapper
-    // Initial State: Hidden (0x0), but pointer-events: auto to receive clicks when expanded
     const wrapper = document.createElement('div');
     wrapper.id = 'vg-app-root';
-    wrapper.style.cssText = "pointer-events: auto; position: absolute; top: 0; left: 0; width: 0; height: 0; overflow: hidden; background: var(--ios-bg, #F2F2F7); display: flex; flex-direction: column; transition: opacity 0.3s ease;";
+    wrapper.style.cssText = "pointer-events: auto; position: absolute; top: 0; left: 0; width: 0; height: 0; opacity: 0; overflow: hidden; background: var(--ios-bg, #F2F2F7); display: flex; flex-direction: column; transition: opacity 0.3s ease;";
     wrapper.innerHTML = \`${htmlContent.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`;
     shadow.appendChild(wrapper);
 
-    // 5. Run App Logic
     try {
         ${jsContent}
     } catch (e) {

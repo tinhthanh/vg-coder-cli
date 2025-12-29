@@ -1,5 +1,7 @@
 import { getGitStatus, getGitDiff, stageFile, unstageFile, commitChanges, discardChange } from '../api.js';
 import { showToast, getById, qsa } from '../utils.js';
+// FIX: Import Diff2HtmlUI from npm package
+import { Diff2HtmlUI } from 'diff2html/lib/ui/js/diff2html-ui';
 
 let isGitMode = false;
 let currentStaged = [];
@@ -330,13 +332,9 @@ async function loadDiffView(filePath, type) {
     const viewer = getById('git-diff-viewer');
     viewer.innerHTML = '<div class="git-empty-state">Loading diff...</div>';
     
-    const UIConstructor = window.Diff2HtmlUI;
+    // FIX: Using imported class
+    const UIConstructor = Diff2HtmlUI;
 
-    if (!UIConstructor) {
-        viewer.innerHTML = '<div class="git-empty-state" style="color:#f85149">Error: Diff2HtmlUI library not loaded correctly.<br>Please check your internet connection or CDN availability.</div>';
-        return;
-    }
-    
     try {
         const diff = await getGitDiff(filePath, type === 'staged' ? 'staged' : 'working');
         

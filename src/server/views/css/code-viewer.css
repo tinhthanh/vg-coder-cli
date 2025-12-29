@@ -1,0 +1,58 @@
+/* Code Viewer Styles */
+.code-viewer-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: var(--code-bg, #1e1e1e);
+    position: relative;
+}
+
+.cv-wrapper {
+    min-height: 100%;
+}
+
+.cv-wrapper pre {
+    margin: 0;
+    padding: 0;
+}
+
+.cv-wrapper code {
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    display: block;
+    padding: 15px;
+    overflow-x: auto;
+    background: transparent; /* Let container handle bg */
+}
+
+/* Scrollbar styling for code view */
+.code-viewer-container::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.code-viewer-container::-webkit-scrollbar-thumb {
+    background: #424242;
+    border-radius: 5px;
+}
+
+.code-viewer-container::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* States */
+.cv-loading, .cv-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary, #888);
+    font-size: 13px;
+}
+
+.cv-error {
+    padding: 20px;
+    color: var(--ios-red, #ff3b30);
+    font-family: monospace;
+}

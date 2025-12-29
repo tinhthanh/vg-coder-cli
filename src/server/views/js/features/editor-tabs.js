@@ -1,20 +1,16 @@
-import { openFileInMonaco, saveViewState, disposeModel } from './monaco-manager.js';
+import { openFileInViewer } from './code-viewer.js';
 import { getById, qsa, qs } from '../utils.js';
 
 let activeTabs = [];
-let currentPath = null; // Default to null (empty editor)
+let currentPath = null;
 
 export function initEditorTabs() {
     renderTabs();
 }
 
 export async function openFileTab(path, name, icon = '📄') {
-    // Luôn hiển thị code view
+    // Switch to code mode
     toggleViewMode('code');
-
-    if (currentPath && currentPath !== path) {
-        saveViewState(currentPath);
-    }
 
     const existingTab = activeTabs.find(t => t.path === path);
     if (!existingTab) {
@@ -25,20 +21,14 @@ export async function openFileTab(path, name, icon = '📄') {
     currentPath = path;
     updateTabUI();
 
-    await openFileInMonaco(path);
+    await openFileInViewer(path);
 }
 
 export function switchTab(path) {
-    if (currentPath) {
-        saveViewState(currentPath);
-    }
-
     currentPath = path;
     updateTabUI();
-    
-    // Luôn mở code mode
     toggleViewMode('code');
-    openFileInMonaco(path);
+    openFileInViewer(path);
 }
 
 export function closeTab(event, path) {
@@ -48,7 +38,6 @@ export function closeTab(event, path) {
     if (index === -1) return;
 
     activeTabs.splice(index, 1);
-    disposeModel(path);
 
     if (currentPath === path) {
         if (activeTabs.length > 0) {
@@ -57,9 +46,8 @@ export function closeTab(event, path) {
         } else {
             currentPath = null;
             updateTabUI();
-            // Clear editor content or show welcome message
-            const monacoContainer = getById('monaco-container');
-            if (monacoContainer) monacoContainer.innerHTML = ''; 
+            const container = getById('code-viewer-container');
+            if (container) container.innerHTML = '<div class="cv-empty">No file open</div>'; 
         }
     }
     renderTabs();
@@ -88,7 +76,6 @@ function renderTabs() {
 }
 
 function updateTabUI() {
-    // Không cần update AI tab nữa vì nó đã bị xóa
     const fileTabs = qsa('#file-tabs-container .tab-item');
     fileTabs.forEach(el => {
         if (el.dataset.path === currentPath) el.classList.add('active');
@@ -97,12 +84,13 @@ function updateTabUI() {
 }
 
 function toggleViewMode(mode) {
-    // Hàm này giờ chỉ còn tác dụng đảm bảo monaco visible
-    // vì iframe container đã bị xóa
-    const monacoContainer = getById('monaco-container');
-    if(monacoContainer) monacoContainer.classList.remove('view-mode-hidden');
+    // Placeholder for view switching logic if needed in future
+    // For now, it just ensures the container is visible if we were to hide it
+    const container = getById('code-viewer-container');
+    if (container) container.style.display = 'block';
 }
 
+// Expose to window for onclick handlers
 window.switchTab = switchTab;
 window.closeTab = closeTab;
 window.openFileTab = openFileTab;

@@ -5,13 +5,11 @@ import { showToast, getById, setRoot, qs } from './utils.js';
 import { initGitView } from './features/git-view.js';
 import { initTerminal } from './features/terminal.js';
 import { initEditorTabs } from './features/editor-tabs.js';
-import { initMonaco, updateMonacoTheme } from './features/monaco-manager.js';
-// Resize is not strictly needed for 100% view but kept if we want internal resizing
-import { initResizeHandler } from './features/resize.js'; 
+// REMOVED: initMonaco
+import { initResizeHandler } from './features/resize.js';
 import { initSavedCommands } from './features/commands.js';
 import { initProjectSwitcher } from './features/project-switcher.js';
 import './features/structure.js';
-// NEW: Import Bubble
 import { initBubble } from './features/bubble.js';
 
 export async function initMain() {
@@ -29,7 +27,6 @@ export async function initMain() {
         
         initGitView();
         initTerminal();
-        initMonaco();
         initEditorTabs();
         initResizeHandler();
         initSavedCommands();
@@ -99,7 +96,6 @@ function initTheme() {
 function applyTheme(theme) {
     const themeIcon = getById('theme-icon');
     if (themeIcon) themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
-    updateMonacoTheme(theme);
     const wrapper = getById('vg-app-root');
     if (wrapper) wrapper.setAttribute('data-theme', theme);
 }
