@@ -1,73 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VG Coder - Split View</title>
-    <link rel="stylesheet" href="/dashboard.css">
-    <link rel="stylesheet" href="/css/structure.css">
-    <link rel="stylesheet" href="/css/iframe.css">
-    <link rel="stylesheet" href="/css/git-view.css">
-    <link rel="stylesheet" href="/css/terminal.css">
-    <link rel="stylesheet" href="/css/editor.css">
-    <link rel="stylesheet" href="/css/monaco.css">
-
-    <!-- Syntax Highlighting -->
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
-
-    <!-- Git Diff CSS (JSDelivr Bundle) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html@3.4.47/bundles/css/diff2html.min.css" />
-
-    <!-- Terminal Dependencies -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
-
-    <!-- Monaco Editor Loader -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
-
-    <!-- FIX: AMD Loader Conflict Patch -->
-    <script>
-        var __amdDefine = window.define;
-        var __amdRequire = window.require;
-        window.define = undefined;
-        window.require = undefined;
-    </script>
-
-    <!-- Git Diff JS (JSDelivr Bundle) -->
-    <script src="https://cdn.jsdelivr.net/npm/diff2html@3.4.47/bundles/js/diff2html-ui.min.js"></script>
-
-    <!-- FIX: Restore AMD Loader -->
-    <script>
-        window.define = __amdDefine;
-        window.require = __amdRequire;
-    </script>
-
-    <script>
-        (function () {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        })();
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VG Coder</title>
+    <!-- CSS & JS Injected via Gulp -->
 </head>
-
 <body>
+    <!-- BUBBLE INTERFACE -->
+    <div id="vg-bubble" class="vg-bubble" title="VG Coder (Click to Open, Drag to Move)">
+        <div class="vg-bubble-icon"><img style="width: 64px;" src="https://phanmemvet.vn/wp-content/vetgo/pawai.gif"></div>
+        <!-- Quick Action Menu (Shows on hover) -->
+        <div class="vg-bubble-menu">
+            <button id="quick-paste-run" class="bubble-action-btn" title="Paste & Run from Clipboard">
+                Paste & Run from Clipboard
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD INTERFACE -->
     <div class="split-layout">
-        <!-- CỘT TRÁI: Giao diện VG Coder -->
         <div class="left-panel">
             <div class="container">
-                <!-- Header Layout Redesign -->
                 <div class="header">
-                    <!-- Top Row: Status, Switcher (Title), Actions -->
                     <div class="header-top-row">
                         <div class="header-left-group">
                             <span class="status" id="status" style="font-size: 14px;">●</span>
-                            
-                            <!-- Project Switcher takes primary spot -->
                             <div class="project-switcher">
                                 <select id="project-selector" class="project-selector" onchange="window.switchProject(this.value)" title="Switch Project">
                                     <option value="">Loading...</option>
@@ -75,62 +33,40 @@
                                 <span class="project-count" id="project-count">1 project</span>
                             </div>
                         </div>
-
-                        <!-- Right Actions -->
                         <div class="header-actions">
-                            <button class="stop-server-btn" id="stop-server-btn" onclick="window.stopServer()" title="Stop Server">
-                                🛑
-                            </button>
+                            <button class="stop-server-btn" id="stop-server-btn" onclick="window.stopServer()" title="Stop Server">🛑</button>
                             <button class="theme-toggle" id="theme-toggle" title="Toggle Dark Mode">
                                 <span id="theme-icon">🌙</span>
                             </button>
                         </div>
                     </div>
-
-                    <!-- Bottom Row: Meta Info (Path/Type) -->
                     <div class="header-bottom-row">
                         <div class="project-meta" id="project-meta">...</div>
-                        <!-- Hidden element to keep JS happy -->
                         <div id="project-name" style="display: none;"></div>
                     </div>
                 </div>
 
-                <!-- Saved Commands Panel -->
+                <!-- Saved Commands -->
                 <div class="endpoint-card saved-commands-panel">
                     <div class="saved-commands-header">
-                        <div class="saved-commands-title">
-                            <span class="command-icon-header">💾</span>
-                            <span>Saved Commands</span>
-                        </div>
+                        <div class="saved-commands-title"><span class="command-icon-header">💾</span><span>Saved Commands</span></div>
                         <div class="saved-commands-actions">
-                            <button class="btn-new-terminal" onclick="createNewTerminal()" title="New Terminal">
-                                🖥️
-                            </button>
-                            <button class="btn-add-command" onclick="openAddCommandModal()" title="Add Command">
-                                ➕
-                            </button>
+                            <button class="btn-new-terminal" onclick="createNewTerminal()" title="New Terminal">🖥️</button>
+                            <button class="btn-add-command" onclick="openAddCommandModal()" title="Add Command">➕</button>
                         </div>
                     </div>
                     <div class="saved-commands-content" id="saved-commands-content">
-                        <div id="commands-list" class="commands-list">
-                            <!-- Commands will be rendered here -->
-                        </div>
+                        <div id="commands-list" class="commands-list"></div>
                         <div class="empty-state" id="commands-empty-state" style="display: none;">
-                            <p style="color: #888; text-align: center; padding: 15px 10px; font-size: 12px; margin: 0;">
-                                Click ➕ to add a command
-                            </p>
+                            <p style="color: #888; text-align: center; padding: 15px 10px; font-size: 12px; margin: 0;">Click ➕ to add a command</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- System Prompt Section -->
                 <div class="system-prompt-card">
                     <div class="system-prompt-header" onclick="toggleSystemPrompt()">
                         <div class="header-title-group">
-                            <button class="btn-icon-head" onclick="copySystemPromptFromHeader(event)"
-                                title="Copy System Prompt">
-                                📋
-                            </button>
+                            <button class="btn-icon-head" onclick="copySystemPromptFromHeader(event)" title="Copy System Prompt">📋</button>
                             <h2>System Prompt</h2>
                         </div>
                         <span class="toggle-icon" id="toggle-icon">▼</span>
@@ -145,68 +81,45 @@
                 </div>
 
                 <div class="endpoints">
-                    <!-- Execute Bash -->
                     <div class="endpoint-card">
                         <div class="endpoint-header">
-                            <div class="endpoint-title-group">
-                                <span class="method post">POST</span>
-                                <span class="endpoint-path">/execute</span>
-                            </div>
+                            <div class="endpoint-title-group"><span class="method post">POST</span><span class="endpoint-path">/execute</span></div>
                         </div>
                         <div class="form-group">
-                            <textarea id="execute-bash"
-                                placeholder="mkdir -p src/test&#10;echo 'Hello' > src/test/hello.txt"></textarea>
+                            <textarea id="execute-bash" placeholder="mkdir -p src/test&#10;echo 'Hello' > src/test/hello.txt"></textarea>
                         </div>
                         <div class="btn-group">
-                            <button class="btn" onclick="testExecute(event)">
-                                <span>▶️</span> Run
-                            </button>
-                            <button class="btn" onclick="executeFromClipboard(event)">
-                                <span>📋</span> Paste & Run
-                            </button>
+                            <button class="btn" onclick="testExecute(event)"><span>▶️</span> Run</button>
+                            <button class="btn" onclick="executeFromClipboard(event)"><span>📋</span> Paste & Run</button>
                         </div>
                         <div class="response" id="execute-response"></div>
                     </div>
 
-                    <!-- Structure -->
                     <div class="endpoint-card">
                         <div class="endpoint-header">
                             <div class="endpoint-title-group">
                                 <span class="method get" style="background: var(--ios-blue); color: white;">GET</span>
                                 <span class="endpoint-path">/structure</span>
                             </div>
-                            <button class="btn-icon-head" onclick="copySelectedStructure(event)" title="Copy Selected">
-                                📋
-                            </button>
+                            <button class="btn-icon-head" onclick="copySelectedStructure(event)" title="Copy Selected">📋</button>
                         </div>
                         <div class="form-group">
                             <input type="text" id="structure-path" value="." placeholder="Project path">
                         </div>
                         <div class="btn-group">
-                            <button class="btn" onclick="testStructure(event)">
-                                <span>🌳</span> View
-                            </button>
+                            <button class="btn" onclick="testStructure(event)"><span>🌳</span> View</button>
                         </div>
                         <div class="tree-container" id="structure-tree" style="display: none;">
-                            <div class="tree-header">
-                                <span>Tree</span>
-                                <span class="tree-total-tokens" id="total-tokens-badge">0 tokens</span>
-                            </div>
+                            <div class="tree-header"><span>Tree</span><span class="tree-total-tokens" id="total-tokens-badge">0 tokens</span></div>
                             <div class="tree-content" id="tree-content"></div>
                         </div>
                         <div class="response" id="structure-response" style="display: none;"></div>
                     </div>
 
-                    <!-- Analyze -->
                     <div class="endpoint-card">
                         <div class="endpoint-header">
-                            <div class="endpoint-title-group">
-                                <span class="method post">POST</span>
-                                <span class="endpoint-path">/analyze</span>
-                            </div>
-                            <button class="btn-icon-head" onclick="testAnalyze(event)" title="Download Project Source">
-                                📥
-                            </button>
+                            <div class="endpoint-title-group"><span class="method post">POST</span><span class="endpoint-path">/analyze</span></div>
+                            <button class="btn-icon-head" onclick="testAnalyze(event)" title="Download Project Source">📥</button>
                         </div>
                         <div class="form-group">
                             <input type="text" id="analyze-path" value="." placeholder="Project path (e.g. .)">
@@ -223,118 +136,34 @@
                 <div style="height: 50px;"></div>
             </div>
         </div>
-        <!-- Resize Handler -->
         <div id="resize-handler" class="resize-handler"></div>
 
-        <!-- CỘT PHẢI: AI Iframe & Editor -->
         <div class="right-panel">
-            <!-- HEADER MỚI: Tích hợp Tabs & Actions -->
             <div id="tabs-header" class="tabs-header">
-                <!-- Vùng Tabs Scrollable -->
                 <div class="tabs-scroll-area">
-
-                    <!-- AI Tab (STATIC) -->
-                    <div class="tab-item active" id="ai-tab" onclick="window.switchTab('ai-assistant')"
-                        data-path="ai-assistant">
-                        <span class="tab-icon">🤖</span>
-                        <!-- Select Box nằm ngay trong tên Tab -->
-                        <select id="ai-provider-select" class="ai-provider-select" onclick="event.stopPropagation()">
-                            <!-- Options filled by JS -->
-                        </select>
-                    </div>
-
-                    <!-- Dynamic File Tabs -->
                     <div id="file-tabs-container" style="display:flex; height:100%;"></div>
                 </div>
-
-                <!-- Global Actions -->
                 <div class="tabs-actions">
-                    <button id="guide-toggle-btn" class="action-btn-mini" title="Show Installation Guide">🧩</button>
-                    <button id="git-refresh-btn" class="action-btn-mini" style="display:none;"
-                        title="Refresh Git">↻</button>
-                    <button id="git-view-toggle" class="action-btn-mini" title="Toggle Git View">
-                        <span style="font-size:12px">Git</span>
-                    </button>
+                    <button id="git-view-toggle" class="action-btn-mini" title="Toggle Git View"><span style="font-size:12px">Git</span></button>
                 </div>
             </div>
-
-            <!-- Git View Container -->
             <div id="git-view-container" class="git-view-container"></div>
-
-            <!-- Editor Container -->
             <div class="editor-container" style="flex: 1; position: relative; overflow: hidden;">
-
-                <!-- AI Iframe -->
-                <div class="ai-iframe-container">
-                    <div id="iframe-placeholder" class="iframe-placeholder hidden">
-                        <div class="extension-guide-center">
-                            <button class="guide-close-btn" id="guide-close-btn" title="Close Guide">×</button>
-                            <span class="guide-icon">🧩</span>
-                            <h3 class="guide-title">Cài đặt VG Coder Extension</h3>
-                            <p class="guide-desc">
-                                Không thấy trang web? AI Provider chặn hiển thị trong Iframe.<br>
-                                Hãy cài đặt Extension để bỏ qua các giới hạn này.
-                            </p>
-                            <ol class="guide-steps">
-                                <li class="guide-step">
-                                    <span class="step-number">1</span>
-                                    Copy link và dán vào tab mới:
-                                    <div class="url-box">
-                                        <input type="text" id="chrome-url-input-center" class="guide-input" readonly
-                                            value="chrome://extensions" onclick="this.select()">
-                                        <button class="guide-btn-copy" onclick="copyChromeUrl(event)">Copy</button>
-                                    </div>
-                                </li>
-                                <li class="guide-step">
-                                    <span class="step-number">2</span>
-                                    Bật <b>Developer mode</b> (Góc phải trên) &rarr; <b>Load unpacked</b>
-                                </li>
-                                <li class="guide-step">
-                                    <span class="step-number">3</span>
-                                    Chọn thư mục bên dưới:
-                                    <div class="path-box">
-                                        <input type="text" id="extension-path-input-center" class="guide-input" readonly
-                                            value="Loading..." onclick="this.select()">
-                                        <button class="guide-btn-copy" onclick="copyExtensionPath(event)">Copy</button>
-                                    </div>
-                                </li>
-                            </ol>
-                            <div class="guide-footer">
-                                <a id="ai-placeholder-link" href="#" target="_blank" class="link-fallback">Mở tab mới
-                                    ↗</a>
-                                <button id="guide-done-btn" class="btn-primary-guide">Đã xong / Tải lại</button>
-                            </div>
-                        </div>
-                    </div>
-                    <iframe id="ai-iframe" src="" title="AI Integration"></iframe>
-                </div>
-
-                <!-- Monaco Editor Container -->
-                <div id="monaco-container" class="monaco-container view-mode-hidden"></div>
+                <div id="monaco-container" class="monaco-container"></div>
             </div>
         </div>
     </div>
 
+    <!-- Modals & Overlays -->
     <div id="floating-terminals-layer"></div>
     <div class="toast" id="toast"></div>
-    
-    <!-- Add/Edit Command Modal -->
     <div id="command-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3 id="modal-title">Add Command</h3>
             <form id="command-form">
-                <div class="form-group">
-                    <label>Icon (emoji)</label>
-                    <input type="text" id="command-icon" placeholder="🚀" maxlength="2" required>
-                </div>
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="command-name" placeholder="Run Dev Server" required>
-                </div>
-                <div class="form-group">
-                    <label>Command</label>
-                    <input type="text" id="command-text" placeholder="npm run dev" required>
-                </div>
+                <div class="form-group"><label>Icon (emoji)</label><input type="text" id="command-icon" placeholder="🚀" maxlength="2" required></div>
+                <div class="form-group"><label>Name</label><input type="text" id="command-name" placeholder="Run Dev Server" required></div>
+                <div class="form-group"><label>Command</label><input type="text" id="command-text" placeholder="npm run dev" required></div>
                 <div class="modal-actions">
                     <button type="button" class="btn" onclick="closeCommandModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save</button>
@@ -343,75 +172,6 @@
         </div>
     </div>
     
-    <!-- VG Coder Parent Context Detector -->
-    <script>
-        // Listener for nested iframe detection
-        // When extension's controller.ts sends VG_CODER_PING, we reply with VG_CODER_PARENT
-        window.addEventListener('message', (event) => {
-            if (event.data?.type === 'VG_CODER_PING') {
-                // Confirm this is VG Coder parent context
-                event.source.postMessage({ type: 'VG_CODER_PARENT' }, '*');
-                console.log('📡 Responded to VG_CODER_PING from iframe:', event.origin);
-            }
-        });
-    </script>
-    
-    <!-- Embedded Mode Detection -->
-    <script>
-        // When dashboard is loaded with ?embedded=true (inside AI chat page),
-        // hide the AI tab and iframe to prevent nested structure
-        (function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const isEmbedded = urlParams.has('embedded');
-            
-            if (isEmbedded) {
-                console.log('🎯 Embedded mode detected - hiding AI iframe tab');
-                
-                // Wait for DOM to be ready
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', hideAITab);
-                } else {
-                    hideAITab();
-                }
-                
-                function hideAITab() {
-                    // Hide AI tab
-                    const aiTab = document.getElementById('ai-tab');
-                    if (aiTab) {
-                        aiTab.style.display = 'none';
-                        console.log('✅ AI tab hidden');
-                    }
-                    
-                    // Hide AI iframe container
-                    const aiContainer = document.querySelector('.ai-iframe-container');
-                    if (aiContainer) {
-                        aiContainer.style.display = 'none';
-                        console.log('✅ AI iframe container hidden');
-                    }
-                    
-                    // Switch to first editor tab if exists, or show monaco by default
-                    const fileTabsContainer = document.getElementById('file-tabs-container');
-                    if (fileTabsContainer && fileTabsContainer.children.length > 0) {
-                        // Click first file tab
-                        const firstTab = fileTabsContainer.children[0];
-                        if (firstTab) firstTab.click();
-                    } else {
-                        // Show monaco editor as default
-                        const monacoContainer = document.getElementById('monaco-container');
-                        if (monacoContainer) {
-                            monacoContainer.classList.remove('view-mode-hidden');
-                        }
-                    }
-                }
-            }
-        })();
-    </script>
-    
-    <!-- Smart Log Copy Utilities -->
-    <script src="/js/utils/log-utils.js"></script>
-    <script src="/js/utils/smart-copy-engine.js"></script>
-    
-    <script type="module" src="/js/main.js"></script>
+    <!-- Scripts injected via Gulp -->
 </body>
-
 </html>

@@ -1,0 +1,81 @@
+/* --- BUBBLE FEATURE STYLES --- */
+
+.vg-bubble {
+    position: fixed;
+    bottom: 50px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    cursor: grab;
+    z-index: 2147483647; /* Highest priority */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: auto; /* Always clickable */
+    user-select: none;
+}
+
+.vg-bubble:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+}
+
+.vg-bubble:hover {
+    transform: scale(1.1);
+}
+
+.vg-bubble-icon {
+    font-size: 30px;
+    line-height: 1;
+    pointer-events: none; /* Let clicks pass to bubble */
+}
+
+/* Bubble Quick Actions Menu */
+.vg-bubble-menu {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: var(--ios-card);
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: all 0.2s ease;
+    pointer-events: auto;
+}
+
+.vg-bubble:hover .vg-bubble-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.bubble-action-btn {
+    background: var(--ios-input-bg);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-primary);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.bubble-action-btn:hover {
+    background: var(--ios-blue);
+    color: white;
+}

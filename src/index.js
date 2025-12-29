@@ -12,25 +12,18 @@ const HtmlExporter = require('./exporter/html-exporter');
 const ClipboardManager = require('./utils/clipboard');
 const ApiServer = require('./server/api-server');
 
-/**
- * Main CLI Application
- */
 class VGCoderCLI {
   constructor() {
     this.program = new Command();
     this.setupCommands();
   }
 
-  /**
-   * Setup CLI commands
-   */
   setupCommands() {
     this.program
       .name('vg')
       .description('CLI tool để phân tích dự án, nối file mã nguồn, đếm token và xuất HTML')
       .version(packageJson.version);
 
-    // Analyze command
     this.program
       .command('analyze [path]')
       .alias('a')
@@ -47,20 +40,17 @@ class VGCoderCLI {
       .option('--save-txt', 'Save AI-friendly content to vg-projects.txt file')
       .action(this.handleAnalyze.bind(this));
 
-    // Info command
     this.program
       .command('info [path]')
       .description('Hiển thị thông tin về dự án')
       .action(this.handleInfo.bind(this));
 
-    // Clean command
     this.program
       .command('clean')
       .description('Xóa thư mục output')
       .option('-o, --output <path>', 'Thư mục output', './vg-output')
       .action(this.handleClean.bind(this));
 
-    // Start server command
     this.program
       .command('start')
       .alias('s')
@@ -69,182 +59,81 @@ class VGCoderCLI {
       .action(this.handleStart.bind(this));
   }
 
-  /**
-   * Handle analyze command
-   */
   async handleAnalyze(projectPath, options) {
     const spinner = ora('Initializing analysis...').start();
-
     try {
-      // Resolve project path
       projectPath = path.resolve(projectPath || process.cwd());
-
-      // Check special modes
       const clipboardMode = options.clipboardOnly || options.clipboard;
       const saveTxtMode = options.saveTxt;
       const specialMode = clipboardMode || saveTxtMode;
       const outputPath = specialMode ? null : path.resolve(options.output || './vg-output');
       
-      // Validate project path
       if (!await fs.pathExists(projectPath)) {
         throw new Error(`Project path does not exist: ${projectPath}`);
       }
-
-      // Validate output path for normal mode
       if (!specialMode && !outputPath) {
         throw new Error('Output path is required for normal mode');
       }
 
       spinner.text = 'Detecting project type...';
-      
-      // Detect project type
       const detector = new ProjectDetector(projectPath);
       const projectInfo = await detector.detectAll();
       
       console.log(chalk.blue('\n📁 Project Detection:'));
       console.log(`Primary Type: ${chalk.green(projectInfo.primary)}`);
-      if (Object.keys(projectInfo.detected).length > 1) {
-        console.log(`Other Types: ${Object.keys(projectInfo.detected).filter(t => t !== projectInfo.primary).join(', ')}`);
-      }
 
       spinner.text = 'Scanning files...';
-      
-      // Scan files
       const scannerOptions = {
         maxTokens: parseInt(options.maxTokens),
         extensions: options.extensions ? options.extensions.split(',').map(ext => ext.trim()) : undefined,
         includeHidden: options.includeHidden
       };
-      
       const scanner = new FileScanner(projectPath, scannerOptions);
       const scanResult = await scanner.scanProject();
       
       console.log(chalk.blue('\n📊 Scan Results:'));
       console.log(`Files Found: ${scanResult.stats.totalFiles}`);
-      console.log(`Files Processed: ${scanResult.stats.processedFiles}`);
-      console.log(`Scan Time: ${scanResult.stats.scanTime}ms`);
-
-      // Hiển thị cấu trúc thư mục được scan
-      console.log(chalk.blue('\n📁 Directory Structure:'));
       const treeStructure = scanner.renderProjectTree(scanResult.tree);
-      console.log(treeStructure);
 
       spinner.text = 'Analyzing tokens...';
-      
-      // Analyze tokens
       const tokenManager = new TokenManager({
         model: options.model,
         maxTokens: parseInt(options.maxTokens),
         preserveStructure: options.structure !== false
       });
-      
       const tokenAnalysis = tokenManager.analyzeFiles(scanResult.files);
       
       console.log(chalk.blue('\n🧮 Token Analysis:'));
       console.log(`Total Tokens: ${chalk.yellow(tokenAnalysis.summary.totalTokens.toLocaleString())}`);
-      console.log(`Average Tokens/File: ${tokenAnalysis.summary.averageTokensPerFile.toLocaleString()}`);
-      console.log(`Files Exceeding Limit: ${tokenAnalysis.summary.filesExceedingLimit}`);
-      console.log(`Estimated Chunks: ${tokenAnalysis.summary.estimatedChunks}`);
 
       spinner.text = 'Creating content chunks...';
 
       if (clipboardMode) {
-        // Clipboard mode: create AI-friendly content and copy to clipboard
-        spinner.text = 'Creating AI-friendly content...';
-
-        const aiContent = await scanner.createCombinedContentForAI(scanResult.files, {
-          includeStats: false,
-          includeTree: false,
-          preserveLineNumbers: true
-        });
-
-        spinner.text = 'Copying to clipboard...';
-
+        const aiContent = await scanner.createCombinedContentForAI(scanResult.files, { includeStats: false, includeTree: false, preserveLineNumbers: true });
         await ClipboardManager.copyToClipboard(aiContent);
-        const contentInfo = ClipboardManager.getContentInfo(aiContent);
-
-        // Cleanup
         tokenManager.cleanup();
-
         spinner.succeed('Content copied to clipboard successfully!');
-
-        console.log(chalk.green('\n📋 Clipboard Content:'));
-        console.log(`Files: ${chalk.cyan(scanResult.files.length)}`);
-        console.log(`Lines: ${chalk.cyan(contentInfo.lines.toLocaleString())}`);
-        console.log(`Characters: ${chalk.cyan(contentInfo.characters.toLocaleString())}`);
-        console.log(`Size: ${chalk.cyan(contentInfo.size)}`);
-
-        console.log(chalk.blue('\n💡 Ready for AI analysis!'));
-        console.log('Content is now in your clipboard and ready to paste into AI tools.');
-
-        return; // Exit early for clipboard mode
+        return;
       }
 
       if (saveTxtMode) {
-        // Save-txt mode: create AI-friendly content and save to vg-projects.txt
-        spinner.text = 'Creating AI-friendly content...';
-
-        const aiContent = await scanner.createCombinedContentForAI(scanResult.files, {
-          includeStats: false,
-          includeTree: false,
-          preserveLineNumbers: true
-        });
-
-        spinner.text = 'Saving to vg-projects.txt...';
-
+        const aiContent = await scanner.createCombinedContentForAI(scanResult.files, { includeStats: false, includeTree: false, preserveLineNumbers: true });
         const outputFilePath = path.resolve('vg-projects.txt');
-
-        // Ensure file is deleted first
-        try {
-          await fs.unlink(outputFilePath);
-        } catch (error) {
-          // File doesn't exist, that's fine
-        }
-
         await fs.writeFile(outputFilePath, aiContent, 'utf8');
-        const contentInfo = ClipboardManager.getContentInfo(aiContent);
-
-        // Cleanup
         tokenManager.cleanup();
-
         spinner.succeed('Content saved to vg-projects.txt successfully!');
-
-        console.log(chalk.green('\n📄 File Content:'));
-        console.log(`Output: ${chalk.cyan(outputFilePath)}`);
-        console.log(`Files: ${chalk.cyan(scanResult.files.length)}`);
-        console.log(`Lines: ${chalk.cyan(contentInfo.lines.toLocaleString())}`);
-        console.log(`Characters: ${chalk.cyan(contentInfo.characters.toLocaleString())}`);
-        console.log(`Size: ${chalk.cyan(contentInfo.size)}`);
-
-        console.log(chalk.blue('\n💡 Ready for AI analysis!'));
-        console.log('Content is now saved in vg-projects.txt and ready for AI tools.');
-
-        return; // Exit early for save-txt mode
+        return;
       }
 
-      // Normal mode: create HTML output
       const combinedContent = await scanner.createCombinedContent(scanResult.files);
-
-      // Chunk content
       const chunks = await tokenManager.chunkContent(combinedContent, {
         projectType: projectInfo.primary,
         projectPath: projectPath,
         totalFiles: scanResult.files.length
       });
       
-      console.log(chalk.blue('\n✂️ Chunking Results:'));
-      console.log(`Total Chunks: ${chunks.length}`);
-      chunks.forEach((chunk, index) => {
-        console.log(`  Chunk ${index + 1}: ${chunk.tokens.toLocaleString()} tokens (${chunk.metadata?.type || 'unknown'})`);
-      });
-
       spinner.text = 'Generating HTML output...';
-      
-      // Export HTML
-      const exporter = new HtmlExporter(outputPath, {
-        theme: options.theme,
-        title: `VG Coder Analysis - ${path.basename(projectPath)}`
-      });
+      const exporter = new HtmlExporter(outputPath, { theme: options.theme, title: `VG Coder Analysis - ${path.basename(projectPath)}` });
       
       const exportResult = await exporter.exportChunks(chunks, {
         projectType: projectInfo.primary,
@@ -252,23 +141,11 @@ class VGCoderCLI {
         scanStats: scanResult.stats,
         tokenStats: tokenAnalysis.summary,
         directoryStructure: treeStructure,
-        files: scanResult.files // Thêm files gốc để tạo combined.txt
+        files: scanResult.files
       });
       
-      // Cleanup
       tokenManager.cleanup();
-      
       spinner.succeed('Analysis completed successfully!');
-      
-      console.log(chalk.green('\n✅ Output Generated:'));
-      console.log(`Index: ${chalk.cyan(exportResult.indexPath)}`);
-      console.log(`Combined: ${chalk.cyan(exportResult.combinedPath)}`);
-      if (exportResult.combinedTxtPath) {
-        console.log(`Combined.txt: ${chalk.cyan(exportResult.combinedTxtPath)}`);
-      }
-      console.log(`Chunks: ${chalk.cyan(exportResult.chunksPath)}`);
-      console.log(`Total Files: ${exportResult.totalFiles}`);
-      
       console.log(chalk.blue('\n🌐 Open in browser:'));
       console.log(`file://${exportResult.indexPath}`);
       
@@ -279,64 +156,29 @@ class VGCoderCLI {
     }
   }
 
-  /**
-   * Handle info command
-   */
   async handleInfo(projectPath, options) {
     const spinner = ora('Gathering project information...').start();
-    
     try {
-      // Resolve project path
       projectPath = path.resolve(projectPath || process.cwd());
-      
       if (!await fs.pathExists(projectPath)) {
         throw new Error(`Project path does not exist: ${projectPath}`);
       }
 
-      // Detect project
       const detector = new ProjectDetector(projectPath);
       const projectInfo = await detector.detectAll();
-      
-      // Quick scan
       const scanner = new FileScanner(projectPath);
       const scanResult = await scanner.scanProject();
-      
-      // Token analysis
       const tokenManager = new TokenManager();
       const tokenAnalysis = tokenManager.analyzeFiles(scanResult.files);
       
       spinner.succeed('Information gathered');
-      
       console.log(chalk.blue('\n📁 Project Information:'));
       console.log(`Path: ${chalk.cyan(projectPath)}`);
       console.log(`Primary Type: ${chalk.green(projectInfo.primary)}`);
-      
-      if (Object.keys(projectInfo.detected).length > 0) {
-        console.log('\nDetected Technologies:');
-        Object.entries(projectInfo.detected).forEach(([type, info]) => {
-          console.log(`  ${chalk.yellow(type)}: ${info.confidence} confidence`);
-          if (info.version) {
-            console.log(`    Version: ${info.version}`);
-          }
-        });
-      }
-      
-      console.log(chalk.blue('\n📊 File Statistics:'));
       console.log(`Total Files: ${scanResult.stats.processedFiles}`);
-      console.log(`Total Size: ${scanner.formatBytes(scanResult.files.reduce((sum, f) => sum + f.size, 0))}`);
-      console.log(`Total Lines: ${scanResult.files.reduce((sum, f) => sum + f.lines, 0).toLocaleString()}`);
-      
-      const extensions = [...new Set(scanResult.files.map(f => f.extension))].filter(Boolean);
-      console.log(`Extensions: ${extensions.join(', ')}`);
-      
-      console.log(chalk.blue('\n🧮 Token Statistics:'));
       console.log(`Total Tokens: ${tokenAnalysis.summary.totalTokens.toLocaleString()}`);
-      console.log(`Average Tokens/File: ${tokenAnalysis.summary.averageTokensPerFile.toLocaleString()}`);
-      console.log(`Files Exceeding 8K Limit: ${tokenAnalysis.summary.filesExceedingLimit}`);
-      console.log(`Estimated Chunks (8K): ${tokenAnalysis.summary.estimatedChunks}`);
       
       tokenManager.cleanup();
-      
     } catch (error) {
       spinner.fail('Failed to gather information');
       console.error(chalk.red('\n❌ Error:'), error.message);
@@ -344,22 +186,16 @@ class VGCoderCLI {
     }
   }
 
-  /**
-   * Handle clean command
-   */
   async handleClean(options) {
     const spinner = ora('Cleaning output directory...').start();
-    
     try {
       const outputPath = path.resolve(options.output);
-      
       if (await fs.pathExists(outputPath)) {
         await fs.remove(outputPath);
         spinner.succeed(`Cleaned: ${outputPath}`);
       } else {
         spinner.succeed('Output directory does not exist');
       }
-      
     } catch (error) {
       spinner.fail('Failed to clean');
       console.error(chalk.red('\n❌ Error:'), error.message);
@@ -367,77 +203,54 @@ class VGCoderCLI {
     }
   }
 
-  /**
-   * Handle start command
-   */
   async handleStart(options) {
     try {
       const projectPath = process.cwd();
       const initialPort = parseInt(options.port);
       const projectManager = require('./server/project-manager');
       
-      // Check if leader exists
       const leaderInfo = await projectManager.checkLeader();
       
       if (leaderInfo) {
-        // Leader exists - join as follower
         console.log(chalk.blue(`\n🔍 Found existing server at port ${leaderInfo.port}`));
         const joined = await projectManager.joinLeader(leaderInfo, projectPath);
-        
-        if (joined) {
-          // Successfully joined, no need to start new server
-          return;
-        } else {
-          // Failed to join, fallback to starting new server
-          console.log(chalk.yellow('⚠️  Failed to join leader, starting new server...'));
-        }
+        if (joined) return;
+        console.log(chalk.yellow('⚠️  Failed to join leader, starting new server...'));
       }
       
-      // No leader or failed to join - become leader
-      console.log(chalk.blue('\n🚀 No existing server found, becoming leader...'));
+      console.log(chalk.blue('\n🚀 Starting VG Coder Server...'));
       
       const server = new ApiServer(initialPort);
-      
-      // Try to acquire lock before starting
       const lockAcquired = await projectManager.acquireLock(initialPort);
-      if (!lockAcquired) {
-        throw new Error('Failed to acquire leader lock');
-      }
+      if (!lockAcquired) throw new Error('Failed to acquire leader lock');
       
       await server.start();
-      
-      // Register current project
       server.projectManager.registerProject(projectPath);
       
-      // Auto-open browser to dashboard using actual port from server
-      const dashboardUrl = `http://localhost:${server.port}`;
-      const { exec } = require('child_process');
-      const platform = process.platform;
+      // --- EXTENSION INSTALLATION GUIDE ---
+      // Calculate absolute path to the extension folder inside the package
+      const extensionPath = path.resolve(__dirname, 'server', 'views', 'vg-coder');
       
-      let openCommand;
-      if (platform === 'darwin') {
-        openCommand = `open ${dashboardUrl}`;
-      } else if (platform === 'win32') {
-        openCommand = `start ${dashboardUrl}`;
-      } else {
-        openCommand = `xdg-open ${dashboardUrl}`;
-      }
+      console.log(chalk.green('\n✅ Server is running!'));
+      console.log(chalk.cyan('──────────────────────────────────────────────────'));
+      console.log(`📡 URL:       http://localhost:${server.port}`);
+      console.log(chalk.cyan('──────────────────────────────────────────────────'));
       
-      exec(openCommand, (error) => {
-        if (error) {
-          console.log(chalk.yellow(`\n💡 Open your browser manually: ${dashboardUrl}`));
-        } else {
-          console.log(chalk.green(`\n✓ Dashboard opened in browser`));
-        }
-      });
+      console.log(chalk.yellow('\n🧩 CHƯA CÀI EXTENSION?'));
+      console.log('1. Truy cập: chrome://extensions');
+      console.log('2. Bật "Developer mode" (Góc phải trên)');
+      console.log('3. Bấm "Load unpacked" và chọn thư mục dưới đây:');
+      console.log(chalk.bgBlue.white.bold(` ${extensionPath} `));
       
-      // Handle graceful shutdown
+      console.log(chalk.yellow('\n👉 HƯỚNG DẪN SỬ DỤNG:'));
+      console.log('1. Mở trang chat AI (ChatGPT, Claude, v.v.)');
+      console.log('2. Click vào bong bóng 🚀 ở góc phải dưới để mở Dashboard.');
+      console.log('3. Bắt đầu code!');
+      console.log(chalk.gray('\n(Nhấn Ctrl+C để dừng server)'));
+      
       const shutdown = async () => {
         console.log(chalk.yellow('\n\nShutting down server...'));
-        
-        // Release lock
         await projectManager.releaseLock();
-        
         await server.stop();
         process.exit(0);
       };
@@ -451,18 +264,13 @@ class VGCoderCLI {
     }
   }
 
-  /**
-   * Run CLI
-   */
   run() {
     this.program.parse();
   }
 }
 
-// Export for testing
 module.exports = VGCoderCLI;
 
-// Run if called directly
 if (require.main === module) {
   const cli = new VGCoderCLI();
   cli.run();

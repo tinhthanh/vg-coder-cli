@@ -1,15 +1,10 @@
-/**
- * Feature: Left Panel Resize
- * Allows the user to drag the right edge of the left panel to resize it.
- */
+import { qs, getById } from '../utils.js';
 
 export function initResizeHandler() {
-    const leftPanel = document.querySelector('.left-panel');
-    const handle = document.getElementById('resize-handler'); // Match the ID we will add in HTML
-    const splitLayout = document.querySelector('.split-layout');
+    const leftPanel = qs('.left-panel');
+    const handle = getById('resize-handler');
 
     if (!leftPanel || !handle) {
-        console.warn('Resize elements not found');
         return;
     }
 
@@ -17,28 +12,23 @@ export function initResizeHandler() {
     let startX = 0;
     let startWidth = 0;
 
-    // Mouse Down
     handle.addEventListener('mousedown', (e) => {
         isResizing = true;
         startX = e.clientX;
         startWidth = leftPanel.getBoundingClientRect().width;
         
-        // Add resizing class for styling/cursor
         document.body.classList.add('resizing');
-        
-        // Disable text selection during drag
         e.preventDefault();
     });
 
-    // Mouse Move
     document.addEventListener('mousemove', (e) => {
         if (!isResizing) return;
 
         requestAnimationFrame(() => {
             const currentX = e.clientX;
             const diffX = currentX - startX;
-            const newWidth = Math.max(250, startWidth + diffX); // Min width 250px
-            const maxWidth = window.innerWidth - 300; // Leave space for right panel
+            const newWidth = Math.max(250, startWidth + diffX);
+            const maxWidth = window.innerWidth - 300;
 
             if (newWidth < maxWidth) {
                 leftPanel.style.flex = `0 0 ${newWidth}px`;
@@ -47,7 +37,6 @@ export function initResizeHandler() {
         });
     });
 
-    // Mouse Up
     document.addEventListener('mouseup', () => {
         if (isResizing) {
             isResizing = false;

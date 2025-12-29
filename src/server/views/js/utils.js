@@ -1,29 +1,57 @@
-// UI Utility Functions
+// UI Utility Functions & DOM Helpers
+
+// --- Context Management ---
+let _root = document;
+
+export function setRoot(rootElement) {
+    _root = rootElement;
+    // Update global reference if in Shadow DOM
+    if (rootElement.host) {
+        window.__VG_CODER_ROOT__ = rootElement;
+    }
+}
+
+export function getRoot() {
+    return _root;
+}
+
+// DOM Helpers to replace document.*
+export function qs(selector) {
+    return _root.querySelector(selector);
+}
+
+export function qsa(selector) {
+    return _root.querySelectorAll(selector);
+}
+
+export function getById(id) {
+    // ShadowRoot doesn't always support getElementById in standard way, querySelector is safer
+    return _root.querySelector('#' + id);
+}
+
+// --- UI Utils ---
 
 /**
  * Display a toast notification
- * @param {string} message - Message to display
- * @param {string} type - Type of toast: 'success', 'error', 'info'
  */
 export function showToast(message, type = 'success') {
-    const toast = document.getElementById('toast');
-    // Reset text content to remove potential icon junk
+    const toast = getById('toast');
+    if (!toast) return;
+
+    // Reset text content
     toast.textContent = message;
     toast.className = `toast ${type}`;
     toast.classList.add('show');
 
-    // Clear previous timeout if exists
     if (toast.timeoutId) clearTimeout(toast.timeoutId);
-
     toast.timeoutId = setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
 /**
  * Show loading state on button
- * @param {HTMLElement} button - Button element
- * @param {string} originalText - Original button HTML
  */
 export function showLoading(button, originalText) {
+    if (!button) return;
     button.disabled = true;
     button.innerHTML = '<span class="loading"></span>';
     button.dataset.originalText = originalText;
@@ -31,50 +59,42 @@ export function showLoading(button, originalText) {
 
 /**
  * Reset button to original state
- * @param {HTMLElement} button - Button element
  */
 export function resetButton(button) {
+    if (!button) return;
     button.disabled = false;
     const originalText = button.dataset.originalText;
-    button.innerHTML = originalText;
+    if (originalText) button.innerHTML = originalText;
 }
 
 /**
- * Display API response in response area
- * @param {string} elementId - ID of response element
- * @param {Object} data - Response data
- * @param {boolean} isError - Whether this is an error response
+ * Display API response
  */
 export function showResponse(elementId, data, isError = false) {
-    const el = document.getElementById(elementId);
+    const el = getById(elementId);
+    if (!el) return;
     el.className = 'response show ' + (isError ? 'error' : 'success');
     el.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 }
 
 /**
  * Update button state to show copied status
- * @param {HTMLElement} button - Button element
- * @param {HTMLElement} icon - Icon element
- * @param {HTMLElement} text - Text element
- * @param {string} originalIcon - Original icon text
- * @param {string} originalText - Original button text
  */
 export function showCopiedState(button, icon, text, originalIcon, originalText) {
+    if (!button) return;
     button.classList.add('copied');
-    icon.textContent = '✓';
-    text.textContent = 'Copied';
+    if (icon) icon.textContent = '✓';
+    if (text) text.textContent = 'Copied';
 
     setTimeout(() => {
         button.classList.remove('copied');
-        icon.textContent = originalIcon;
-        text.textContent = originalText;
+        if (icon) icon.textContent = originalIcon;
+        if (text) text.textContent = originalText;
     }, 2000);
 }
 
 /**
- * Format number with commas (handles undefined/null)
- * @param {number} num - Number to format
- * @returns {string} Formatted string
+ * Format number with commas
  */
 export function formatNumber(num) {
     if (num === undefined || num === null) return '0';

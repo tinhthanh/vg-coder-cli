@@ -1,43 +1,32 @@
-/**
- * Saved Commands Feature
- * Manages saved terminal commands that can be quickly executed
- */
+import { API_BASE } from '../config.js';
+import { getById, showToast } from '../utils.js';
 
 let savedCommands = [];
 let editingCommandId = null;
 
-/**
- * Initialize saved commands on page load
- */
 export async function initSavedCommands() {
     await loadSavedCommands();
     renderCommands();
 }
 
-/**
- * Load saved commands from backend
- */
 async function loadSavedCommands() {
     try {
-        const response = await fetch('/api/commands/load');
+        const response = await fetch(`${API_BASE}/api/commands/load`);
         const data = await response.json();
         savedCommands = data.commands || [];
-        renderCommands(); // Re-render after loading
+        renderCommands();
     } catch (error) {
         console.error('Failed to load commands:', error);
         savedCommands = [];
     }
 }
 
-/**
- * Save commands to backend (debounced)
- */
 let saveTimeout = null;
 async function saveCommands() {
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
         try {
-            const response = await fetch('/api/commands/save', {
+            const response = await fetch(`${API_BASE}/api/commands/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ commands: savedCommands })
@@ -52,12 +41,9 @@ async function saveCommands() {
     }, 500);
 }
 
-/**
- * Render commands in UI
- */
 function renderCommands() {
-    const container = document.getElementById('commands-list');
-    const emptyState = document.getElementById('commands-empty-state');
+    const container = getById('commands-list');
+    const emptyState = getById('commands-empty-state');
     
     if (!container) return;
 
@@ -90,63 +76,50 @@ function renderCommands() {
     `).join('');
 }
 
-/**
- * Open add command modal
- */
 function openAddCommandModal() {
     editingCommandId = null;
-    document.getElementById('modal-title').textContent = 'Add Command';
-    document.getElementById('command-icon').value = '🚀';
-    document.getElementById('command-name').value = '';
-    document.getElementById('command-text').value = '';
-    document.getElementById('command-modal').style.display = 'flex';
-    document.getElementById('command-name').focus();
+    getById('modal-title').textContent = 'Add Command';
+    getById('command-icon').value = '🚀';
+    getById('command-name').value = '';
+    getById('command-text').value = '';
+    getById('command-modal').style.display = 'flex';
+    getById('command-name').focus();
 }
 
-/**
- * Open edit command modal
- */
 function editCommand(id) {
     const command = savedCommands.find(c => c.id === id);
     if (!command) return;
 
     editingCommandId = id;
-    document.getElementById('modal-title').textContent = 'Edit Command';
-    document.getElementById('command-icon').value = command.icon;
-    document.getElementById('command-name').value = command.name;
-    document.getElementById('command-text').value = command.command;
-    document.getElementById('command-modal').style.display = 'flex';
-    document.getElementById('command-name').focus();
+    getById('modal-title').textContent = 'Edit Command';
+    getById('command-icon').value = command.icon;
+    getById('command-name').value = command.name;
+    getById('command-text').value = command.command;
+    getById('command-modal').style.display = 'flex';
+    getById('command-name').focus();
 }
 
-/**
- * Close command modal
- */
 function closeCommandModal() {
-    document.getElementById('command-modal').style.display = 'none';
+    const modal = getById('command-modal');
+    if (modal) modal.style.display = 'none';
     editingCommandId = null;
 }
 
-/**
- * Handle command form submit
- */
 function handleCommandFormSubmit(event) {
     event.preventDefault();
 
-    const icon = document.getElementById('command-icon').value.trim();
-    const name = document.getElementById('command-name').value.trim();
-    const command = document.getElementById('command-text').value.trim();
+    const icon = getById('command-icon').value.trim();
+    const name = getById('command-name').value.trim();
+    const command = getById('command-text').value.trim();
 
     if (!icon || !name || !command) return;
 
     if (editingCommandId) {
-        // Edit existing
         const index = savedCommands.findIndex(c => c.id === editingCommandId);
         if (index !== -1) {
             savedCommands[index] = { ...savedCommands[index], icon, name, command };
         }
     } else {
-        // Add new
         savedCommands.push({
             id: 'cmd_' + Date.now(),
             icon,
@@ -160,9 +133,6 @@ function handleCommandFormSubmit(event) {
     closeCommandModal();
 }
 
-/**
- * Delete command with confirmation
- */
 function deleteCommand(id) {
     const command = savedCommands.find(c => c.id === id);
     if (!command) return;
@@ -174,57 +144,40 @@ function deleteCommand(id) {
     }
 }
 
-/**
- * Run saved command - open terminal and copy command to clipboard
- */
 function runSavedCommand(id) {
     const command = savedCommands.find(c => c.id === id);
     if (!command) return;
 
-    // Create new terminal
     if (typeof window.createNewTerminal === 'function') {
         window.createNewTerminal();
     }
     
-    // Copy command to clipboard
     navigator.clipboard.writeText(command.command).then(() => {
-        // Show toast notification
-        if (typeof window.showToast === 'function') {
-            window.showToast(`📋 Copied: ${command.command}`, 'success');
-        }
+        showToast(`📋 Copied: ${command.command}`, 'success');
     }).catch(err => {
         console.error('Failed to copy command:', err);
-        if (typeof window.showToast === 'function') {
-            window.showToast('Failed to copy command', 'error');
-        }
+        showToast('Failed to copy command', 'error');
     });
 }
 
-/**
- * Escape HTML to prevent XSS
- */
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-// Global exports for HTML onclick
 window.openAddCommandModal = openAddCommandModal;
 window.editCommand = editCommand;
 window.closeCommandModal = closeCommandModal;
 window.deleteCommand = deleteCommand;
 window.runSavedCommand = runSavedCommand;
-window.loadSavedCommands = loadSavedCommands; // Export for project switching
+window.loadSavedCommands = loadSavedCommands;
 
-// Setup form submit handler
-if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', () => {
-        const form = document.getElementById('command-form');
-        if (form) {
-            form.addEventListener('submit', handleCommandFormSubmit);
-        }
-    });
-}
+setTimeout(() => {
+    const form = getById('command-form');
+    if (form) {
+        form.addEventListener('submit', handleCommandFormSubmit);
+    }
+}, 500);
 
 export { openAddCommandModal, editCommand, deleteCommand, runSavedCommand, loadSavedCommands };

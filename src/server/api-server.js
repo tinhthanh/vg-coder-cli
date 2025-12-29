@@ -22,16 +22,10 @@ class ApiServer {
   constructor(port = 6868) {
     this.port = port;
     this.app = express();
-    
-    // Create HTTP server for Socket.IO
     this.httpServer = http.createServer(this.app);
-    this.io = new Server(this.httpServer, {
-        cors: { origin: "*" }
-    });
-    
-    this.server = null;
-    this.workingDir = process.cwd(); // Fallback for backward compatibility
-    this.projectManager = projectManager; // Reference to singleton
+    this.io = new Server(this.httpServer, { cors: { origin: "*" } });
+    this.workingDir = process.cwd();
+    this.projectManager = projectManager;
     this.setupMiddleware();
     this.setupRoutes();
     this.setupSocketIO();
@@ -42,19 +36,12 @@ class ApiServer {
     this.app.use(bodyParser.json({ limit: '50mb' }));
     this.app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
     this.app.use(express.static(path.join(__dirname, 'views')));
+    this.app.use('/dist', express.static(path.join(__dirname, '../../dist')));
     
-    // Project context middleware
     this.app.use((req, res, next) => {
       const activeProject = this.projectManager.getActiveProject();
       req.projectContext = activeProject;
       req.workingDir = activeProject ? activeProject.workingDir : this.workingDir;
-      next();
-    });
-    
-    this.app.use((req, res, next) => {
-      if (!req.path.includes('.')) {
-          console.log(chalk.blue(`[REQ] ${req.method} ${req.path}`));
-      }
       next();
     });
   }
@@ -64,44 +51,21 @@ class ApiServer {
         socket.on('terminal:init', (data) => {
             if (!data || !data.termId) return;
             const { termId, cols, rows, projectId } = data;
-            
-            // Get working directory from project context
             let cwd;
             if (projectId) {
-              // Use specific project
               const projects = this.projectManager.getAllProjects();
               const project = projects.find(p => p.id === projectId);
               cwd = project ? project.workingDir : this.workingDir;
             } else {
-              // Use active project
               const activeProject = this.projectManager.getActiveProject();
               cwd = activeProject ? activeProject.workingDir : this.workingDir;
             }
-            
             terminalManager.createTerminal(socket, termId, cols, rows, cwd, projectId);
         });
-
-        socket.on('terminal:input', (data) => {
-             if (data && data.termId) {
-                terminalManager.write(data.termId, data.data);
-             }
-        });
-
-        socket.on('terminal:resize', (data) => {
-            if (data && data.termId) {
-                terminalManager.resize(data.termId, data.cols, data.rows);
-            }
-        });
-        
-        socket.on('terminal:kill', (data) => {
-            if (data && data.termId) {
-                terminalManager.kill(data.termId);
-            }
-        });
-
-        socket.on('disconnect', () => {
-            terminalManager.cleanupSocket(socket.id);
-        });
+        socket.on('terminal:input', (data) => { if (data && data.termId) terminalManager.write(data.termId, data.data); });
+        socket.on('terminal:resize', (data) => { if (data && data.termId) terminalManager.resize(data.termId, data.cols, data.rows); });
+        socket.on('terminal:kill', (data) => { if (data && data.termId) terminalManager.kill(data.termId); });
+        socket.on('disconnect', () => { terminalManager.cleanupSocket(socket.id); });
     });
   }
 
@@ -109,409 +73,58 @@ class ApiServer {
     this.app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
     this.app.get('/health', (req, res) => res.json({ status: 'ok', version: packageJson.version }));
 
-    this.app.get('/api/extension-path', (req, res) => {
-      try {
-        const extensionPath = path.join(__dirname, 'views', 'vg-coder');
-        res.json({ path: extensionPath, exists: fs.existsSync(extensionPath) });
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    });
-
-    // --- MULTI-PROJECT MANAGEMENT API ---
-
-    // List all projects
-    this.app.get('/api/projects', (req, res) => {
-      try {
-        const projects = this.projectManager.getAllProjects();
-        const activeProject = this.projectManager.getActiveProject();
-        res.json({ 
-          projects,
-          activeProjectId: activeProject ? activeProject.id : null,
-          totalProjects: projects.length
-        });
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    });
-
-    // Register new project (for follower join)
-    this.app.post('/api/projects/register', (req, res) => {
-      try {
-        const { workingDir, name } = req.body;
-        if (!workingDir) {
-          return res.status(400).json({ error: 'Missing workingDir' });
-        }
-
-        const projectId = this.projectManager.registerProject(workingDir);
-        const projects = this.projectManager.getAllProjects();
-
-        // Emit socket event to notify all clients about new project
-        this.io.emit('project:registered', { projectId, name });
-
-        res.json({ 
-          success: true, 
-          projectId,
-          totalProjects: projects.length
-        });
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    });
-
-    // Switch active project
-    this.app.post('/api/projects/switch', (req, res) => {
-      try {
-        const { projectId } = req.body;
-        if (!projectId) {
-          return res.status(400).json({ error: 'Missing projectId' });
-        }
-
-        const success = this.projectManager.switchProject(projectId);
-        
-        if (success) {
-          const activeProject = this.projectManager.getActiveProject();
-          
-          // Emit socket event to notify all clients
-          this.io.emit('project:switched', { 
-            projectId, 
-            projectName: activeProject.name 
-          });
-
-          res.json({ success: true, project: activeProject });
-        } else {
-          res.status(404).json({ error: 'Project not found' });
-        }
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    });
-
-    // Remove project
-    this.app.delete('/api/projects/:id', (req, res) => {
-      try {
-        const projectId = req.params.id;
-        this.projectManager.removeProject(projectId);
-        
-        // Emit socket event
-        this.io.emit('project:removed', { projectId });
-
-        res.json({ success: true });
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    });
-
-
-    // --- FILE OPERATIONS (NEW) ---
-    
-    // Read raw file content
+    // File Ops
     this.app.get('/api/read-file', async (req, res) => {
         try {
             const filePath = req.query.path;
-            if (!filePath) return res.status(400).json({ error: 'Missing path' });
-            
-            // Prevent directory traversal (basic check)
             const resolvedPath = path.resolve(req.workingDir, filePath);
-            if (!resolvedPath.startsWith(req.workingDir)) {
-                // Allow reading but log warning - in dev tool we might want flexibility
-                // For strict mode: return res.status(403).json({ error: 'Access denied' });
-            }
-
-            if (!await fs.pathExists(resolvedPath)) {
-                return res.status(404).json({ error: 'File not found' });
-            }
-
+            if (!await fs.pathExists(resolvedPath)) return res.status(404).json({ error: 'File not found' });
             const content = await fs.readFile(resolvedPath, 'utf8');
             res.json({ content, path: filePath });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { res.status(500).json({ error: error.message }); }
     });
 
-    // Save file content
     this.app.post('/api/save-file', async (req, res) => {
         try {
             const { path: filePath, content } = req.body;
-            if (!filePath || content === undefined) return res.status(400).json({ error: 'Missing data' });
-            
             const resolvedPath = path.resolve(req.workingDir, filePath);
-            
-            // Security check
-            if (!resolvedPath.startsWith(req.workingDir)) {
-                 // For strict mode: return res.status(403).json({ error: 'Access denied' });
-            }
-
             await fs.writeFile(resolvedPath, content, 'utf8');
             res.json({ success: true });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { res.status(500).json({ error: error.message }); }
     });
 
-    // --- GIT API START ---
-
-    // Get Git Status
-    this.app.get('/api/git/status', async (req, res) => {
-        try {
-            const { stdout } = await execAsync('git status --porcelain -u', { cwd: req.workingDir });
-            
-            const staged = [];
-            const unstaged = [];
-            const untracked = [];
-
-            const lines = stdout.split('\n').filter(l => l.trim());
-            
-            lines.forEach(line => {
-                const x = line[0];
-                const y = line[1];
-                const path = line.substring(3);
-
-                if (x !== ' ' && x !== '?') {
-                    staged.push({ path, status: x });
-                }
-
-                if (y !== ' ') {
-                    if (x === '?' && y === '?') {
-                        untracked.push({ path, status: 'U' });
-                    } else {
-                        unstaged.push({ path, status: y });
-                    }
-                }
-            });
-
-            const changes = [...unstaged, ...untracked];
-            res.json({ staged, changes });
-        } catch (error) {
-            console.error(chalk.red('❌ [GIT STATUS] Error:'), error.message);
-            res.status(500).json({ error: error.message });
-        }
+    // Bash Execute
+    this.app.post('/api/execute', async (req, res) => {
+        const { bash } = req.body;
+        const executor = new BashExecutor(req.workingDir);
+        const result = await executor.execute(bash);
+        res.status(result.success ? 200 : 400).json(result);
     });
 
-    // Git Stage
-    this.app.post('/api/git/stage', async (req, res) => {
-        try {
-            const { files } = req.body;
-            const target = files.includes('*') ? '.' : files.map(f => `"${f}"`).join(' ');
-            await execAsync(`git add ${target}`, { cwd: req.workingDir });
-            res.json({ success: true });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+    // Structure API
+    this.app.get('/api/structure', async (req, res) => {
+        const projectPath = req.query.path || '.';
+        const resolvedPath = path.resolve(req.workingDir, projectPath);
+        const scanner = new FileScanner(resolvedPath);
+        const scanResult = await scanner.scanProject();
+        const tokenManager = new TokenManager();
+        const enrichedTree = tokenManager.analyzeTree(scanResult.tree, scanResult.files);
+        res.json({ path: resolvedPath, structure: enrichedTree });
     });
 
-    // Git Unstage
-    this.app.post('/api/git/unstage', async (req, res) => {
-        try {
-            const { files } = req.body;
-            const target = files.includes('*') ? '' : files.map(f => `"${f}"`).join(' ');
-            await execAsync(`git reset HEAD ${target}`, { cwd: req.workingDir });
-            res.json({ success: true });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+    // Info API
+    this.app.get('/api/info', async (req, res) => {
+        const projectPath = req.query.path || '.';
+        const resolvedPath = path.resolve(req.workingDir, projectPath);
+        const detector = new ProjectDetector(resolvedPath);
+        const projectInfo = await detector.detectAll();
+        res.json({ path: resolvedPath, primaryType: projectInfo.primary });
     });
 
-    // Git Discard
-    this.app.post('/api/git/discard', async (req, res) => {
-        try {
-            const { files } = req.body;
-            if (files.includes('*')) {
-                try { await execAsync('git restore .', { cwd: req.workingDir }); } catch (e) {}
-                try { await execAsync('git clean -fd', { cwd: req.workingDir }); } catch (e) {}
-            } else {
-                for (const file of files) {
-                    try { await execAsync(`git restore "${file}"`, { cwd: req.workingDir }); } catch (e) {}
-                    try { await execAsync(`git clean -f "${file}"`, { cwd: req.workingDir }); } catch (e) {}
-                }
-            }
-            res.json({ success: true });
-        } catch (error) {
-            console.error('Discard error:', error);
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    // Git Commit
-    this.app.post('/api/git/commit', async (req, res) => {
-        try {
-            const { message } = req.body;
-            if (!message) throw new Error('Commit message is required');
-            const safeMessage = message.replace(/"/g, '\\"');
-            await execAsync(`git commit -m "${safeMessage}"`, { cwd: req.workingDir });
-            res.json({ success: true });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    // Get Diff
-    this.app.get('/api/git/diff', async (req, res) => {
-      try {
-        const file = req.query.file;
-        const type = req.query.type || 'working';
-
-        let cmd = '';
-        if (type === 'staged') {
-            cmd = file ? `git diff --cached -- "${file}"` : `git diff --cached`;
-        } else {
-             if (file) {
-                 try {
-                     const filePath = path.join(req.workingDir, file);
-                     if (await fs.pathExists(filePath)) {
-                         const stat = await fs.stat(filePath);
-                         if (stat.isDirectory()) return res.json({ diff: '' });
-                     }
-                 } catch (e) {}
-                 const { stdout: isUntracked } = await execAsync(`git ls-files --others --exclude-standard "${file}"`, { cwd: req.workingDir });
-                 if (isUntracked.trim()) {
-                     const content = await fs.readFile(path.join(req.workingDir, file), 'utf8');
-                     let fakeDiff = `diff --git a/${file} b/${file}\nnew file mode 100644\n--- /dev/null\n+++ b/${file}\n@@ -0,0 +1,${content.split('\n').length} @@\n`;
-                     content.split('\n').forEach(l => fakeDiff += `+${l}\n`);
-                     return res.json({ diff: fakeDiff });
-                 }
-                 cmd = `git diff -- "${file}"`;
-            } else {
-                 cmd = `git diff`;
-            }
-        }
-        const { stdout } = await execAsync(cmd, { cwd: req.workingDir, maxBuffer: 20 * 1024 * 1024 });
-        res.json({ diff: stdout });
-      } catch (error) {
-        console.error(chalk.red('❌ [GIT DIFF] Error:'), error.message);
-        res.json({ diff: '', error: error.message });
-      }
-    });
-
-    // --- TERMINAL LOG API ---
-
-    // Get terminal logs
-    this.app.get('/api/terminal/:termId/logs', (req, res) => {
-        try {
-            const { termId } = req.params;
-            const logs = terminalManager.getLogBuffer(termId);
-            
-            res.json({ 
-                termId,
-                logs, 
-                totalLines: logs.length 
-            });
-        } catch (error) {
-            console.error(chalk.red('❌ [TERMINAL LOGS] Error:'), error.message);
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    // Analyze terminal logs
-    this.app.post('/api/terminal/:termId/analyze', (req, res) => {
-        try {
-            const { termId } = req.params;
-            const analysis = terminalManager.analyzeLogBuffer(termId);
-            
-            res.json({ 
-                termId,
-                ...analysis
-            });
-        } catch (error) {
-            console.error(chalk.red('❌ [TERMINAL ANALYZE] Error:'), error.message);
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    // --- SAVED COMMANDS API ---
-
-    // Load saved commands
-    this.app.get('/api/commands/load', async (req, res) => {
-        try {
-            const commandsFile = path.join(req.workingDir, '.vg', 'commands.json');
-            
-            if (!await fs.pathExists(commandsFile)) {
-                return res.json({ commands: [] });
-            }
-
-            const data = await fs.readJson(commandsFile);
-            res.json({ commands: data.commands || [] });
-        } catch (error) {
-            console.error(chalk.red('❌ [COMMANDS LOAD] Error:'), error.message);
-            res.json({ commands: [] });
-        }
-    });
-
-    // Save commands
-    this.app.post('/api/commands/save', async (req, res) => {
-        try {
-            const { commands } = req.body;
-            if (!Array.isArray(commands)) {
-                return res.status(400).json({ error: 'commands must be an array' });
-            }
-
-            const vgDir = path.join(req.workingDir, '.vg');
-            await fs.ensureDir(vgDir);
-
-            const commandsFile = path.join(vgDir, 'commands.json');
-            await fs.writeJson(commandsFile, { commands }, { spaces: 2 });
-
-            console.log(chalk.green(`✓ Saved ${commands.length} commands`));
-            res.json({ success: true, count: commands.length });
-        } catch (error) {
-            console.error(chalk.red('❌ [COMMANDS SAVE] Error:'), error.message);
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    // --- TREE STATE API ---
-
-    // Save tree state (excluded paths)
-    this.app.post('/api/tree-state/save', async (req, res) => {
-        try {
-            const { excludedPaths } = req.body;
-            if (!Array.isArray(excludedPaths)) {
-                return res.status(400).json({ error: 'excludedPaths must be an array' });
-            }
-
-            // Create .vg directory if it doesn't exist
-            const vgDir = path.join(req.workingDir, '.vg');
-            await fs.ensureDir(vgDir);
-
-            // Save state to .vg/tree-state.json
-            const stateFile = path.join(vgDir, 'tree-state.json');
-            await fs.writeJson(stateFile, { excludedPaths }, { spaces: 2 });
-
-            console.log(chalk.green(`✓ Saved tree state: ${excludedPaths.length} excluded items`));
-            res.json({ success: true, count: excludedPaths.length });
-        } catch (error) {
-            console.error(chalk.red('❌ [TREE STATE SAVE] Error:'), error.message);
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    // Load tree state
-    this.app.get('/api/tree-state/load', async (req, res) => {
-        try {
-            const stateFile = path.join(req.workingDir, '.vg', 'tree-state.json');
-            
-            // Check if state file exists
-            if (!await fs.pathExists(stateFile)) {
-                return res.json({ excludedPaths: [] });
-            }
-
-            // Read and return state
-            const state = await fs.readJson(stateFile);
-            res.json({ excludedPaths: state.excludedPaths || [] });
-        } catch (error) {
-            console.error(chalk.red('❌ [TREE STATE LOAD] Error:'), error.message);
-            // Return empty state on error instead of failing
-            res.json({ excludedPaths: [] });
-        }
-    });
-
-    // --- GENERAL API ---
-
+    // Analyze API
     this.app.post('/api/analyze', async (req, res) => {
         const { path: projectPath, options = {}, specificFiles } = req.body;
-        if (!projectPath) return res.status(400).json({ error: 'Missing path' });
         const resolvedPath = path.resolve(req.workingDir, projectPath);
-        if (!await fs.pathExists(resolvedPath)) return res.status(404).json({ error: 'Path not found' });
         const scanner = new FileScanner(resolvedPath, {
           extensions: options.extensions ? options.extensions.split(',') : undefined,
           includeHidden: options.includeHidden
@@ -523,54 +136,119 @@ class ApiServer {
         res.send(content);
     });
 
-    this.app.get('/api/info', async (req, res) => {
-        const projectPath = req.query.path || '.';
-        const resolvedPath = path.resolve(req.workingDir, projectPath);
-        const detector = new ProjectDetector(resolvedPath);
-        const projectInfo = await detector.detectAll();
-        const scanner = new FileScanner(resolvedPath);
-        const scanResult = await scanner.scanProject();
-        res.json({ path: resolvedPath, primaryType: projectInfo.primary, stats: { totalFiles: scanResult.files.length } });
+    // --- PROJECT MANAGEMENT APIS (FIXED) ---
+    
+    // List all projects
+    this.app.get('/api/projects', (req, res) => {
+      try {
+        const projects = this.projectManager.getAllProjects();
+        const activeProject = this.projectManager.getActiveProject();
+        res.json({ projects, activeProjectId: activeProject ? activeProject.id : null, totalProjects: projects.length });
+      } catch (error) { res.status(500).json({ error: error.message }); }
     });
 
-    this.app.get('/api/structure', async (req, res) => {
-        const projectPath = req.query.path || '.';
-        const resolvedPath = path.resolve(req.workingDir, projectPath);
-        const scanner = new FileScanner(resolvedPath);
-        const scanResult = await scanner.scanProject();
-        const tokenManager = new TokenManager();
-        const enrichedTree = tokenManager.analyzeTree(scanResult.tree, scanResult.files);
-        res.json({ path: resolvedPath, structure: enrichedTree });
+    // Register new project (Required for join)
+    this.app.post('/api/projects/register', (req, res) => {
+      try {
+        const { workingDir, name } = req.body;
+        if (!workingDir) return res.status(400).json({ error: 'Missing workingDir' });
+
+        const projectId = this.projectManager.registerProject(workingDir);
+        const projects = this.projectManager.getAllProjects();
+
+        this.io.emit('project:registered', { projectId, name: name || path.basename(workingDir) });
+
+        res.json({ success: true, projectId, totalProjects: projects.length });
+      } catch (error) { res.status(500).json({ error: error.message }); }
     });
 
-    this.app.post('/api/execute', async (req, res) => {
-        const { bash } = req.body;
-        const executor = new BashExecutor(req.workingDir);
-        const result = await executor.execute(bash);
-        res.status(result.success ? 200 : 400).json(result);
+    // Switch active project
+    this.app.post('/api/projects/switch', (req, res) => {
+      try {
+        const { projectId } = req.body;
+        const success = this.projectManager.switchProject(projectId);
+        if (success) {
+          const activeProject = this.projectManager.getActiveProject();
+          this.io.emit('project:switched', { projectId, projectName: activeProject.name });
+          res.json({ success: true, project: activeProject });
+        } else res.status(404).json({ error: 'Project not found' });
+      } catch (error) { res.status(500).json({ error: error.message }); }
+    });
+
+    // Remove project
+    this.app.delete('/api/projects/:id', (req, res) => {
+      try {
+        const projectId = req.params.id;
+        this.projectManager.removeProject(projectId);
+        this.io.emit('project:removed', { projectId });
+        res.json({ success: true });
+      } catch (error) { res.status(500).json({ error: error.message }); }
+    });
+
+    // Git
+    this.app.get('/api/git/status', async (req, res) => {
+        try {
+            const { stdout } = await execAsync('git status --porcelain -u', { cwd: req.workingDir });
+            const staged = [], unstaged = [], untracked = [];
+            stdout.split('\n').filter(l=>l).forEach(line => {
+                const x = line[0], y = line[1], path = line.substring(3);
+                if (x !== ' ' && x !== '?') staged.push({ path, status: x });
+                if (y !== ' ') (x === '?' && y === '?') ? untracked.push({ path, status: 'U' }) : unstaged.push({ path, status: y });
+            });
+            res.json({ staged, changes: [...unstaged, ...untracked] });
+        } catch (error) { res.status(500).json({ error: error.message }); }
+    });
+
+    // Tree State API
+    this.app.post('/api/tree-state/save', async (req, res) => {
+        try {
+            const { excludedPaths } = req.body;
+            const vgDir = path.join(req.workingDir, '.vg');
+            await fs.ensureDir(vgDir);
+            await fs.writeJson(path.join(vgDir, 'tree-state.json'), { excludedPaths }, { spaces: 2 });
+            res.json({ success: true, count: excludedPaths.length });
+        } catch (error) { res.status(500).json({ error: error.message }); }
+    });
+
+    this.app.get('/api/tree-state/load', async (req, res) => {
+        try {
+            const stateFile = path.join(req.workingDir, '.vg', 'tree-state.json');
+            if (!await fs.pathExists(stateFile)) return res.json({ excludedPaths: [] });
+            const data = await fs.readJson(stateFile);
+            res.json({ excludedPaths: data.excludedPaths || [] });
+        } catch (error) { res.status(500).json({ error: error.message }); }
+    });
+
+    // Commands
+    this.app.get('/api/commands/load', async (req, res) => {
+        try {
+            const commandsFile = path.join(req.workingDir, '.vg', 'commands.json');
+            if (!await fs.pathExists(commandsFile)) return res.json({ commands: [] });
+            const data = await fs.readJson(commandsFile);
+            res.json({ commands: data.commands || [] });
+        } catch (error) { res.status(500).json({ error: error.message }); }
+    });
+
+    this.app.post('/api/commands/save', async (req, res) => {
+        try {
+            const { commands } = req.body;
+            const vgDir = path.join(req.workingDir, '.vg');
+            await fs.ensureDir(vgDir);
+            await fs.writeJson(path.join(vgDir, 'commands.json'), { commands }, { spaces: 2 });
+            res.json({ success: true, count: commands.length });
+        } catch (error) { res.status(500).json({ error: error.message }); }
+    });
+
+    this.app.get('/api/extension-path', (req, res) => {
+      try {
+        const extensionPath = path.join(__dirname, 'views', 'vg-coder');
+        res.json({ path: extensionPath, exists: fs.existsSync(extensionPath) });
+      } catch (error) { res.status(500).json({ error: error.message }); }
     });
     
-    this.app.delete('/api/clean', async (req, res) => {
-        await fs.remove(path.resolve(req.body.output));
-        res.json({ success: true });
-    });
-
-    // Shutdown server endpoint
     this.app.post('/api/shutdown', async (req, res) => {
-        try {
-            console.log(chalk.yellow('\n🛑 Shutdown requested via API...'));
-            
-            // Send response first
-            res.json({ success: true, message: 'Server shutting down...' });
-            
-            // Give time for response to be sent
-            setTimeout(async () => {
-                await this.stop();
-                process.exit(0);
-            }, 500);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        res.json({ success: true });
+        setTimeout(async () => { await this.stop(); process.exit(0); }, 500);
     });
   }
 
@@ -579,7 +257,6 @@ class ApiServer {
         const tryPort = (port) => {
             const onError = (e) => {
                 if (e.code === 'EADDRINUSE') {
-                    console.log(chalk.yellow(`⚠️  Port ${port} is busy, trying ${port + 1}...`));
                     this.httpServer.close();
                     tryPort(port + 1);
                 } else {
@@ -587,46 +264,22 @@ class ApiServer {
                     reject(e);
                 }
             };
-
             this.httpServer.once('error', onError);
-
             this.server = this.httpServer.listen(port, () => {
                 this.httpServer.removeListener('error', onError);
-                
-                // Update actual port
                 this.port = this.server.address().port;
-
-                const projectName = path.basename(this.workingDir);
-                const startTime = new Date().toLocaleString();
-                
-                console.log(chalk.green('\n──────────────────────────────────────────────────'));
-                console.log(`🚀 ${chalk.bold('VG Coder Server')}    ${chalk.green('● Online')}`);
-                console.log(chalk.gray('──────────────────────────────────────────────────'));
-                console.log(`📁 Project:   ${chalk.cyan(projectName)}`);
-                console.log(`⏰ Started:   ${chalk.yellow(startTime)}`);
-                console.log(`📡 URL:       ${chalk.blue(`http://localhost:${this.port}`)}`);
-                console.log(chalk.green('──────────────────────────────────────────────────\n'));
-                
+                console.log(chalk.green(`🚀 Server Online: http://localhost:${this.port}`));
+                console.log(chalk.blue(`📦 Dist served at: http://localhost:${this.port}/dist`));
                 resolve();
             });
         };
-
         tryPort(this.port);
     });
   }
 
   async stop() {
-    console.log(chalk.yellow('Stopping server...'));
-    
-    // Release leader lock
     await this.projectManager.releaseLock();
-    
-    // Close server
-    if (this.server) {
-      this.server.close();
-    }
-    
-    console.log(chalk.green('✓ Server stopped'));
+    if (this.server) this.server.close();
   }
 }
 

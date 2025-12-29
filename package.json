@@ -16,8 +16,9 @@
     "dev": "nodemon src/index.js",
     "build:extension": "cd vetgo-auto && npm run build",
     "build:copy": "node scripts/build.js",
-    "build": "node scripts/build.js",
-    "push": "npm run build && npm pack && npm publish"
+    "build": "npm run build:inject && npm run install:local",
+    "push": "npm run build && npm pack && npm publish",
+    "build:inject": "gulp"
   },
   "keywords": [
     "cli",
@@ -40,22 +41,32 @@
     "cors": "^2.8.5",
     "directory-tree": "^3.5.1",
     "express": "^4.18.2",
-    "fs-extra": "^11.2.0",
     "highlight.js": "^11.9.0",
     "ignore": "^5.3.0",
     "node-pty": "^1.1.0",
     "ora": "^5.4.1",
     "path": "^0.12.7",
     "socket.io": "^4.7.2",
-    "socket.io-client": "^4.7.2",
+    "socket.io-client": "^4.8.3",
     "tiktoken": "^1.0.10",
-    "vg-coder-cli": "^2.0.15"
+    "vg-coder-cli": "^2.0.15",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",
     "adm-zip": "^0.5.10",
+    "fs-extra": "^11.3.3",
+    "gulp": "^5.0.1",
+    "gulp-clean-css": "^4.3.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-htmlmin": "^5.0.1",
+    "gulp-replace": "^1.1.4",
+    "gulp-terser": "^2.1.0",
     "jest": "^29.7.0",
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "webpack": "^5.104.1",
+    "webpack-stream": "^7.0.0"
   },
   "engines": {
     "node": ">=16.0.0"

@@ -1,40 +1,44 @@
 import { API_BASE } from '../config.js';
-import { showToast } from '../utils.js';
+import { showToast, getById } from '../utils.js';
 
 let editor = null;
-let models = new Map(); // Map<filePath, { model: ITextModel, viewState: object }>
+let models = new Map();
 let isMonacoLoaded = false;
 
-// Cấu hình đường dẫn cho AMD Loader của Monaco
 export function initMonaco() {
-    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
+    if (typeof require !== 'undefined' && require.config) {
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
+    }
 }
 
-/**
- * Đảm bảo Editor đã được khởi tạo
- */
 async function ensureEditor() {
     if (editor) return editor;
 
     return new Promise((resolve) => {
-        require(['vs/editor/editor.main'], function () {
-            const container = document.getElementById('monaco-container');
+        const amdRequire = window.require;
+        
+        if (!amdRequire) {
+            console.error('Monaco Loader not found');
+            return;
+        }
+
+        amdRequire(['vs/editor/editor.main'], function () {
+            const container = getById('monaco-container');
+            if (!container) return;
             
-            // Xác định theme dựa trên theme hiện tại của web
             const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'vs-dark' : 'vs';
 
             editor = monaco.editor.create(container, {
                 value: '',
                 language: 'plaintext',
                 theme: currentTheme,
-                automaticLayout: true, // Tự động resize
+                automaticLayout: true,
                 minimap: { enabled: true },
                 fontSize: 13,
                 fontFamily: 'Menlo, Monaco, "Courier New", monospace',
                 scrollBeyondLastLine: false,
             });
 
-            // Lắng nghe phím tắt Ctrl+S / Cmd+S để lưu
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
                 saveCurrentFile();
             });
@@ -45,13 +49,10 @@ async function ensureEditor() {
     });
 }
 
-/**
- * Mở file vào Editor
- */
 export async function openFileInMonaco(path) {
     const editorInstance = await ensureEditor();
+    if (!editorInstance) return;
 
-    // 1. Nếu Model đã tồn tại trong bộ nhớ -> Dùng lại
     if (models.has(path)) {
         const stored = models.get(path);
         editorInstance.setModel(stored.model);
@@ -62,22 +63,14 @@ export async function openFileInMonaco(path) {
         return;
     }
 
-    // 2. Nếu chưa -> Fetch nội dung từ Server
     try {
         const res = await fetch(`${API_BASE}/api/read-file?path=${encodeURIComponent(path)}`);
         const data = await res.json();
 
         if (res.ok) {
-            // Xác định ngôn ngữ từ extension
             const language = getLanguageFromPath(path);
-            
-            // Tạo Model mới
             const newModel = monaco.editor.createModel(data.content, language, monaco.Uri.file(path));
-            
-            // Lưu vào cache
             models.set(path, { model: newModel, viewState: null });
-            
-            // Gán vào Editor
             editorInstance.setModel(newModel);
         } else {
             showToast(`Error opening file: ${data.error}`, 'error');
@@ -87,9 +80,6 @@ export async function openFileInMonaco(path) {
     }
 }
 
-/**
- * Lưu trạng thái View (Scroll, Cursor) trước khi chuyển tab
- */
 export function saveViewState(path) {
     if (editor && models.has(path)) {
         const viewState = editor.saveViewState();
@@ -99,35 +89,26 @@ export function saveViewState(path) {
     }
 }
 
-/**
- * Giải phóng Model khi đóng Tab
- */
 export function disposeModel(path) {
     if (models.has(path)) {
         const stored = models.get(path);
-        stored.model.dispose(); // Quan trọng: Tránh memory leak
+        stored.model.dispose();
         models.delete(path);
     }
 }
 
-/**
- * Cập nhật Theme cho Monaco khi web đổi theme
- */
 export function updateMonacoTheme(theme) {
     if (editor) {
         monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs');
     }
 }
 
-/**
- * Lưu file hiện tại
- */
 async function saveCurrentFile() {
     const model = editor.getModel();
     if (!model) return;
 
     const content = model.getValue();
-    const filePath = model.uri.fsPath; // Lấy path từ URI
+    const filePath = model.uri.fsPath;
 
     try {
         const res = await fetch(`${API_BASE}/api/save-file`, {
@@ -146,7 +127,6 @@ async function saveCurrentFile() {
     }
 }
 
-// Helper: Map extension to Monaco Language
 function getLanguageFromPath(path) {
     const ext = path.split('.').pop().toLowerCase();
     const map = {

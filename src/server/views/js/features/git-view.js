@@ -1,23 +1,23 @@
 import { getGitStatus, getGitDiff, stageFile, unstageFile, commitChanges, discardChange } from '../api.js';
-import { showToast } from '../utils.js';
-
-export function initGitView() {
-    const toggleBtn = document.getElementById('git-view-toggle');
-    const refreshBtn = document.getElementById('git-refresh-btn');
-    
-    if (toggleBtn) toggleBtn.addEventListener('click', toggleGitMode);
-    if (refreshBtn) refreshBtn.addEventListener('click', loadGitData);
-}
+import { showToast, getById, qsa } from '../utils.js';
 
 let isGitMode = false;
 let currentStaged = [];
 let currentChanges = [];
 
+export function initGitView() {
+    const toggleBtn = getById('git-view-toggle');
+    const refreshBtn = getById('git-refresh-btn');
+    
+    if (toggleBtn) toggleBtn.addEventListener('click', toggleGitMode);
+    if (refreshBtn) refreshBtn.addEventListener('click', loadGitData);
+}
+
 async function toggleGitMode() {
-    const gitContainer = document.getElementById('git-view-container');
-    const toggleBtn = document.getElementById('git-view-toggle');
-    const refreshBtn = document.getElementById('git-refresh-btn');
-    const toggleText = document.getElementById('git-toggle-text');
+    const gitContainer = getById('git-view-container');
+    const toggleBtn = getById('git-view-toggle');
+    const refreshBtn = getById('git-refresh-btn');
+    const toggleText = getById('git-toggle-text');
 
     isGitMode = !isGitMode;
 
@@ -36,9 +36,8 @@ async function toggleGitMode() {
 }
 
 async function loadGitData() {
-    const container = document.getElementById('git-view-container');
+    const container = getById('git-view-container');
     
-    // Initial Structure if empty
     if (!container.querySelector('.git-sidebar')) {
         container.innerHTML = `
             <div class="git-sidebar">
@@ -77,34 +76,28 @@ async function loadGitData() {
             </div>
         `;
         
-        // Bind Actions
-        document.getElementById('stage-all').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            await handleStage('*');
-        });
-        document.getElementById('unstage-all').addEventListener('click', async (e) => {
-             e.stopPropagation();
-             await handleUnstage('*');
-        });
-        document.getElementById('discard-all').addEventListener('click', async (e) => {
-             e.stopPropagation();
-             await handleDiscard('*');
-        });
-        
-        // Commit Actions
-        const commitBtn = document.getElementById('git-commit-btn');
-        const commitInput = document.getElementById('git-commit-message');
-        
-        commitBtn.addEventListener('click', handleCommit);
-        commitInput.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                handleCommit();
-            }
-        });
+        setTimeout(() => {
+            const stageAll = getById('stage-all');
+            const unstageAll = getById('unstage-all');
+            const discardAll = getById('discard-all');
+            const commitBtn = getById('git-commit-btn');
+            const commitInput = getById('git-commit-message');
+
+            if(stageAll) stageAll.addEventListener('click', async (e) => { e.stopPropagation(); await handleStage('*'); });
+            if(unstageAll) unstageAll.addEventListener('click', async (e) => { e.stopPropagation(); await handleUnstage('*'); });
+            if(discardAll) discardAll.addEventListener('click', async (e) => { e.stopPropagation(); await handleDiscard('*'); });
+            
+            if(commitBtn) commitBtn.addEventListener('click', handleCommit);
+            if(commitInput) commitInput.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCommit();
+                }
+            });
+        }, 0);
     }
 
-    const refreshBtn = document.getElementById('git-refresh-btn');
+    const refreshBtn = getById('git-refresh-btn');
     if(refreshBtn) refreshBtn.disabled = true;
 
     try {
@@ -120,9 +113,9 @@ async function loadGitData() {
 }
 
 async function handleCommit() {
-    const input = document.getElementById('git-commit-message');
+    const input = getById('git-commit-message');
     const message = input.value.trim();
-    const btn = document.getElementById('git-commit-btn');
+    const btn = getById('git-commit-btn');
 
     if (!message) {
         showToast('Please enter a commit message', 'error');
@@ -152,30 +145,34 @@ async function handleCommit() {
 }
 
 function renderTrees() {
-    // 1. Render Staged
-    const treeStaged = document.getElementById('tree-staged');
-    document.getElementById('badge-staged').textContent = currentStaged.length;
-    document.getElementById('unstage-all').style.display = currentStaged.length > 0 ? 'block' : 'none';
-    treeStaged.innerHTML = '';
+    const treeStaged = getById('tree-staged');
+    const badgeStaged = getById('badge-staged');
+    const unstageAll = getById('unstage-all');
     
-    if (currentStaged.length > 0) {
-        const rootStaged = buildFileTree(currentStaged);
-        renderTreeNodes(rootStaged, treeStaged, 'staged', 0);
+    if (badgeStaged) badgeStaged.textContent = currentStaged.length;
+    if (unstageAll) unstageAll.style.display = currentStaged.length > 0 ? 'block' : 'none';
+    if (treeStaged) {
+        treeStaged.innerHTML = '';
+        if (currentStaged.length > 0) {
+            const rootStaged = buildFileTree(currentStaged);
+            renderTreeNodes(rootStaged, treeStaged, 'staged', 0);
+        }
     }
 
-    // 2. Render Changes
-    const treeChanges = document.getElementById('tree-changes');
-    document.getElementById('badge-changes').textContent = currentChanges.length;
-    document.getElementById('discard-all').style.display = currentChanges.length > 0 ? 'block' : 'none';
-    treeChanges.innerHTML = '';
-    
-    if (currentChanges.length > 0) {
-        const rootChanges = buildFileTree(currentChanges);
-        renderTreeNodes(rootChanges, treeChanges, 'changes', 0);
+    const treeChanges = getById('tree-changes');
+    const badgeChanges = getById('badge-changes');
+    const discardAll = getById('discard-all');
+
+    if (badgeChanges) badgeChanges.textContent = currentChanges.length;
+    if (discardAll) discardAll.style.display = currentChanges.length > 0 ? 'block' : 'none';
+    if (treeChanges) {
+        treeChanges.innerHTML = '';
+        if (currentChanges.length > 0) {
+            const rootChanges = buildFileTree(currentChanges);
+            renderTreeNodes(rootChanges, treeChanges, 'changes', 0);
+        }
     }
 }
-
-// --- TREE LOGIC ---
 
 function buildFileTree(files) {
     const root = {};
@@ -210,18 +207,15 @@ function renderTreeNodes(nodes, container, type, depth) {
         const li = document.createElement('li');
         li.className = 'git-tree-node';
 
-        // --- CONTENT ROW ---
         const content = document.createElement('div');
         content.className = 'git-tree-content';
         content.style.paddingLeft = (depth * 16 + 8) + 'px';
 
-        // Arrow
         const arrow = document.createElement('span');
         arrow.className = 'git-arrow';
         arrow.textContent = isFolder ? '▼' : '';
         content.appendChild(arrow);
 
-        // Icon
         const iconSpan = document.createElement('span');
         iconSpan.className = 'git-icon';
         if (isFolder) {
@@ -233,18 +227,15 @@ function renderTreeNodes(nodes, container, type, depth) {
         }
         content.appendChild(iconSpan);
 
-        // Label
         const label = document.createElement('span');
         label.className = isFolder ? 'git-label git-dir-label' : 'git-label git-file-label';
         label.textContent = node.name;
         content.appendChild(label);
 
-        // Actions
         if (!isFolder && node.fileData) {
             const actions = document.createElement('div');
             actions.className = 'git-actions';
             
-            // Discard Button (Only for Changes)
             if (type === 'changes') {
                 const discardBtn = document.createElement('button');
                 discardBtn.className = 'git-btn-action destructive';
@@ -254,7 +245,6 @@ function renderTreeNodes(nodes, container, type, depth) {
                 actions.appendChild(discardBtn);
             }
 
-            // Stage/Unstage Button
             const btn = document.createElement('button');
             btn.className = 'git-btn-action';
             if (type === 'staged') {
@@ -270,13 +260,12 @@ function renderTreeNodes(nodes, container, type, depth) {
             content.appendChild(actions);
         }
 
-        // Click Handler
         content.addEventListener('click', (e) => {
             e.stopPropagation();
             if (isFolder) {
                 li.classList.toggle('collapsed');
             } else {
-                document.querySelectorAll('.git-tree-content').forEach(el => el.classList.remove('selected'));
+                qsa('.git-tree-content').forEach(el => el.classList.remove('selected'));
                 content.classList.add('selected');
                 loadDiffView(node.fileData.path, type);
             }
@@ -284,7 +273,6 @@ function renderTreeNodes(nodes, container, type, depth) {
 
         li.appendChild(content);
 
-        // --- CHILDREN ---
         if (isFolder) {
             const ul = document.createElement('ul');
             renderTreeNodes(node.children, ul, type, depth + 1);
@@ -302,8 +290,6 @@ function getStatusIcon(status) {
     if(status === 'R') return 'R';
     return '?';
 }
-
-// --- ACTIONS ---
 
 async function handleStage(path) {
     try {
@@ -341,11 +327,9 @@ async function handleDiscard(path) {
 }
 
 async function loadDiffView(filePath, type) {
-    const viewer = document.getElementById('git-diff-viewer');
+    const viewer = getById('git-diff-viewer');
     viewer.innerHTML = '<div class="git-empty-state">Loading diff...</div>';
     
-    // SAFE CHECK FOR UI LIBRARY
-    // We check window.Diff2HtmlUI first (standard for bundles)
     const UIConstructor = window.Diff2HtmlUI;
 
     if (!UIConstructor) {

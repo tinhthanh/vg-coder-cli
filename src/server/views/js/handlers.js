@@ -1,21 +1,14 @@
-// Event Handlers & Business Logic
-import { SYSTEM_PROMPT } from './config.js';
+import { SYSTEM_PROMPT, API_BASE } from './config.js';
 import { analyzeProject, executeScript, copyToClipboard, readFromClipboard } from './api.js';
-import { showToast, showLoading, resetButton, showResponse, showCopiedState } from './utils.js';
-// Import dedicated feature handlers
-import { handleStructureView, handleToggleFolder, handleCheckboxChange, handleCopySelected } from './features/structure.js';
+import { showToast, showLoading, resetButton, showResponse, showCopiedState, getById } from './utils.js';
 
 let lastAnalyzeResult = null;
 
-// ==========================================
-// SYSTEM PROMPT HANDLERS
-// ==========================================
-
 export function toggleSystemPrompt() {
-    const content = document.getElementById('system-prompt-content');
-    const icon = document.getElementById('toggle-icon');
-    content.classList.toggle('open');
-    icon.classList.toggle('open');
+    const content = getById('system-prompt-content');
+    const icon = getById('toggle-icon');
+    if(content) content.classList.toggle('open');
+    if(icon) icon.classList.toggle('open');
 }
 
 export function copySystemPromptFromHeader(event) {
@@ -33,8 +26,8 @@ export function copySystemPromptFromHeader(event) {
 
 export function copySystemPrompt(event) {
     const copyBtn = event.target.closest('.btn-copy');
-    const copyIcon = document.getElementById('copy-icon');
-    const copyText = document.getElementById('copy-text');
+    const copyIcon = getById('copy-icon');
+    const copyText = getById('copy-text');
 
     navigator.clipboard.writeText(SYSTEM_PROMPT).then(() => {
         showCopiedState(copyBtn, copyIcon, copyText, '📋', 'Copy System Prompt');
@@ -42,13 +35,12 @@ export function copySystemPrompt(event) {
     }).catch(err => showToast('Lỗi copy: ' + err.message, 'error'));
 }
 
-// ==========================================
-// ANALYZE HANDLERS
-// ==========================================
-
 export async function testAnalyze(event) {
     const btn = event.target.closest('.btn') || event.target.closest('.btn-icon-head');
-    const path = document.getElementById('analyze-path').value;
+    const pathInput = getById('analyze-path');
+    if (!pathInput) return;
+    
+    const path = pathInput.value;
 
     showLoading(btn, btn.innerHTML);
     try {
@@ -78,11 +70,12 @@ export async function testAnalyze(event) {
 
 export async function copyAnalyzeResult(event) {
     const copyBtn = event.target.closest('.btn-copy');
-    const copyIcon = document.getElementById('analyze-copy-icon');
-    const copyText = document.getElementById('analyze-copy-text');
+    const copyIcon = getById('analyze-copy-icon');
+    const copyText = getById('analyze-copy-text');
+    const pathInput = getById('analyze-path');
 
-    if (!lastAnalyzeResult) {
-        const path = document.getElementById('analyze-path').value;
+    if (!lastAnalyzeResult && pathInput) {
+        const path = pathInput.value;
         showLoading(copyBtn, copyBtn.innerHTML);
         try {
             lastAnalyzeResult = await analyzeProject(path);
@@ -103,13 +96,11 @@ export async function copyAnalyzeResult(event) {
     }
 }
 
-// ==========================================
-// EXECUTE HANDLERS
-// ==========================================
-
 export async function testExecute(event) {
     const btn = event.target.closest('.btn');
-    const bashInput = document.getElementById('execute-bash');
+    const bashInput = getById('execute-bash');
+    if (!bashInput) return;
+    
     const bash = bashInput.value;
 
     if (!bash.trim()) {
@@ -132,7 +123,8 @@ export async function testExecute(event) {
 
 export async function executeFromClipboard(event) {
     const btn = event.target.closest('.btn');
-    const bashInput = document.getElementById('execute-bash');
+    const bashInput = getById('execute-bash');
+    if (!bashInput) return;
 
     showLoading(btn, btn.innerHTML);
     try {
@@ -163,10 +155,6 @@ export async function executeFromClipboard(event) {
     resetButton(btn);
 }
 
-// ==========================================
-// EXPORT TO WINDOW (GLOBAL)
-// ==========================================
-
 window.toggleSystemPrompt = toggleSystemPrompt;
 window.copySystemPrompt = copySystemPrompt;
 window.copySystemPromptFromHeader = copySystemPromptFromHeader;
@@ -174,9 +162,3 @@ window.testAnalyze = testAnalyze;
 window.copyAnalyzeResult = copyAnalyzeResult;
 window.testExecute = testExecute;
 window.executeFromClipboard = executeFromClipboard;
-
-// Map Structure handlers from feature module to window
-window.testStructure = handleStructureView;
-window.toggleFolder = handleToggleFolder;
-window.handleCheckboxChange = handleCheckboxChange;
-window.copySelectedStructure = handleCopySelected;

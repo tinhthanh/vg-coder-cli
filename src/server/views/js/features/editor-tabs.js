@@ -1,50 +1,44 @@
 import { openFileInMonaco, saveViewState, disposeModel } from './monaco-manager.js';
+import { getById, qsa, qs } from '../utils.js';
 
-let activeTabs = []; // Array of { path, name, icon }
-let currentPath = 'ai-assistant'; // Default
+let activeTabs = [];
+let currentPath = null; // Default to null (empty editor)
 
 export function initEditorTabs() {
     renderTabs();
 }
 
 export async function openFileTab(path, name, icon = '📄') {
-    // 1. Ẩn AI, hiện Monaco
+    // Luôn hiển thị code view
     toggleViewMode('code');
 
-    // 2. Lưu state tab cũ
-    if (currentPath && currentPath !== 'ai-assistant' && currentPath !== path) {
+    if (currentPath && currentPath !== path) {
         saveViewState(currentPath);
     }
 
-    // 3. Logic Tabs Array
     const existingTab = activeTabs.find(t => t.path === path);
     if (!existingTab) {
         activeTabs.push({ path, name, icon });
         renderTabs();
     }
     
-    // 4. Update UI
     currentPath = path;
     updateTabUI();
 
-    // 5. Open in Monaco
     await openFileInMonaco(path);
 }
 
 export function switchTab(path) {
-    if (currentPath && currentPath !== 'ai-assistant') {
+    if (currentPath) {
         saveViewState(currentPath);
     }
 
     currentPath = path;
     updateTabUI();
-
-    if (path === 'ai-assistant') {
-        toggleViewMode('ai');
-    } else {
-        toggleViewMode('code');
-        openFileInMonaco(path);
-    }
+    
+    // Luôn mở code mode
+    toggleViewMode('code');
+    openFileInMonaco(path);
 }
 
 export function closeTab(event, path) {
@@ -61,15 +55,18 @@ export function closeTab(event, path) {
             const nextTab = activeTabs[activeTabs.length - 1];
             switchTab(nextTab.path);
         } else {
-            switchTab('ai-assistant');
+            currentPath = null;
+            updateTabUI();
+            // Clear editor content or show welcome message
+            const monacoContainer = getById('monaco-container');
+            if (monacoContainer) monacoContainer.innerHTML = ''; 
         }
     }
     renderTabs();
 }
 
 function renderTabs() {
-    // Chỉ render các file tabs vào container con
-    const container = document.getElementById('file-tabs-container');
+    const container = getById('file-tabs-container');
     if (!container) return;
     
     let html = '';
@@ -91,13 +88,8 @@ function renderTabs() {
 }
 
 function updateTabUI() {
-    // 1. Update Static AI Tab
-    const aiTab = document.getElementById('ai-tab');
-    if (currentPath === 'ai-assistant') aiTab.classList.add('active');
-    else aiTab.classList.remove('active');
-
-    // 2. Update Dynamic Tabs
-    const fileTabs = document.querySelectorAll('#file-tabs-container .tab-item');
+    // Không cần update AI tab nữa vì nó đã bị xóa
+    const fileTabs = qsa('#file-tabs-container .tab-item');
     fileTabs.forEach(el => {
         if (el.dataset.path === currentPath) el.classList.add('active');
         else el.classList.remove('active');
@@ -105,19 +97,12 @@ function updateTabUI() {
 }
 
 function toggleViewMode(mode) {
-    const aiContainer = document.querySelector('.ai-iframe-container');
-    const monacoContainer = document.getElementById('monaco-container');
-
-    if (mode === 'code') {
-        aiContainer.classList.add('view-mode-hidden');
-        monacoContainer.classList.remove('view-mode-hidden');
-    } else {
-        aiContainer.classList.remove('view-mode-hidden');
-        monacoContainer.classList.add('view-mode-hidden');
-    }
+    // Hàm này giờ chỉ còn tác dụng đảm bảo monaco visible
+    // vì iframe container đã bị xóa
+    const monacoContainer = getById('monaco-container');
+    if(monacoContainer) monacoContainer.classList.remove('view-mode-hidden');
 }
 
-// Export global helpers
 window.switchTab = switchTab;
 window.closeTab = closeTab;
 window.openFileTab = openFileTab;

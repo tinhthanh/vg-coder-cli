@@ -42,8 +42,6 @@ export async function getStructure(path) {
     return await res.json();
 }
 
-// --- Git API Wrappers ---
-
 export async function getGitStatus() {
     const res = await fetch(`${API_BASE}/api/git/status`);
     if (!res.ok) throw new Error('Failed to fetch status');
@@ -100,8 +98,6 @@ export async function commitChanges(message) {
     return true;
 }
 
-// --- Tree State API ---
-
 export async function saveTreeState(excludedPaths) {
     const res = await fetch(`${API_BASE}/api/tree-state/save`, {
         method: 'POST',
@@ -124,27 +120,11 @@ export async function loadTreeState() {
     return await res.json();
 }
 
-// ------------------------
-
-export async function copyAsFile(filename, content) {
-    const blob = new Blob([content], { type: "application/octet-stream" });
-    const item = new ClipboardItem({
-        [blob.type]: blob
-    }, {
-        type: "application/octet-stream",
-        presentationStyle: "attachment",
-        name: filename
-    });
-    await navigator.clipboard.write([item]);
-}
-
 export async function copyToClipboard(text) {
     try {
-        const blob = new Blob([text], { type: 'text/plain' });
-        const item = new ClipboardItem({ 'text/plain': blob });
-        await navigator.clipboard.write([item]);
-    } catch (err) {
         await navigator.clipboard.writeText(text);
+    } catch (err) {
+        throw new Error('Clipboard write failed');
     }
 }
 
