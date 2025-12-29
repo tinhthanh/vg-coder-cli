@@ -30,13 +30,20 @@ vg-coder-cli-*.tgz
 
 # VG internal
 .vg/
+vetgo-auto/
+
+# Build and development tools
+gulpfile.js
+change.sh
 
 # Documentation (keep README.md, remove others if not needed)
 DEVELOPMENT.md
 SYSTEM_PROMPT.md
+ARCHITECTURE.md
+.vgignore
 
 # Do NOT ignore these - needed for published package:
-# - src/
+# - src/ (entry point in package.json)
 # - bin/
 # - scripts/postinstall.js
 # - package.json
