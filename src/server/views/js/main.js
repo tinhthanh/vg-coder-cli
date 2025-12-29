@@ -1,6 +1,6 @@
 import { API_BASE, SYSTEM_PROMPT } from './config.js';
 import { checkHealth } from './api.js';
-import './handlers.js'; 
+import { initEventHandlers } from './handlers.js'; 
 import { showToast, getById, setRoot, qs } from './utils.js';
 import { initGitView } from './features/git-view.js';
 import { initTerminal } from './features/terminal.js';
@@ -25,6 +25,9 @@ export async function initMain() {
         initTheme();
         loadExtensionPath();
         
+        // Initialize event handlers FIRST (before bubble which dispatches events)
+        initEventHandlers();
+        
         initGitView();
         initTerminal();
         initEditorTabs();
@@ -32,7 +35,7 @@ export async function initMain() {
         initSavedCommands();
         await initProjectSwitcher();
         
-        // Init Bubble
+        // Init Bubble (will use event protocol)
         initBubble();
 
         console.log('✅ VG Coder: Initialization Complete');

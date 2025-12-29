@@ -1,8 +1,43 @@
 import { SYSTEM_PROMPT, API_BASE } from './config.js';
 import { analyzeProject, executeScript, copyToClipboard, readFromClipboard } from './api.js';
 import { showToast, showLoading, resetButton, showResponse, showCopiedState, getById } from './utils.js';
+import { globalDispatcher, EVENT_TYPES } from './event-protocol.js';
 
 let lastAnalyzeResult = null;
+
+/**
+ * Initialize event handlers for bubble menu features
+ * This creates the bridge between UI events and handler functions
+ */
+export function initEventHandlers() {
+    // Paste & Run from Clipboard
+    globalDispatcher.on(EVENT_TYPES.PASTE_RUN, async (event) => {
+        console.log('[Handlers] Paste & Run event received:', event);
+        await executeFromClipboard();
+    });
+
+    // New Terminal
+    globalDispatcher.on(EVENT_TYPES.TERMINAL_NEW, (event) => {
+        console.log('[Handlers] New Terminal event received:', event);
+        if (typeof window.createNewTerminal === 'function') {
+            window.createNewTerminal();
+        } else {
+            showToast('Terminal feature not available', 'error');
+        }
+    });
+
+    // Terminal Execute (for future use)
+    globalDispatcher.on(EVENT_TYPES.TERMINAL_EXECUTE, (event) => {
+        console.log('[Handlers] Terminal Execute event received:', event);
+        const { command, terminalId } = event.payload || {};
+        if (command) {
+            // TODO: Implement terminal execute logic
+            console.log(`Execute in terminal ${terminalId}: ${command}`);
+        }
+    });
+
+    console.log('[Handlers] Event handlers initialized');
+}
 
 export function toggleSystemPrompt() {
     const content = getById('system-prompt-content');
@@ -122,16 +157,16 @@ export async function testExecute(event) {
 }
 
 export async function executeFromClipboard(event) {
-    const btn = event.target.closest('.btn');
+    const btn = event?.target?.closest('.btn');
     const bashInput = getById('execute-bash');
     if (!bashInput) return;
 
-    showLoading(btn, btn.innerHTML);
+    if (btn) showLoading(btn, btn.innerHTML);
     try {
         const clipboardText = await readFromClipboard();
         if (!clipboardText || !clipboardText.trim()) {
             showToast('Clipboard trống!', 'error');
-            resetButton(btn);
+            if (btn) resetButton(btn);
             return;
         }
         bashInput.value = clipboardText;
@@ -152,7 +187,7 @@ export async function executeFromClipboard(event) {
             showToast('Lỗi: ' + err.message, 'error');
         }
     }
-    resetButton(btn);
+    if (btn) resetButton(btn);
 }
 
 window.toggleSystemPrompt = toggleSystemPrompt;

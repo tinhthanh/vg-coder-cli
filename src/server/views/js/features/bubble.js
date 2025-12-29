@@ -1,21 +1,29 @@
 import { getById, showToast } from '../utils.js';
-import { executeFromClipboard } from '../handlers.js';
+import { globalDispatcher } from '../event-protocol.js';
+import { featureRegistry } from './bubble-features/index.js';
 
 export function initBubble() {
     const bubble = getById('vg-bubble');
     const appRoot = getById('vg-app-root');
-    const quickPasteBtn = getById('quick-paste-run');
+    const bubbleMenu = bubble?.querySelector('.vg-bubble-menu');
 
     if (!bubble || !appRoot) return;
+
+    // --- RENDER FEATURES DYNAMICALLY ---
+    if (bubbleMenu) {
+        renderFeatures(bubbleMenu);
+    }
 
     // --- DRAG LOGIC ---
     let isDragging = false;
     let startX, startY, initialLeft, initialTop;
     let hasMoved = false; // To distinguish click vs drag
+    let mouseDownTarget = null; // Track where mousedown started
 
     bubble.addEventListener('mousedown', (e) => {
         isDragging = true;
         hasMoved = false;
+        mouseDownTarget = e.target; // Remember click target
         startX = e.clientX;
         startY = e.clientY;
         
@@ -51,7 +59,7 @@ export function initBubble() {
         bubble.style.right = 'auto';
     });
 
-    root.addEventListener('mouseup', () => {
+    root.addEventListener('mouseup', (e) => {
         if (!isDragging) return;
         isDragging = false;
         bubble.style.cursor = 'grab';
@@ -59,18 +67,65 @@ export function initBubble() {
         if (hasMoved) {
             snapToEdge(bubble);
         } else {
-            // Click logic
-            toggleDashboard(appRoot);
+            // Click logic - only toggle if clicked on bubble icon, NOT on menu buttons
+            const clickedOnMenu = mouseDownTarget?.closest('.vg-bubble-menu');
+            const clickedOnIcon = mouseDownTarget?.closest('.vg-bubble-icon');
+            
+            // Only toggle dashboard if clicked on icon or bubble itself, but NOT on menu
+            if (!clickedOnMenu && (clickedOnIcon || mouseDownTarget === bubble)) {
+                toggleDashboard(appRoot);
+            }
         }
+        
+        // Reset
+        mouseDownTarget = null;
+    });
+}
+
+/**
+ * Render features dynamically from feature registry
+ */
+function renderFeatures(container) {
+    // Clear existing content
+    container.innerHTML = '';
+
+    // Get enabled features
+    const features = featureRegistry.getEnabledFeatures();
+
+    if (features.length === 0) {
+        console.warn('[Bubble] No enabled features found');
+        return;
+    }
+
+    // Render each feature
+    features.forEach(feature => {
+        const btn = document.createElement('button');
+        btn.id = `bubble-feature-${feature.id}`;
+        btn.className = 'bubble-action-btn';
+        btn.title = feature.tooltip;
+        btn.textContent = feature.label;
+
+        // Add click handler to dispatch event
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent toggling dashboard
+
+            // Dispatch event via event protocol
+            globalDispatcher.dispatch({
+                type: feature.eventType,
+                source: 'bubble-menu',
+                target: 'handlers',
+                payload: { 
+                    featureId: feature.id,
+                    label: feature.label,
+                },
+                context: 'shadow-root',
+            });
+        });
+
+        container.appendChild(btn);
     });
 
-    // --- QUICK ACTION ---
-    if (quickPasteBtn) {
-        quickPasteBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent toggling dashboard
-            executeFromClipboard();
-        });
-    }
+    console.log(`[Bubble] Rendered ${features.length} features`);
 }
 
 function snapToEdge(bubble) {
