@@ -30,10 +30,6 @@
   ],
   "author": "VG Coder",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/tinhthanh/vg-coder-cli.git"
-  },
   "dependencies": {
     "body-parser": "^1.20.2",
     "chalk": "^4.1.2",

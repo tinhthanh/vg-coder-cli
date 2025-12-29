@@ -40,12 +40,6 @@ npm install -g vg-coder-cli
 npm install vg-coder-cli
 ```
 
-### Từ Source
-```bash
-git clone https://github.com/tinhthanh/vg-coder-cli.git
-cd vg-coder-cli
-npm install
-```
 
 ## 🚀 Sử dụng
 
@@ -339,11 +333,6 @@ npm run push
 
 MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 
-## 🔗 Links
-
-- **GitHub**: https://github.com/tinhthanh/vg-coder-cli
-- **NPM**: https://www.npmjs.com/package/vg-coder-cli
-- **Issues**: https://github.com/tinhthanh/vg-coder-cli/issues
 
 ## 📊 Version History
 
