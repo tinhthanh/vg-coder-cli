@@ -87,7 +87,7 @@ gulp.task('build', gulp.series('css', 'html', 'js', function(done) {
 
     const wrapper = document.createElement('div');
     wrapper.id = 'vg-app-root';
-    wrapper.style.cssText = "pointer-events: auto; position: absolute; top: 0; left: 0; width: 0; height: 0; opacity: 0; overflow: hidden; background: var(--ios-bg, #F2F2F7); display: flex; flex-direction: column; transition: opacity 0.3s ease;";
+    wrapper.style.cssText = "pointer-events: auto; position: absolute; top: 0; left: 0; width: 0; height: 0; overflow: hidden; background: var(--ios-bg, #F2F2F7); display: flex; flex-direction: column; transition: opacity 0.3s ease;";
     wrapper.innerHTML = \`${htmlContent.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`;
     shadow.appendChild(wrapper);
 
