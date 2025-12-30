@@ -136,6 +136,25 @@ class ApiServer {
         res.send(content);
     });
 
+    // Count tokens using TokenManager (tiktoken)
+    this.app.post('/api/count-tokens', async (req, res) => {
+      try {
+        const { text } = req.body;
+        
+        if (!text) {
+          return res.json({ tokens: 0 });
+        }
+        
+        const tokenManager = new TokenManager();
+        const tokens = tokenManager.countTokens(text);
+        
+        res.json({ tokens });
+      } catch (error) {
+        console.error('Token counting error:', error);
+        res.status(500).json({ error: error.message, tokens: 0 });
+      }
+    });
+
     // --- PROJECT MANAGEMENT APIS (FIXED) ---
     
     // List all projects

@@ -144,3 +144,16 @@ export async function copyToClipboard(text) {
 export async function readFromClipboard() {
     return await navigator.clipboard.readText();
 }
+
+export async function countTokens(text) {
+    const res = await fetch(`${API_BASE}/api/count-tokens`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+    });
+    if (!res.ok) {
+        throw new Error('Failed to count tokens');
+    }
+    const data = await res.json();
+    return data.tokens || 0;
+}

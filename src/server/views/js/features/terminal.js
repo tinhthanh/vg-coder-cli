@@ -2,6 +2,7 @@ import { io } from 'socket.io-client';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { getById, showToast } from '../utils.js';
+import { countTokens as countTokensAPI } from '../api.js';
 
 let socket;
 const activeTerminals = new Map();
@@ -43,8 +44,12 @@ export function createNewTerminal() {
     // --- HTML STRUCTURE: Header + Body + Separate Input ---
     wrapper.innerHTML = `
         <div class="terminal-header" id="header-${termId}">
-            <div class="terminal-title-group"><span>>_</span> Terminal (${activeTerminals.size + 1})</div>
+            <div class="terminal-title-group">
+                <span>>_</span> Terminal (${activeTerminals.size + 1})
+                <span class="terminal-token-count" id="token-count-${termId}">0 tokens</span>
+            </div>
             <div class="terminal-controls">
+                <button class="term-btn copy-logs" onclick="window.copyTerminalLogs('${termId}')" title="Copy Logs">📋</button>
                 <button class="term-btn minimize" onclick="window.toggleMinimize('${termId}')">-</button>
                 <button class="term-btn maximize" onclick="window.toggleMaximize('${termId}')">+</button>
                 <button class="term-btn close" onclick="window.closeTerminal('${termId}')">x</button>
@@ -173,6 +178,73 @@ export function toggleMaximize(termId) {
     }
 }
 
+/**
+ * Copy terminal logs to clipboard with token count
+ */
+export async function copyTerminalLogs(termId) {
+    const session = activeTerminals.get(termId);
+    if (!session) {
+        showToast('Terminal not found', 'error');
+        return;
+    }
+    
+    try {
+        // Get terminal buffer content
+        const term = session.term;
+        const buffer = term.buffer.active;
+        const lines = [];
+        
+        // Extract all lines from buffer
+        for (let i = 0; i < buffer.length; i++) {
+            const line = buffer.getLine(i);
+            if (line) {
+                lines.push(line.translateToString(true));
+            }
+        }
+        
+        const logsText = lines.join('\n').trim();
+        
+        if (!logsText) {
+            showToast('No logs to copy', 'info');
+            return;
+        }
+        
+        // Copy to clipboard first (fast)
+        await navigator.clipboard.writeText(logsText);
+        
+        // Then count tokens via API (accurate)
+        try {
+            const tokens = await countTokensAPI(logsText);
+            
+            // Update token count display
+            updateTokenCount(termId, tokens);
+            
+            // Show toast
+            showToast(`📋 Copied ${tokens.toLocaleString()} tokens`, 'success');
+        } catch (err) {
+            console.error('[Terminal] Token counting error:', err);
+            // Still copied to clipboard, just show basic message
+            showToast('📋 Copied to clipboard', 'success');
+        }
+        
+    } catch (err) {
+        console.error('[Terminal] Copy logs error:', err);
+        showToast('Error copying logs', 'error');
+    }
+}
+
+/**
+ * Update token count display in terminal header
+ */
+function updateTokenCount(termId, tokens) {
+    const tokenEl = getById(`token-count-${termId}`);
+    if (tokenEl) {
+        tokenEl.textContent = `${tokens.toLocaleString()} tokens`;
+    }
+}
+
+// Remove old simple countTokens function - no longer needed
+
 function makeDraggable(element, handle) {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     handle.onmousedown = dragMouseDown;
@@ -206,3 +278,4 @@ window.createNewTerminal = createNewTerminal;
 window.closeTerminal = closeTerminalUI;
 window.toggleMinimize = toggleMinimize;
 window.toggleMaximize = toggleMaximize;
+window.copyTerminalLogs = copyTerminalLogs;
