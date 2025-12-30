@@ -10,6 +10,7 @@ import { initResizeHandler } from './features/resize.js';
 import { initSavedCommands } from './features/commands.js';
 import './features/structure.js';
 import { initBubble } from './features/bubble.js';
+import { initKeyboardShortcuts } from './features/keyboard-shortcuts.js';
 
 // NEW: Import Tool Window modules
 import { initToolWindow } from './features/tool-window.js';
@@ -46,6 +47,9 @@ export async function initMain() {
         
         // Init Bubble (will use event protocol)
         initBubble();
+        
+        // Initialize keyboard shortcuts (global hotkeys for Shadow DOM)
+        initKeyboardShortcuts();
 
         console.log('✅ VG Coder: Initialization Complete');
     } catch (e) {

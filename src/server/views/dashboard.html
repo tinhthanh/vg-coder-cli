@@ -130,6 +130,25 @@
         </div>
     </div>
     
+    <!-- Keyboard Shortcuts Help Overlay -->
+    <div id="shortcuts-help" class="vg-shortcuts-help">
+        <div class="vg-shortcuts-panel">
+            <div class="vg-shortcuts-header">
+                <div class="vg-shortcuts-title">
+                    <span>⌨️</span>
+                    <span>Keyboard Shortcuts</span>
+                </div>
+                <button class="vg-shortcuts-close" onclick="window.toggleShortcutsHelp()">×</button>
+            </div>
+            <div id="shortcuts-list" class="vg-shortcuts-list">
+                <!-- Shortcuts will be rendered dynamically by keyboard-shortcuts.js -->
+            </div>
+            <div class="vg-shortcuts-footer">
+                Press <kbd class="vg-shortcut-key">Cmd</kbd> + <kbd class="vg-shortcut-key">/</kbd> to toggle this help
+            </div>
+        </div>
+    </div>
+    
     <!-- Scripts injected via Gulp -->
 </body>
 </html>
