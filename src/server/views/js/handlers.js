@@ -170,7 +170,8 @@ export async function testExecute(event) {
 export async function executeFromClipboard(event) {
     const btn = event?.target?.closest('.btn');
     const bashInput = getById('execute-bash');
-    if (!bashInput) return;
+    
+    // Don't return early if bashInput is missing - it's optional when called from bubble menu
 
     if (btn) showLoading(btn, btn.innerHTML);
     try {
@@ -180,13 +181,25 @@ export async function executeFromClipboard(event) {
             if (btn) resetButton(btn);
             return;
         }
-        bashInput.value = clipboardText;
+        
+        // Only populate bashInput if it exists (when called from dashboard)
+        if (bashInput) {
+            bashInput.value = clipboardText;
+        }
+        
         const data = await executeScript(clipboardText);
-        showResponse('execute-response', data, !data.success);
+        
+        // Only show response in execute-response container if it exists
+        const responseContainer = getById('execute-response');
+        if (responseContainer) {
+            showResponse('execute-response', data, !data.success);
+        }
         
         if (data.success) {
             showToast('Thực thi OK', 'success');
-            bashInput.value = '';
+            if (bashInput) {
+                bashInput.value = '';
+            }
         } else {
             data.syntaxError ? showToast('Lỗi syntax script', 'error') : showToast('Thực thi thất bại', 'error');
         }
@@ -194,7 +207,10 @@ export async function executeFromClipboard(event) {
         if (err.name === 'NotAllowedError') {
             showToast('Không có quyền clipboard', 'error');
         } else {
-            showResponse('execute-response', { error: err.message }, true);
+            const responseContainer = getById('execute-response');
+            if (responseContainer) {
+                showResponse('execute-response', { error: err.message }, true);
+            }
             showToast('Lỗi: ' + err.message, 'error');
         }
     }
