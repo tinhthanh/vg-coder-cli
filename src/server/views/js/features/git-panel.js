@@ -403,6 +403,34 @@ async function handleCommit() {
 }
 
 /**
+ * Handle Push
+ */
+async function handlePush() {
+    const btn = getById('git-panel-push-btn');
+    
+    if (!btn) {
+        console.error('[GitPanel] Push button not found');
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '\u2191 Pushing...';
+    console.log('[GitPanel] Pushing to remote...');
+
+    try {
+        const result = await gitPush();
+        console.log('[GitPanel] Push successful:', result);
+        showToast(`Pushed to ${result.remote}/${result.branch}`, 'success');
+    } catch (err) {
+        console.error('[GitPanel] Push failed:', err);
+        showToast('Push failed: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '\u2191 Push';
+    }
+}
+
+/**
  * Open Git diff view in the overlay (uses existing git-view.js functionality)
  */
 async function openGitDiffView(filePath, type) {
