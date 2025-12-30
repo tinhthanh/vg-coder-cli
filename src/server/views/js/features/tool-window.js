@@ -23,7 +23,13 @@ export function initToolWindow() {
         });
     });
 
-    console.log('[ToolWindow] Initialized');
+    // Open Project panel by default after a short delay
+    // This ensures all panel listeners are registered first
+    setTimeout(() => {
+        togglePanel('project');
+    }, 100);
+
+    console.log('[ToolWindow] Initialized with Project panel active');
 }
 
 /**
