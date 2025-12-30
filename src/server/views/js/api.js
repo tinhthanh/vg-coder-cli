@@ -98,6 +98,19 @@ export async function commitChanges(message) {
     return true;
 }
 
+export async function gitPush(remote = 'origin', branch = null) {
+    const res = await fetch(`${API_BASE}/api/git/push`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ remote, branch })
+    });
+    if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Push failed');
+    }
+    return await res.json();
+}
+
 export async function saveTreeState(excludedPaths) {
     const res = await fetch(`${API_BASE}/api/tree-state/save`, {
         method: 'POST',

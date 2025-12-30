@@ -1,5 +1,5 @@
-import { getGitStatus, getGitDiff, stageFile, unstageFile, commitChanges, discardChange } from '../api.js';
-import { showToast, getById, qsa } from '../utils.js';
+import { getGitStatus, getGitDiff, stageFile, unstageFile, commitChanges, discardChange, gitPush } from '../api.js';
+ import { showToast, getById, qsa } from '../utils.js';
 
 let currentStaged = [];
 let currentChanges = [];
@@ -55,6 +55,12 @@ function renderGitPanel() {
 
     container.innerHTML = `
         <div class="git-panel-commit-section">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:11px;font-weight:bold;color:#8b949e;text-transform:uppercase;">Commit</span>
+                <button id="git-panel-push-btn" class="git-panel-push-btn" title="Push to remote">
+                    ↑ Push
+                </button>
+            </div>
             <textarea id="git-panel-commit-message" class="git-panel-commit-input" placeholder="Commit message (Ctrl+Enter to commit)" rows="2"></textarea>
             <button id="git-panel-commit-btn" class="git-panel-commit-btn">
                 <span>✓</span> Commit
@@ -93,12 +99,14 @@ function renderGitPanel() {
         const unstageAllBtn = getById('git-panel-unstage-all');
         const discardAllBtn = getById('git-panel-discard-all');
         const commitBtn = getById('git-panel-commit-btn');
+        const pushBtn = getById('git-panel-push-btn');
         const commitInput = getById('git-panel-commit-message');
 
         if (stageAllBtn) stageAllBtn.addEventListener('click', () => handleStage('*'));
         if (unstageAllBtn) unstageAllBtn.addEventListener('click', () => handleUnstage('*'));
         if (discardAllBtn) discardAllBtn.addEventListener('click', () => handleDiscard('*'));
         if (commitBtn) commitBtn.addEventListener('click', handleCommit);
+        if (pushBtn) pushBtn.addEventListener('click', handlePush);
         
         if (commitInput) {
             commitInput.addEventListener('keydown', (e) => {

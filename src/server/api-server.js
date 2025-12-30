@@ -325,6 +325,30 @@ class ApiServer {
       }
     });
 
+    // Git Push
+    this.app.post('/api/git/push', async (req, res) => {
+      try {
+        const { remote = 'origin', branch } = req.body;
+        
+        // Get current branch if not specified
+        let currentBranch = branch;
+        if (!currentBranch) {
+          const { stdout } = await execAsync('git rev-parse --abbrev-ref HEAD', { cwd: req.workingDir });
+          currentBranch = stdout.trim();
+        }
+        
+        // Push to remote
+        await execAsync(`git push ${remote} ${currentBranch}`, { 
+          cwd: req.workingDir,
+          timeout: 30000 // 30 seconds timeout
+        });
+        
+        res.json({ success: true, branch: currentBranch, remote });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     // Tree State API
     this.app.post('/api/tree-state/save', async (req, res) => {
         try {
