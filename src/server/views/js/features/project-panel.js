@@ -1,10 +1,15 @@
 import { getStructure, analyzeProject, copyToClipboard, saveTreeState as apiSaveTreeState, loadTreeState as apiLoadTreeState } from '../api.js';
 import { showToast, formatNumber, getById, qsa } from '../utils.js';
+import { API_BASE } from '../config.js';
+import { switchProject } from './project-switcher.js';
 
 let currentStructureData = null;
 let excludedPaths = new Set();
 let saveStateTimeout = null;
 let isInitialized = false;
+
+// Expose switchProject to window for selector onChange
+window.switchProject = switchProject;
 
 /**
  * Initialize Project Panel

@@ -8,7 +8,6 @@ import { initEditorTabs } from './features/editor-tabs.js';
 // REMOVED: initMonaco
 import { initResizeHandler } from './features/resize.js';
 import { initSavedCommands } from './features/commands.js';
-import { initProjectSwitcher } from './features/project-switcher.js';
 import './features/structure.js';
 import { initBubble } from './features/bubble.js';
 
@@ -43,7 +42,7 @@ export async function initMain() {
         initEditorTabs();
         initResizeHandler();
         initSavedCommands();
-        await initProjectSwitcher();
+        // initProjectSwitcher(); // REMOVED: project-panel.js now handles project polling
         
         // Init Bubble (will use event protocol)
         initBubble();
