@@ -238,6 +238,93 @@ class ApiServer {
       }
     });
 
+    // Git Stage
+    this.app.post('/api/git/stage', async (req, res) => {
+      try {
+        const { files } = req.body;
+        const fileList = Array.isArray(files) ? files : [files];
+        
+        if (fileList.includes('*')) {
+          await execAsync('git add -A', { cwd: req.workingDir });
+        } else {
+          for (const file of fileList) {
+            await execAsync(`git add "${file}"`, { cwd: req.workingDir });
+          }
+        }
+        
+        res.json({ success: true });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Git Unstage
+    this.app.post('/api/git/unstage', async (req, res) => {
+      try {
+        const { files } = req.body;
+        const fileList = Array.isArray(files) ? files : [files];
+        
+        if (fileList.includes('*')) {
+          await execAsync('git reset HEAD', { cwd: req.workingDir });
+        } else {
+          for (const file of fileList) {
+            await execAsync(`git reset HEAD "${file}"`, { cwd: req.workingDir });
+          }
+        }
+        
+        res.json({ success: true });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Git Commit
+    this.app.post('/api/git/commit', async (req, res) => {
+      try {
+        const { message } = req.body;
+        
+        if (!message || !message.trim()) {
+          return res.status(400).json({ error: 'Commit message is required' });
+        }
+        
+        await execAsync(`git commit -m "${message.replace(/"/g, '\\"')}"`, { cwd: req.workingDir });
+        res.json({ success: true });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Git Discard
+    this.app.post('/api/git/discard', async (req, res) => {
+      try {
+        const { files } = req.body;
+        const fileList = Array.isArray(files) ? files : [files];
+        
+        if (fileList.includes('*')) {
+          // Discard all changes
+          await execAsync('git checkout -- .', { cwd: req.workingDir });
+          // Clean untracked files
+          await execAsync('git clean -fd', { cwd: req.workingDir });
+        } else {
+          for (const file of fileList) {
+            // Check if file is tracked
+            try {
+              await execAsync(`git ls-files --error-unmatch "${file}"`, { cwd: req.workingDir });
+              // Tracked file - checkout
+              await execAsync(`git checkout -- "${file}"`, { cwd: req.workingDir });
+            } catch (e) {
+              // Untracked file - remove
+              await execAsync(`rm "${file}"`, { cwd: req.workingDir });
+            }
+          }
+        }
+        
+        res.json({ success: true });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     // Tree State API
     this.app.post('/api/tree-state/save', async (req, res) => {
         try {

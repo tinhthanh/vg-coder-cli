@@ -32,7 +32,6 @@
 
 /* Khu vực Actions bên phải */
 .tabs-actions {
-    display: flex;
     align-items: center;
     padding: 0 5px;
     background: #252526;
@@ -40,6 +39,7 @@
     border-left: 1px solid #1e1e1e;
     box-shadow: -5px 0 10px rgba(0,0,0,0.2); /* Tạo bóng đổ nhẹ ngăn cách */
     z-index: 5;
+   display: none;  /*  để trigger đóng view code change */
 }
 
 /* Style cho Tab Item */
