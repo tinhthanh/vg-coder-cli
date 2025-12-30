@@ -18,118 +18,6 @@
 
     <!-- MAIN DASHBOARD INTERFACE -->
     <div class="split-layout">
-        <div class="left-panel">
-
-            <div class="container">
-                <div class="header">
-                    <div class="header-top-row">
-                        <!-- <div class="header-left-group">
-                            <span class="status" id="status" style="font-size: 14px;">●</span>
-                            <div class="project-switcher">
-                                <select id="project-selector" class="project-selector" onchange="window.switchProject(this.value)" title="Switch Project">
-                                    <option value="">Loading...</option>
-                                </select>
-                                <span class="project-count" id="project-count">1 project</span>
-                            </div>
-                        </div> -->
-                        <!-- Header actions moved to tool-window-bar -->
-                    </div>
-                    <!-- <div class="header-bottom-row">
-                        <div class="project-meta" id="project-meta">...</div>
-                        <div id="project-name" style="display: none;"></div>
-                    </div> -->
-                </div>
-
-                <!-- Saved Commands -->
-                <div class="endpoint-card saved-commands-panel">
-                    <div class="saved-commands-header">
-                        <div class="saved-commands-title"><span class="command-icon-header">💾</span><span>Saved Commands</span></div>
-                        <div class="saved-commands-actions">
-                            <button class="btn-new-terminal" onclick="createNewTerminal()" title="New Terminal">🖥️</button>
-                            <button class="btn-add-command" onclick="openAddCommandModal()" title="Add Command">➕</button>
-                        </div>
-                    </div>
-                    <div class="saved-commands-content" id="saved-commands-content">
-                        <div id="commands-list" class="commands-list"></div>
-                        <div class="empty-state" id="commands-empty-state" style="display: none;">
-                            <p style="color: #888; text-align: center; padding: 15px 10px; font-size: 12px; margin: 0;">Click ➕ to add a command</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="system-prompt-card">
-                    <div class="system-prompt-header" onclick="toggleSystemPrompt()">
-                        <div class="header-title-group">
-                            <button class="btn-icon-head" onclick="copySystemPromptFromHeader(event)" title="Copy System Prompt">📋</button>
-                            <h2>System Prompt</h2>
-                        </div>
-                        <span class="toggle-icon" id="toggle-icon">▼</span>
-                    </div>
-                    <div class="system-prompt-content" id="system-prompt-content">
-                        <div class="prompt-text" id="prompt-text"></div>
-                        <button class="btn btn-copy" onclick="copySystemPrompt(event)">
-                            <span id="copy-icon">📋</span>
-                            <span id="copy-text">Copy System Prompt</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="endpoints">
-                    <!-- <div class="endpoint-card">
-                        <div class="endpoint-header">
-                            <div class="endpoint-title-group"><span class="method post">POST</span><span class="endpoint-path">/execute</span></div>
-                        </div>
-                        <div class="form-group">
-                            <textarea id="execute-bash" placeholder="mkdir -p src/test&#10;echo 'Hello' > src/test/hello.txt"></textarea>
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn" onclick="testExecute(event)"><span>▶️</span> Run</button>
-                            <button class="btn" onclick="executeFromClipboard(event)"><span>📋</span> Paste & Run</button>
-                        </div>
-                        <div class="response" id="execute-response"></div>
-                    </div> -->
-
-                    <!-- <div class="endpoint-card">
-                        <div class="endpoint-header">
-                            <div class="endpoint-title-group">
-                                <span class="method get" style="background: var(--ios-blue); color: white;">GET</span>
-                                <span class="endpoint-path">/structure</span>
-                            </div>
-                            <button class="btn-icon-head" onclick="copySelectedStructure(event)" title="Copy Selected">📋</button>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" id="structure-path" value="." placeholder="Project path">
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn" onclick="testStructure(event)"><span>🌳</span> View</button>
-                        </div>
-                        <div class="tree-container" id="structure-tree" style="display: none;">
-                            <div class="tree-header"><span>Tree</span><span class="tree-total-tokens" id="total-tokens-badge">0 tokens</span></div>
-                            <div class="tree-content" id="tree-content"></div>
-                        </div>
-                        <div class="response" id="structure-response" style="display: none;"></div>
-                    </div> -->
-
-                    <!-- <div class="endpoint-card">
-                        <div class="endpoint-header">
-                            <div class="endpoint-title-group"><span class="method post">POST</span><span class="endpoint-path">/analyze</span></div>
-                            <button class="btn-icon-head" onclick="testAnalyze(event)" title="Download Project Source">📥</button>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" id="analyze-path" value="." placeholder="Project path (e.g. .)">
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn btn-copy" onclick="copyAnalyzeResult(event)">
-                                <span id="analyze-copy-icon">📋</span>
-                                <span id="analyze-copy-text">Copy Text</span>
-                            </button>
-                        </div>
-                        <div class="response" id="analyze-response"></div>
-                    </div> -->
-                </div>
-                <div style="height: 50px;"></div>
-            </div>
-        </div>
         
         <!-- TOOL WINDOW BAR (IDE-Style Sidebar) -->
         <div id="tool-window-bar" class="tool-window-bar">
@@ -138,6 +26,9 @@
             </button>
             <button class="tool-window-icon" data-panel="git" data-tooltip="Git" title="Git">
                 🔀
+            </button>
+            <button class="tool-window-icon" data-panel="commands" data-tooltip="Commands" title="Saved Commands">
+                ⚡
             </button>
             
             <!-- Action Buttons at bottom -->
@@ -180,6 +71,22 @@
                 </div>
                 <div id="git-panel-content" class="tool-panel-content">
                     <!-- Git view will be rendered here by git-panel.js -->
+                </div>
+            </div>
+
+            <!-- Commands Panel -->
+            <div id="tool-panel-commands" class="tool-panel">
+                <div class="tool-panel-header">
+                    <div class="tool-panel-title">
+                        <span>⚡</span>
+                        <span>Commands</span>
+                    </div>
+                    <div class="tool-panel-actions">
+                        <button class="tool-panel-action-btn" onclick="window.closeToolPanels()" title="Close">✕</button>
+                    </div>
+                </div>
+                <div id="commands-panel-content" class="tool-panel-content">
+                    <!-- Content will be rendered by commands-panel.js -->
                 </div>
             </div>
         </div>

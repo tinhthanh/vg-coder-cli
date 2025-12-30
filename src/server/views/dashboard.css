@@ -47,7 +47,7 @@
 
 /* Main Layout */
 .split-layout { display: flex; height: 100%; width: 100%; flex-direction: row; }
-.left-panel { flex: 0 0 520px; height: 100%; overflow-y: auto; background: var(--ios-bg); border-right: 1px solid var(--ios-separator); padding: 15px; }
+.left-panel { flex: 0 0 100%; height: 100%; overflow-y: auto; background: var(--ios-bg); border-right: 1px solid var(--ios-separator); padding: 15px; }
 .right-panel { flex: 1; height: 100%; background: var(--ios-bg); display: flex; flex-direction: column; overflow: hidden; }
 
 /* Header & Meta */

@@ -1,10 +1,10 @@
 import { qs, getById } from '../utils.js';
 
 export function initResizeHandler() {
-    const leftPanel = qs('.left-panel');
+    const toolPanelContainer = getById('tool-panel-container');
     const handle = getById('resize-handler');
 
-    if (!leftPanel || !handle) {
+    if (!toolPanelContainer || !handle) {
         return;
     }
 
@@ -15,7 +15,7 @@ export function initResizeHandler() {
     handle.addEventListener('mousedown', (e) => {
         isResizing = true;
         startX = e.clientX;
-        startWidth = leftPanel.getBoundingClientRect().width;
+        startWidth = toolPanelContainer.getBoundingClientRect().width;
         
         document.body.classList.add('resizing');
         e.preventDefault();
@@ -27,13 +27,10 @@ export function initResizeHandler() {
         requestAnimationFrame(() => {
             const currentX = e.clientX;
             const diffX = currentX - startX;
-            const newWidth = Math.max(250, startWidth + diffX);
-            const maxWidth = window.innerWidth - 300;
-
-            if (newWidth < maxWidth) {
-                leftPanel.style.flex = `0 0 ${newWidth}px`;
-                leftPanel.style.width = `${newWidth}px`;
-            }
+            const newWidth = Math.max(250, Math.min(600, startWidth + diffX)); // Min 250px, Max 600px
+            
+            // Update width of tool-panel-container
+            toolPanelContainer.style.width = `${newWidth}px`;
         });
     });
 

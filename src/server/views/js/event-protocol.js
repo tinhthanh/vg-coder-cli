@@ -11,6 +11,7 @@ export const EVENT_TYPES = {
     TERMINAL_NEW: 'vg:terminal-new',
     TERMINAL_EXECUTE: 'vg:terminal-execute',
     FEATURE_TOGGLE: 'vg:feature-toggle',
+    COPY_PROMPT: 'vg:copy-prompt',
 };
 
 /**

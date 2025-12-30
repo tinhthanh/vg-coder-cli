@@ -36,6 +36,17 @@ export function initEventHandlers() {
         }
     });
 
+    // Copy System Prompt
+    globalDispatcher.on(EVENT_TYPES.COPY_PROMPT, async (event) => {
+        console.log('[Handlers] Copy Prompt event received:', event);
+        try {
+            await navigator.clipboard.writeText(SYSTEM_PROMPT);
+            showToast('📋 Copied System Prompt', 'success');
+        } catch (err) {
+            showToast('Failed to copy: ' + err.message, 'error');
+        }
+    });
+
     console.log('[Handlers] Event handlers initialized');
 }
 

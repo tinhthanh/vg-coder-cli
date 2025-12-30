@@ -1,0 +1,75 @@
+/* Commands Panel Styles */
+#commands-panel-content {
+    padding: 0;
+    background: #2B2D30;
+}
+
+[data-theme="light"] #commands-panel-content {
+    background: #FFFFFF;
+}
+
+.commands-panel-header {
+    padding: 12px;
+    border-bottom: 1px solid #1E1F22;
+    background: #2B2D30;
+    display: flex;
+    gap: 8px;
+}
+
+[data-theme="light"] .commands-panel-header {
+    background: #F7F7F7;
+    border-bottom: 1px solid #D1D1D1;
+}
+
+.commands-panel-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: #4E84E8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.15s ease;
+}
+
+.commands-panel-btn:hover {
+    background: #3A6FBF;
+}
+
+[data-theme="light"] .commands-panel-btn {
+    background: #007AFF;
+}
+
+[data-theme="light"] .commands-panel-btn:hover {
+    background: #0051D5;
+}
+
+/* Commands Content Area */
+.saved-commands-content {
+    padding: 0;
+}
+
+.commands-list {
+    padding: 8px;
+}
+
+.commands-empty-state {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.commands-empty-state p {
+    color: #868A8E;
+    font-size: 13px;
+    margin: 0;
+}
+
+[data-theme="light"] .commands-empty-state p {
+    color: #6E6E6E;
+}

@@ -117,9 +117,14 @@ export class FeatureRegistry {
 // Create singleton registry
 export const featureRegistry = new FeatureRegistry();
 
+// Import features
+import { CopyPromptFeature } from './copy-prompt-feature.js';
+
 // Register built-in features
 featureRegistry.register(PasteRunFeature);
 featureRegistry.register(TerminalFeature);
+featureRegistry.register(CopyPromptFeature);
 
 // Export for external registration
-export { PasteRunFeature, TerminalFeature };
+export { PasteRunFeature, TerminalFeature, CopyPromptFeature };
+

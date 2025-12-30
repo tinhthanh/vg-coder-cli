@@ -16,6 +16,7 @@ import { initBubble } from './features/bubble.js';
 import { initToolWindow } from './features/tool-window.js';
 import { initProjectPanel } from './features/project-panel.js';
 import { initGitPanel } from './features/git-panel.js';
+import { initCommandsPanel } from './features/commands-panel.js';
 
 export async function initMain() {
     console.log('VG Coder: Starting Main Logic...');
@@ -35,6 +36,7 @@ export async function initMain() {
         initToolWindow();
         initProjectPanel();
         initGitPanel();
+        initCommandsPanel();
         
         initGitView();
         initTerminal();
