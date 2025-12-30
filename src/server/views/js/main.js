@@ -24,8 +24,6 @@ export async function initMain() {
         const promptEl = getById('prompt-text');
         if (promptEl) promptEl.textContent = SYSTEM_PROMPT;
         
-        await checkServerStatus();
-        await loadProjectInfo();
 
         initTheme();
         loadExtensionPath();
@@ -54,11 +52,9 @@ export async function initMain() {
     }
 }
 
-// ... (Giữ nguyên các hàm helper khác: switchProject, loadProjectInfo, initTheme...)
 // Để ngắn gọn, tôi copy lại phần còn lại của main.js
 window.addEventListener('project-switched', async (event) => {
     const { projectId, projectName } = event.detail;
-    await loadProjectInfo();
     if (window.updateTerminalVisibility) window.updateTerminalVisibility(projectId);
     if (window.loadSavedCommands) await window.loadSavedCommands();
     const treeContainer = getById('structure-tree');
@@ -67,31 +63,6 @@ window.addEventListener('project-switched', async (event) => {
     if (treeContent) treeContent.innerHTML = '';
 });
 
-async function checkServerStatus() {
-    const statusEl = getById('status');
-    if (!statusEl) return;
-    const isHealthy = await checkHealth();
-    if (isHealthy) {
-        statusEl.textContent = '●';
-        statusEl.style.background = 'transparent';
-        statusEl.style.color = 'var(--ios-green)';
-    } else {
-        statusEl.textContent = '●';
-        statusEl.style.background = 'transparent';
-        statusEl.style.color = 'var(--ios-red)';
-    }
-}
-
-async function loadProjectInfo() {
-    try {
-        const res = await fetch(`${API_BASE}/api/info?path=.`);
-        const data = await res.json();
-        const projectNameEl = getById('project-name');
-        const projectMetaEl = getById('project-meta');
-        if (projectNameEl) projectNameEl.textContent = data.path.split(/[\\/]/).pop();
-        if (projectMetaEl) projectMetaEl.textContent = `${data.primaryType} • ${data.path}`;
-    } catch (err) {}
-}
 
 function initTheme() {
     const themeBtn = getById('theme-toggle');

@@ -90,6 +90,41 @@
     opacity: 1;
 }
 
+/* Tool Window Spacer - Pushes action buttons to bottom */
+.tool-window-spacer {
+    flex: 1;
+}
+
+/* Tool Window Action Buttons (Stop Server, Theme Toggle) */
+.tool-window-action-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 18px;
+    transition: background 0.15s ease, transform 0.1s ease;
+    background: transparent;
+    border: none;
+    color: #868A8E;
+}
+
+.tool-window-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #DFE1E5;
+}
+
+[data-theme="light"] .tool-window-action-btn:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: #000000;
+}
+
+.tool-window-action-btn:active {
+    transform: scale(0.95);
+}
+
 /* Tool Panel Container */
 .tool-panel-container {
     width: 0;
