@@ -49,6 +49,7 @@ export function createNewTerminal() {
                 <span class="terminal-token-count" id="token-count-${termId}">0 tokens</span>
             </div>
             <div class="terminal-controls">
+                <button class="term-btn clear-logs" onclick="window.clearTerminalLogs('${termId}')" title="Clear Logs">🗑️</button>
                 <button class="term-btn copy-logs" onclick="window.copyTerminalLogs('${termId}')" title="Copy Logs">📋</button>
                 <button class="term-btn minimize" onclick="window.toggleMinimize('${termId}')">-</button>
                 <button class="term-btn maximize" onclick="window.toggleMaximize('${termId}')">+</button>
@@ -245,6 +246,30 @@ function updateTokenCount(termId, tokens) {
 
 // Remove old simple countTokens function - no longer needed
 
+/**
+ * Clear terminal logs
+ */
+export function clearTerminalLogs(termId) {
+    const session = activeTerminals.get(termId);
+    if (!session) {
+        showToast('Terminal not found', 'error');
+        return;
+    }
+    
+    try {
+        // Clear xterm buffer
+        session.term.clear();
+        
+        // Reset token count
+        updateTokenCount(termId, 0);
+        
+        showToast('🗑️ Logs cleared', 'success');
+    } catch (err) {
+        console.error('[Terminal] Clear logs error:', err);
+        showToast('Error clearing logs', 'error');
+    }
+}
+
 function makeDraggable(element, handle) {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     handle.onmousedown = dragMouseDown;
@@ -279,3 +304,4 @@ window.closeTerminal = closeTerminalUI;
 window.toggleMinimize = toggleMinimize;
 window.toggleMaximize = toggleMaximize;
 window.copyTerminalLogs = copyTerminalLogs;
+window.clearTerminalLogs = clearTerminalLogs;
