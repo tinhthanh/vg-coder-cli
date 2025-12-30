@@ -1,0 +1,232 @@
+/* Tool Window Bar - IDE-Style Sidebar */
+.tool-window-bar {
+    width: 48px;
+    height: 100%;
+    background: #2B2D30;
+    border-right: 1px solid #1E1F22;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 4px;
+    flex-shrink: 0;
+    z-index: 100;
+}
+
+[data-theme="light"] .tool-window-bar {
+    background: #F2F2F2;
+    border-right: 1px solid #D1D1D1;
+}
+
+/* Tool Window Icon Buttons */
+.tool-window-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 18px;
+    transition: background 0.15s ease, transform 0.1s ease;
+    position: relative;
+    background: transparent;
+    border: none;
+    color: #868A8E;
+}
+
+.tool-window-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #DFE1E5;
+}
+
+[data-theme="light"] .tool-window-icon:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: #000000;
+}
+
+.tool-window-icon.active {
+    background: rgba(78, 132, 232, 0.2);
+    color: #4E84E8;
+}
+
+[data-theme="light"] .tool-window-icon.active {
+    background: rgba(0, 122, 255, 0.15);
+    color: #007AFF;
+}
+
+.tool-window-icon:active {
+    transform: scale(0.95);
+}
+
+/* Tooltip */
+.tool-window-icon::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 52px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #3C3F41;
+    color: #DFE1E5;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .tool-window-icon::after {
+    background: #FFFFFF;
+    color: #000000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tool-window-icon:hover::after {
+    opacity: 1;
+}
+
+/* Tool Panel Container */
+.tool-panel-container {
+    width: 0;
+    height: 100%;
+    background: #2B2D30;
+    border-right: 1px solid #1E1F22;
+    overflow: hidden;
+    transition: width 0.25s ease;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 99;
+}
+
+[data-theme="light"] .tool-panel-container {
+    background: #F7F7F7;
+    border-right: 1px solid #D1D1D1;
+}
+
+.tool-panel-container.expanded {
+    width: 320px;
+}
+
+/* Individual Tool Panel */
+.tool-panel {
+    width: 320px;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    background: #2B2D30;
+    color: #DFE1E5;
+}
+
+[data-theme="light"] .tool-panel {
+    background: #F7F7F7;
+    color: #000000;
+}
+
+.tool-panel.active {
+    display: flex;
+}
+
+/* Panel Header */
+.tool-panel-header {
+    height: 40px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #2B2D30;
+    border-bottom: 1px solid #1E1F22;
+    flex-shrink: 0;
+}
+
+[data-theme="light"] .tool-panel-header {
+    background: #F2F2F2;
+    border-bottom: 1px solid #D1D1D1;
+}
+
+.tool-panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #868A8E;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+[data-theme="light"] .tool-panel-title {
+    color: #6E6E6E;
+}
+
+.tool-panel-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.tool-panel-action-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: #868A8E;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: background 0.15s ease;
+}
+
+.tool-panel-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #DFE1E5;
+}
+
+[data-theme="light"] .tool-panel-action-btn:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: #000000;
+}
+
+/* Panel Content */
+.tool-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #2B2D30;
+}
+
+[data-theme="light"] .tool-panel-content {
+    background: #FFFFFF;
+}
+
+/* Custom Scrollbar for Panels */
+.tool-panel-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tool-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tool-panel-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.tool-panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .tool-panel-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .tool-panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}

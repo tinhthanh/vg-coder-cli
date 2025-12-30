@@ -1,0 +1,242 @@
+/* Project Panel Styles - IDE-Style */
+
+/* Override tool-panel-content for project-specific styling */
+#project-panel-content {
+    padding: 8px 0;
+}
+
+/* Project Tree Container */
+.project-tree-wrapper {
+    width: 100%;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 12px;
+    color: #DFE1E5;
+}
+
+[data-theme="light"] .project-tree-wrapper {
+    color: #000000;
+}
+
+/* Loading State */
+.project-loading {
+    padding: 20px;
+    text-align: center;
+    color: #868A8E;
+    font-size: 12px;
+}
+
+/* Empty State */
+.project-empty-state {
+    padding: 20px;
+    text-align: center;
+    color: #868A8E;
+    font-size: 12px;
+}
+
+/* Tree Structure */
+.project-tree-ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.project-tree-ul .project-tree-ul {
+    padding-left: 16px;
+}
+
+.project-tree-li {
+    margin: 0;
+    position: relative;
+}
+
+/* Tree Item Row */
+.project-tree-row {
+    display: flex;
+    align-items: center;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: background 0.1s ease;
+    line-height: 1.4;
+    min-height: 24px;
+}
+
+.project-tree-row:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .project-tree-row:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.project-tree-row.selected {
+    background: rgba(78, 132, 232, 0.2);
+}
+
+[data-theme="light"] .project-tree-row.selected {
+    background: rgba(0, 122, 255, 0.15);
+}
+
+/* Expand Arrow */
+.project-arrow {
+    display: inline-block;
+    width: 14px;
+    text-align: center;
+    font-size: 10px;
+    color: #868A8E;
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
+    margin-right: 2px;
+}
+
+.project-tree-li.collapsed > .project-tree-row .project-arrow {
+    transform: rotate(-90deg);
+}
+
+.project-tree-li:not(.has-children) .project-arrow {
+    visibility: hidden;
+}
+
+/* Checkbox */
+.project-checkbox {
+    margin-right: 6px;
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+    accent-color: #4E84E8;
+    flex-shrink: 0;
+}
+
+[data-theme="light"] .project-checkbox {
+    accent-color: #007AFF;
+}
+
+/* Icon */
+.project-icon {
+    margin-right: 6px;
+    font-size: 14px;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Name */
+.project-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8px;
+    color: #DFE1E5;
+    font-size: 12px;
+}
+
+[data-theme="light"] .project-name {
+    color: #000000;
+}
+
+.project-tree-row:hover .project-name {
+    color: #FFFFFF;
+}
+
+[data-theme="light"] .project-tree-row:hover .project-name {
+    color: #000000;
+}
+
+/* Token Badge */
+.project-token-badge {
+    font-size: 9px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-weight: 600;
+    min-width: 32px;
+    text-align: right;
+    flex-shrink: 0;
+    font-family: 'SF Mono', monospace;
+}
+
+.project-token-low {
+    color: #3fb950;
+}
+
+.project-token-med {
+    color: #d29922;
+}
+
+.project-token-high {
+    color: #f85149;
+}
+
+/* Collapsed state */
+.project-tree-li.collapsed > .project-tree-ul {
+    display: none;
+}
+
+/* Panel Actions Bar */
+.project-panel-actions-bar {
+    padding: 8px 12px;
+    border-bottom: 1px solid #1E1F22;
+    display: flex;
+    gap: 6px;
+    background: #2B2D30;
+}
+
+[data-theme="light"] .project-panel-actions-bar {
+    background: #F2F2F2;
+    border-bottom: 1px solid #D1D1D1;
+}
+
+.project-action-btn {
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid #1E1F22;
+    color: #868A8E;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 11px;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.project-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #4E84E8;
+    color: #DFE1E5;
+}
+
+[data-theme="light"] .project-action-btn {
+    border-color: #D1D1D1;
+}
+
+[data-theme="light"] .project-action-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: #007AFF;
+    color: #000000;
+}
+
+/* Token Summary */
+.project-token-summary {
+    padding: 6px 12px;
+    border-bottom: 1px solid #1E1F22;
+    font-size: 11px;
+    color: #868A8E;
+    background: #1E1F22;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+[data-theme="light"] .project-token-summary {
+    background: #E8E8E8;
+    border-bottom: 1px solid #D1D1D1;
+}
+
+.project-token-count {
+    font-weight: 600;
+    color: #4E84E8;
+}
+
+[data-theme="light"] .project-token-count {
+    color: #007AFF;
+}

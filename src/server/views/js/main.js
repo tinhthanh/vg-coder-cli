@@ -12,6 +12,11 @@ import { initProjectSwitcher } from './features/project-switcher.js';
 import './features/structure.js';
 import { initBubble } from './features/bubble.js';
 
+// NEW: Import Tool Window modules
+import { initToolWindow } from './features/tool-window.js';
+import { initProjectPanel } from './features/project-panel.js';
+import { initGitPanel } from './features/git-panel.js';
+
 export async function initMain() {
     console.log('VG Coder: Starting Main Logic...');
 
@@ -27,6 +32,11 @@ export async function initMain() {
         
         // Initialize event handlers FIRST (before bubble which dispatches events)
         initEventHandlers();
+        
+        // NEW: Initialize Tool Window system
+        initToolWindow();
+        initProjectPanel();
+        initGitPanel();
         
         initGitView();
         initTerminal();

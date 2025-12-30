@@ -29,18 +29,6 @@
     border-color: var(--ios-blue);
 }
 
-.git-refresh-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    border: 1px solid var(--ios-separator);
-    background: var(--ios-card);
-    color: var(--text-primary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
 
 .git-view-container {
     position: absolute;
@@ -57,73 +45,9 @@
 
 .git-view-container.active {
     display: flex;
-}
 
-/* --- SIDEBAR --- */
-.git-sidebar {
-    width: 300px;
-    min-width: 250px;
-    background: #0d1117;
-    border-right: 1px solid #30363d;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    color: #c9d1d9;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    user-select: none;
-}
 
-/* --- COMMIT SECTION --- */
-.git-commit-section {
-    padding: 10px;
-    border-bottom: 1px solid #30363d;
-    background: #0d1117;
-}
 
-.git-commit-input {
-    width: 100%;
-    background: #161b22;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
-    padding: 6px 8px;
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 13px;
-    resize: vertical;
-    min-height: 32px;
-    margin-bottom: 8px;
-}
-
-.git-commit-input:focus {
-    outline: 1px solid #58a6ff;
-    border-color: #58a6ff;
-}
-
-.git-commit-btn {
-    width: 100%;
-    background: #0078d4;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 2px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.git-commit-btn:hover {
-    background: #026ec1;
-}
-
-.git-commit-btn:disabled {
-    background: #30363d;
-    color: #8b949e;
-    cursor: not-allowed;
-}
 
 /* --- SECTIONS & TREE --- */
 .git-section {
