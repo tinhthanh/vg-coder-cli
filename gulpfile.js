@@ -51,6 +51,7 @@ gulp.task('html', function() {
 
 // 3. Bundle JS using Webpack
 let jsContent = '';
+let allChunks = []; // Collect all webpack chunks
 gulp.task('js', function() {
     return gulp.src(PATHS.entryJs)
     .pipe(webpack({
@@ -59,13 +60,27 @@ gulp.task('js', function() {
         resolve: { extensions: ['.js'] }
     }))
     .on('data', function(file) {
-        jsContent = file.contents.toString();
+        const content = file.contents.toString();
+        allChunks.push(content);
+        console.log(`[DEBUG] Captured chunk: ${file.basename} (${content.length} chars)`);
+        
+        // The main bundle.js is usually the first/largest one
+        if (file.basename === 'bundle.js' || content.length > jsContent.length) {
+            jsContent = content;
+        }
+    })
+    .on('end', function() {
+        // Concatenate ALL chunks for complete bundle
+        jsContent = allChunks.join('\n');
+        console.log(`[DEBUG] Total jsContent length: ${jsContent.length} characters`);
+        console.log(`[DEBUG] Total chunks collected: ${allChunks.length}`);
     });
 });
 
 // 4. Build Final Injector
 gulp.task('build', gulp.series('css', 'html', 'js', function(done) {
-    const finalScript = `
+    // Build the wrapper separately to avoid template string issues with large jsContent
+    const wrapperStart = `
 (function() {
     const CONTAINER_ID = 'vg-coder-shadow-host';
     if (document.getElementById(CONTAINER_ID)) {
@@ -92,18 +107,24 @@ gulp.task('build', gulp.series('css', 'html', 'js', function(done) {
     shadow.appendChild(wrapper);
 
     try {
-        ${jsContent}
+`;
+    
+    const wrapperEnd = `
     } catch (e) {
         console.error('VG Coder Start Error:', e);
     }
 })();
-    `;
+`;
+
+    // Concatenate parts without template string interpolation for jsContent
+    const finalScript = wrapperStart + jsContent + wrapperEnd;
 
     if (!fs.existsSync(PATHS.dist)) fs.mkdirSync(PATHS.dist);
     fs.writeFileSync(path.join(PATHS.dist, PATHS.outputFile), finalScript);
     
     console.log('--------------------------------------------------');
     console.log(`✅ Build Complete: ${path.join(PATHS.dist, PATHS.outputFile)}`);
+    console.log(`📦 Bundle Size: ${(finalScript.length / 1024 / 1024).toFixed(2)} MB`);
     console.log('--------------------------------------------------');
     done();
 }));
