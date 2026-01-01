@@ -235,7 +235,7 @@ export class ScriptInjector {
         console.log(`Attempting direct eval for ${actionType}`);
 
         // Create isolated function to avoid polluting global scope
-        const isolatedExecution = new Function('script', `
+        const isolatedExecution = new Function(`
           try {
             ${script}
             return true;
@@ -245,7 +245,7 @@ export class ScriptInjector {
           }
         `);
 
-        const success = isolatedExecution(script);
+        const success = isolatedExecution();
         resolve(success);
       } catch (error) {
         console.error('Eval injection failed:', error);

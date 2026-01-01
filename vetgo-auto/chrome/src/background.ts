@@ -156,9 +156,18 @@ chrome.runtime.onMessage.addListener((request, sender, respond) => {
           world: 'MAIN', // Execute in main world to access page's window object
           func: (scriptCode) => {
             try {
-              // Execute script in page context
-              const func = new Function(scriptCode);
-              func();
+              // Create script element and inject into DOM
+              // This avoids nested eval issues and executes in proper page context
+              const script = document.createElement('script');
+              script.textContent = scriptCode;
+              script.type = 'text/javascript';
+              
+              // Append to head or document element
+              const target = document.head || document.documentElement;
+              target.appendChild(script);
+              
+              // Clean up immediately after execution
+              script.remove();
             } catch (error) {
               console.error('Script execution error:', error);
             }

@@ -16,7 +16,7 @@
     "dev": "nodemon src/index.js",
     "build:extension": "cd vetgo-auto && npm run build",
     "build:copy": "node scripts/build.js",
-    "build": "npm run build:inject && npm run install:local",
+    "build": "npm run build:extension && npm run build:copy && npm run build:inject && npm run install:local",
     "push": "npm run build && npm pack && npm publish",
     "build:inject": "gulp"
   },

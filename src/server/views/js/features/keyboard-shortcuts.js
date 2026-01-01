@@ -112,10 +112,8 @@ function toggleDashboard() {
     
     if (isVisible) {
         appRoot.classList.remove('visible');
-        console.log('[Keyboard] Dashboard hidden');
     } else {
         appRoot.classList.add('visible');
-        console.log('[Keyboard] Dashboard shown');
     }
 }
 
@@ -132,7 +130,6 @@ function openGitPanel() {
     // First, make sure dashboard is visible
     if (!appRoot.classList.contains('visible')) {
         appRoot.classList.add('visible');
-        console.log('[Keyboard] Dashboard opened');
     }
     
     // Then activate Git panel using getRoot() to query in Shadow DOM
@@ -183,7 +180,6 @@ function handleKeyDown(event) {
     }
     
     const shortcutKey = getShortcutKey(event);
-    console.log('[Keyboard] Shortcut key detected:', shortcutKey);
     
     if (!shortcutKey) return;
     
@@ -191,7 +187,6 @@ function handleKeyDown(event) {
     const action = SHORTCUTS[shortcutKey];
     
     if (!action) {
-        console.log('[Keyboard] No action registered for:', shortcutKey);
         return;
     }
     
@@ -199,7 +194,6 @@ function handleKeyDown(event) {
     event.preventDefault();
     event.stopPropagation();
     
-    console.log(`[Keyboard] Shortcut triggered: ${shortcutKey} -> ${action}`);
     
     // Execute action
     switch (action) {
@@ -213,7 +207,7 @@ function handleKeyDown(event) {
             toggleShortcutsHelp();
             break;
         default:
-            console.warn(`[Keyboard] Unknown action: ${action}`);
+            return;
     }
 }
 
@@ -231,12 +225,10 @@ function toggleShortcutsHelp() {
     
     if (isVisible) {
         helpPanel.classList.remove('visible');
-        console.log('[Keyboard] Help panel hidden');
     } else {
         // Render shortcuts before showing
         renderHelpPanel();
         helpPanel.classList.add('visible');
-        console.log('[Keyboard] Help panel shown');
     }
 }
 

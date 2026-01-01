@@ -45,7 +45,7 @@ export function initProjectPanel() {
         if (getById('project-panel-selector')) {
             loadProjectsIntoSelector();
         }
-    }, 5000);
+    }, 30000);
 
     console.log('[ProjectPanel] Initialized with polling (Socket.IO not available in shadow DOM)');
 }
@@ -131,35 +131,27 @@ async function loadProjectsIntoSelector() {
 
     // Save current selection to preserve it
     const currentValue = selector.value;
-    console.log('[ProjectPanel] Current selected project:', currentValue);
-
+    
     try {
         const apiBase = window.API_BASE || 'http://localhost:6868';
-        console.log('[ProjectPanel] Fetching projects from:', `${apiBase}/api/projects`);
         
         const response = await fetch(`${apiBase}/api/projects`);
         const data = await response.json();
-        
-        console.log('[ProjectPanel] Received projects:', data);
         
         if (data.projects && data.projects.length > 0) {
             const options = data.projects.map(p => 
                 `<option value="${p.id}" ${p.isActive ? 'selected' : ''}>${p.name}</option>`
             ).join('');
             
-            console.log('[ProjectPanel] Updating selector with', data.projects.length, 'projects');
             selector.innerHTML = options;
             
             // IMPORTANT: Restore previous selection if it still exists
             // This prevents auto-switching when new projects join
             if (currentValue && data.projects.some(p => p.id === currentValue)) {
                 selector.value = currentValue;
-                console.log('[ProjectPanel] ✅ Restored previous selection:', currentValue);
             } else {
-                console.log('[ProjectPanel] ℹ️ Using active project from API:', data.activeProjectId);
             }
         } else {
-            console.warn('[ProjectPanel] No projects returned from API');
             selector.innerHTML = '<option value="">No projects</option>';
         }
     } catch (err) {
