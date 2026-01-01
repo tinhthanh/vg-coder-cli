@@ -1,6 +1,6 @@
 import { getById, qsa, showToast } from '../utils.js';
 import { getGitDiff } from '../api.js';
-import { Diff2HtmlUI } from 'diff2html/lib/ui/js/diff2html-ui';
+import { Diff2HtmlUI } from 'diff2html/lib-esm/src/ui/js/diff2html-ui';
 
 let isGitMode = false;
 

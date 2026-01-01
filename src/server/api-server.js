@@ -411,8 +411,21 @@ class ApiServer {
     this.app.get('/api/extension-path', (req, res) => {
       try {
         const extensionPath = path.join(__dirname, 'views', 'vg-coder');
-        res.json({ path: extensionPath, exists: fs.existsSync(extensionPath) });
+        res.json({ path:extensionPath, exists: fs.existsSync(extensionPath) });
       } catch (error) { res.status(500).json({ error: error.message }); }
+    });
+    
+    // Clipboard API - Read system clipboard from server-side
+    this.app.get('/api/clipboard', async (req, res) => {
+      try {
+        // Dynamically import clipboardy (ES module)
+        const clipboardy = await import('clipboardy');
+        const text = await clipboardy.default.read();
+        res.json({ success: true, text });
+      } catch (error) {
+        console.error('Clipboard read error:', error);
+        res.status(500).json({ success: false, error: error.message });
+      }
     });
     
     this.app.post('/api/shutdown', async (req, res) => {
