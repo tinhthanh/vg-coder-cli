@@ -189,7 +189,10 @@
     }
 
     console.log('📋 CDP Clicking More button...');
-    await window.vetgoCDPClick(moreBtn);
+    // trigger click body 
+    window.vetgoCDPClick(document.querySelector('body'));
+    moreBtn.click();
+    // await window.vetgoCDPClick(moreBtn);
     console.log('✅ More button clicked via CDP');
 
     // 4. Đợi menu render (Angular CDK overlay)
