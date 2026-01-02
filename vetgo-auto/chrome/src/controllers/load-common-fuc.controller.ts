@@ -2,6 +2,7 @@ import { getFirebaseDatabase } from './common.firebase';
 import { RealtimeDbCrud } from "./firebase-crud";
 import { EnvironmentStorageService } from "../utils/environment-storage.service";
 import { CLIPBOARD_HELPER_SCRIPT } from "../helpers/clipboard-helper";
+import { CDP_CLICK_HELPER_SCRIPT } from "../helpers/cdp-click-helper";
 
 const COMMON_FUC = 'COMMON-FUNC';
 
@@ -23,7 +24,7 @@ export module CommonFunc {
       firebaseCode = `console.log('empty...${COMMON_FUC}')`;
     }
     
-    // Always prepend clipboard helper to common functions
-    return CLIPBOARD_HELPER_SCRIPT + '\n' + firebaseCode;
+    // Always prepend helpers to common functions
+    return CLIPBOARD_HELPER_SCRIPT + '\n' + CDP_CLICK_HELPER_SCRIPT + '\n' + firebaseCode;
   }
 }

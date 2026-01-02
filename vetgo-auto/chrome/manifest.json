@@ -15,7 +15,9 @@
     "nativeMessaging",
     "downloads",
     "scripting",
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "clipboardRead",
+    "debugger"
   ],
   "host_permissions": [
     "<all_urls>"

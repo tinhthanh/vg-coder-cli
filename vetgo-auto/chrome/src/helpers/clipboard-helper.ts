@@ -1,17 +1,16 @@
 /**
  * Clipboard Helper
- * Provides clipboard read functionality for injected scripts
+ * Provides clipboard READ functionality for injected scripts
  * 
  * Architecture:
- * MAIN World (Page) -> HTTP API -> Node.js Server -> System Clipboard
- * This bypasses all browser security restrictions!
+ * - Read: MAIN World → HTTP API → Node.js Server → clipboardy.read()
+ * - Write: Handled by CDP clicks (see cdp-click-helper.ts)
  */
 
 export const CLIPBOARD_HELPER_SCRIPT = `
-// VetGo Clipboard Helper (API-based)
-// Calls server API to read clipboard, bypassing browser security
+// VetGo Clipboard Helper (Read-only via Server API)
 (function() {
-  // Function to read clipboard via server API
+  // ===== READ CLIPBOARD =====
   window.vetgoReadClipboard = function() {
     return fetch('http://localhost:6868/api/clipboard')
       .then(response => response.json())
@@ -23,7 +22,7 @@ export const CLIPBOARD_HELPER_SCRIPT = `
         }
       })
       .catch(error => {
-        console.error('Clipboard API error:', error);
+        console.error('Clipboard read error:', error);
         throw error;
       });
   };
@@ -31,6 +30,6 @@ export const CLIPBOARD_HELPER_SCRIPT = `
   // Alias for backward compatibility
   window.readClipboard = window.vetgoReadClipboard;
 
-  console.log('✅ VetGo Clipboard Helper loaded (Server API)');
+  console.log('✅ VetGo Clipboard Helper loaded (Server API Read)');
 })();
 `;

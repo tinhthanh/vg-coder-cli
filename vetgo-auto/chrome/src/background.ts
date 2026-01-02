@@ -148,6 +148,66 @@ chrome.runtime.onMessage.addListener((request, sender, respond) => {
       resolve(request);
       return;
     }
+    
+    if (request.action === 'CDP_CLICK') {
+      // Use Chrome DevTools Protocol to send REAL mouse clicks
+      const tabId = sender.tab?.id;
+      if (!tabId) {
+        resolve({ success: false, error: 'No tab ID' });
+        return;
+      }
+
+      const { x, y } = request;
+      
+      console.log(`📋 CDP: Clicking at (${x}, ${y}) on tab ${tabId}`);
+      
+      // Attach debugger
+      chrome.debugger.attach({ tabId }, '1.3', () => {
+        if (chrome.runtime.lastError) {
+          console.error('CDP attach error:', chrome.runtime.lastError);
+          resolve({ success: false, error: chrome.runtime.lastError.message });
+          return;
+        }
+
+        // Dispatch mouse events via CDP
+        const dispatchMouseEvent = (type: string, clickCount = 0) => {
+          return new Promise((resolveEvent) => {
+            chrome.debugger.sendCommand(
+              { tabId },
+              'Input.dispatchMouseEvent',
+              {
+                type,
+                x,
+                y,
+                button: 'left',
+                clickCount
+              },
+              () => resolveEvent(null)
+            );
+          });
+        };
+
+        // Sequence: mousePressed -> mouseReleased
+        Promise.resolve()
+          .then(() => dispatchMouseEvent('mousePressed', 1))
+          .then(() => new Promise(r => setTimeout(r, 50))) // Small delay
+          .then(() => dispatchMouseEvent('mouseReleased', 1))
+          .then(() => {
+            // Detach debugger
+            chrome.debugger.detach({ tabId }, () => {
+              console.log('✅ CDP click completed');
+              resolve({ success: true });
+            });
+          })
+          .catch((error) => {
+            chrome.debugger.detach({ tabId });
+            resolve({ success: false, error: error.message });
+          });
+      });
+      
+      return;
+    }
+    
     if (request.action === 'INJECT_SCRIPT') {
       // Inject script using chrome.scripting API to bypass CSP
       if (sender.tab && sender.tab.id) {

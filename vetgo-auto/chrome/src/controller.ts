@@ -109,3 +109,30 @@ const setupRemoveExtensionListener = async () => {
 // Setup remove extension listener
 setupRemoveExtensionListener();
 
+// Setup CDP click bridge
+// Listens for CDP click requests from MAIN world
+window.addEventListener('message', (event) => {
+  if (event.source !== window) return;
+  
+  if (event.data.type === 'VETGO_CDP_CLICK') {
+    const { x, y } = event.data;
+    console.log(`📋 Content script received CDP click request: (${x}, ${y})`);
+    
+    // Forward to background script
+    chrome.runtime.sendMessage(
+      { action: 'CDP_CLICK', x, y },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('❌ CDP click failed:', chrome.runtime.lastError);
+        } else if (response?.success) {
+          console.log('✅ CDP click successful');
+        } else {
+          console.error('❌ CDP click failed:', response?.error);
+        }
+      }
+    );
+  }
+});
+
+console.log('✅ VetGo CDP Click Bridge initialized');
+
