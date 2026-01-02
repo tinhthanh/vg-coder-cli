@@ -71,6 +71,49 @@
   }
 
   /**
+   * Tự động nhấn Skip khi AI Studio hiển thị dialog "Which response do you prefer?"
+   * @returns {Promise<void>}
+   */
+  async function autoSkipPreferenceVote() {
+    return new Promise((resolve) => {
+      const checkInterval = setInterval(() => {
+        // Tìm dialog inline preference voting
+        const preferenceDialog = document.querySelector('ms-inline-preference-vote-middleware');
+        
+        if (preferenceDialog) {
+          console.log('🔍 Phát hiện dialog "Which response do you prefer?"');
+          
+          // Tìm nút Skip
+          const skipButton = Array.from(preferenceDialog.querySelectorAll('button'))
+            .find(btn => btn.textContent.trim() === 'Skip');
+          
+          if (skipButton) {
+            console.log('⏭️ Đang nhấn nút Skip...');
+            skipButton.click();
+            emit('PREFERENCE_SKIPPED');
+            
+            // Đợi dialog biến mất
+            setTimeout(() => {
+              clearInterval(checkInterval);
+              console.log('✅ Đã skip preference voting, đợi kết quả mới...');
+              
+              // Đợi thêm để AI render lại kết quả
+              setTimeout(resolve, 1000);
+            }, 500);
+          }
+        }
+      }, 300); // Check mỗi 300ms
+
+      // Timeout sau 10s nếu không thấy dialog
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        console.log('⏱️ Không phát hiện preference dialog (timeout 10s)');
+        resolve();
+      }, 10000);
+    });
+  }
+
+  /**
    * Đọc nội dung từ clipboard
    * Ưu tiên dùng vetgoReadClipboard nếu có, fallback về navigator.clipboard
    */
@@ -203,6 +246,10 @@
     });
 
     await waitForRunFinish(runBtn);
+    
+    // Tự động skip preference voting nếu xuất hiện
+    await autoSkipPreferenceVote();
+    
     emit('DONE');
   }
 

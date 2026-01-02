@@ -1,29 +1,135 @@
-(() => {
+(async () => {
+  // 1. Kiểm tra panel đã tồn tại chưa
   if (document.getElementById('ai-chat-test-panel')) {
     console.warn('Chat test panel already exists');
     return;
   }
 
+  // 2. Load thư viện Markdown-it (Dynamic Import)
+  if (typeof window.markdownit !== 'function') {
+    console.log('⏳ Loading markdown-it...');
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+    console.log('✅ Markdown-it loaded');
+  }
+
+  // 3. Khởi tạo Markdown Parser
+  const md = window.markdownit({
+    html: false,        // Không cho phép thẻ HTML thô (bảo mật)
+    breaks: true,       // Enter là xuống dòng (<br>)
+    linkify: true       // Tự động nhận diện link
+  });
+
   /*********************************
-   * Chat State
+   * State
    *********************************/
   let messages = [];
+  let selectedFiles = [];
   let isProcessing = false;
 
   /*********************************
-   * Helper Functions
+   * UI Helper Functions
    *********************************/
+  
+  function renderMessages() {
+    const container = document.getElementById('chat-messages');
+    
+    // Empty State
+    if (messages.length === 0) {
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #52525b; gap: 10px;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+          <span style="font-size: 13px;">Kéo thả file hoặc nhập tin nhắn</span>
+        </div>
+      `;
+      return;
+    }
+
+    // Message List
+    container.innerHTML = messages.map(msg => {
+      const isUser = msg.role === 'user';
+      
+      // Render nội dung: Nếu là User thì text thường, AI thì dùng Markdown
+      // (Hoặc dùng markdown cho cả 2 tuỳ ý, ở đây mình dùng cả 2 cho đẹp)
+      const renderedContent = md.render(msg.content);
+
+      return `
+      <div style="display: flex; width: 100%; margin-bottom: 20px; ${isUser ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
+        ${!isUser ? `
+          <div style="width: 24px; height: 24px; margin-right: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+             <svg viewBox="0 0 24 24" style="width:18px; height:18px; color: #ededed; fill:none; stroke:currentColor; stroke-width:2;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+          </div>
+        ` : ''}
+
+        <div style="
+          max-width: 85%;
+          padding: 8px 14px;
+          border-radius: ${isUser ? '12px' : '4px'};
+          background: ${isUser ? '#27272a' : 'transparent'};
+          color: #ededed;
+          font-size: 14px;
+          line-height: 1.6;
+          border: ${isUser ? '1px solid #3f3f46' : 'none'};
+          word-break: break-word;
+          overflow-wrap: break-word;
+        ">
+          <!-- Class 'markdown-body' để áp dụng CSS -->
+          <div class="markdown-body">${renderedContent}</div>
+          
+          <div style="margin-top: 6px; font-size: 10px; color: #71717a; display: flex; align-items: center; gap: 6px; justify-content: ${isUser ? 'flex-end' : 'flex-start'}">
+            <span>${msg.timestamp}</span>
+            <span>${getStatusIcon(msg.status, msg.role)}</span>
+          </div>
+        </div>
+      </div>
+    `}).join('');
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function renderFileList() {
+    const listContainer = document.getElementById('chat-file-list');
+    if (selectedFiles.length === 0) {
+      listContainer.innerHTML = '';
+      return;
+    }
+
+    listContainer.innerHTML = selectedFiles.map((file, index) => `
+      <div style="
+        display: inline-flex; align-items: center; gap: 6px; 
+        background: #3f3f46; padding: 4px 8px; border-radius: 4px; 
+        margin-right: 6px; margin-bottom: 4px; font-size: 11px; color: #e4e4e7;
+      ">
+        <span style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">📎 ${file.name}</span>
+        <span style="color: #a1a1aa;">(${(file.size / 1024).toFixed(0)}KB)</span>
+        <button onclick="window.removeChatFile(${index})" style="
+          background: none; border: none; color: #ef4444; cursor: pointer; 
+          font-weight: bold; padding: 0 2px; font-size: 14px; line-height: 1;
+        ">×</button>
+      </div>
+    `).join('');
+  }
+
+  window.removeChatFile = (index) => {
+    if (isProcessing) return;
+    selectedFiles.splice(index, 1);
+    renderFileList();
+  };
+
   function addMessage(role, content, status = 'done') {
-    const msg = {
+    messages.push({
       id: Date.now(),
-      role, // 'user' | 'assistant'
+      role,
       content,
-      status, // 'sending' | 'processing' | 'done' | 'error'
+      status,
       timestamp: new Date().toLocaleTimeString('vi-VN')
-    };
-    messages.push(msg);
+    });
     renderMessages();
-    return msg;
   }
 
   function updateLastMessage(updates) {
@@ -32,124 +138,49 @@
     renderMessages();
   }
 
-  function renderMessages() {
-    const container = document.getElementById('chat-messages');
-    container.innerHTML = '';
-
-    messages.forEach(msg => {
-      const msgDiv = document.createElement('div');
-      msgDiv.style.cssText = `
-        display: flex;
-        gap: 12px;
-        margin-bottom: 16px;
-        align-items: flex-start;
-        animation: slideIn 0.3s ease;
-      `;
-
-      // Avatar
-      const avatar = document.createElement('div');
-      avatar.style.cssText = `
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        flex-shrink: 0;
-        ${msg.role === 'user' 
-          ? 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);' 
-          : 'background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);'
-        }
-      `;
-      avatar.innerText = msg.role === 'user' ? '👤' : '🤖';
-
-      // Message content
-      const contentDiv = document.createElement('div');
-      contentDiv.style.cssText = `
-        flex: 1;
-        background: ${msg.role === 'user' ? '#f3f4f6' : '#fff'};
-        padding: 12px 16px;
-        border-radius: 12px;
-        ${msg.role === 'assistant' ? 'border: 1px solid #e5e7eb;' : ''}
-        position: relative;
-      `;
-
-      // Status indicator
-      let statusIcon = '';
-      if (msg.status === 'sending') statusIcon = '📤';
-      else if (msg.status === 'processing') statusIcon = '⏳';
-      else if (msg.status === 'error') statusIcon = '❌';
-      else if (msg.status === 'done' && msg.role === 'assistant') statusIcon = '✅';
-
-      contentDiv.innerHTML = `
-        <div style="
-          font-size: 13px;
-          color: #111;
-          line-height: 1.6;
-          white-space: pre-wrap;
-          word-break: break-word;
-        ">${escapeHtml(msg.content)}</div>
-        <div style="
-          margin-top: 8px;
-          font-size: 11px;
-          color: #9ca3af;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        ">
-          <span>${msg.timestamp}</span>
-          <span>${statusIcon}</span>
-        </div>
-      `;
-
-      msgDiv.appendChild(avatar);
-      msgDiv.appendChild(contentDiv);
-      container.appendChild(msgDiv);
-    });
-
-    // Auto scroll to bottom
-    container.scrollTop = container.scrollHeight;
-  }
-
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+  function getStatusIcon(status, role) {
+    if (status === 'sending') return '<span style="color:#71717a">sending...</span>';
+    if (status === 'processing') return '<span style="color:#fbbf24">● thinking</span>';
+    if (status === 'error') return '<span style="color:#ef4444">failed</span>';
+    return '';
   }
 
   function setProcessing(processing) {
     isProcessing = processing;
     const input = document.getElementById('chat-input');
     const sendBtn = document.getElementById('chat-send-btn');
-    const fileInput = document.getElementById('chat-file-input');
+    const fileBtn = document.getElementById('chat-file-btn');
+    const dropZone = document.getElementById('chat-input-wrapper');
 
     input.disabled = processing;
     sendBtn.disabled = processing;
-    fileInput.disabled = processing;
-
+    fileBtn.disabled = processing;
+    
     if (processing) {
-      sendBtn.innerHTML = '⏳';
-      sendBtn.style.opacity = '0.6';
-      input.placeholder = 'Đang xử lý...';
+        dropZone.style.opacity = '0.5';
+        dropZone.style.pointerEvents = 'none';
     } else {
-      sendBtn.innerHTML = '🚀';
-      sendBtn.style.opacity = '1';
-      input.placeholder = 'Nhập câu hỏi...';
+        dropZone.style.opacity = '1';
+        dropZone.style.pointerEvents = 'auto';
     }
+
+    sendBtn.style.opacity = processing ? '0.3' : '1';
+    sendBtn.innerHTML = processing 
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
+    
+    input.placeholder = processing ? 'AI đang suy nghĩ...' : 'Nhập tin nhắn...';
   }
 
   /*********************************
-   * Core Chat Logic
+   * Core Logic
    *********************************/
   async function sendMessage() {
     const input = document.getElementById('chat-input');
-    const fileInput = document.getElementById('chat-file-input');
     const prompt = input.value.trim();
-    const files = [...fileInput.files];
-
-    if (!prompt && files.length === 0) {
-      alert('⚠️ Vui lòng nhập nội dung hoặc chọn file');
+    
+    if (!prompt && selectedFiles.length === 0) {
+      console.warn('Empty input');
       return;
     }
 
@@ -158,37 +189,27 @@
       return;
     }
 
-    // Add user message
     let userMsg = prompt;
-    if (files.length > 0) {
-      userMsg += `\n\n📎 Files: ${files.map(f => f.name).join(', ')}`;
+    if (selectedFiles.length > 0) {
+      userMsg += `\n\n📎 Files: ${selectedFiles.map(f => f.name).join(', ')}`;
     }
     addMessage('user', userMsg, 'sending');
 
-    // Clear input
+    const payloadFiles = [...selectedFiles];
     input.value = '';
-    fileInput.value = '';
-    document.getElementById('chat-file-list').innerHTML = '';
-
+    selectedFiles = [];
+    renderFileList();
+    
     setProcessing(true);
 
     try {
-      // Update user message status
       updateLastMessage({ status: 'done' });
+      addMessage('assistant', '...', 'processing');
 
-      // Add AI placeholder
-      addMessage('assistant', 'Đang suy nghĩ...', 'processing');
+      await window.AIChat.send({ prompt, files: payloadFiles });
+      await new Promise(r => setTimeout(r, 1000));
 
-      // Send to AI
-      await window.AIChat.send({ prompt, files });
-
-      // Wait a bit for AI to finish rendering
-      await new Promise(r => setTimeout(r, 5000));
-
-      // Copy AI response
       const aiResponse = await window.AIChat.copyLastTurnAsMarkdown();
-
-      // Update AI message with real content
       updateLastMessage({ 
         content: aiResponse || '(AI không trả về nội dung)',
         status: 'done' 
@@ -197,7 +218,7 @@
     } catch (error) {
       console.error('Chat error:', error);
       updateLastMessage({ 
-        content: `❌ Lỗi: ${error.message}`,
+        content: `Lỗi: ${error.message}`,
         status: 'error' 
       });
     } finally {
@@ -205,299 +226,177 @@
     }
   }
 
+  function handleAddFiles(newFiles) {
+    if (isProcessing) return;
+    for (const file of newFiles) {
+        selectedFiles.push(file);
+    }
+    renderFileList();
+  }
+
   /*********************************
-   * UI Panel
+   * UI Panel Construction
    *********************************/
   const panel = document.createElement('div');
   panel.id = 'ai-chat-test-panel';
-  panel.innerHTML = `
-    <style>
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-      }
-
-      #chat-messages::-webkit-scrollbar {
-        width: 8px;
-      }
-
-      #chat-messages::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-      }
-
-      #chat-messages::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-      }
-
-      #chat-messages::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
-    </style>
-
-    <div style="
-      position: fixed;
-      top: 50%;
-      right: 24px;
-      transform: translateY(-50%);
-      width: 420px;
-      height: 600px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.15);
+  
+  // Style CSS cho Markdown (quan trọng)
+  const css = `
+    #ai-chat-test-panel {
+      position: fixed; bottom: 20px; right: 20px;
+      width: 450px; height: 600px;
+      background-color: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
       z-index: 999999;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    ">
-      
-      <!-- Header -->
-      <div style="
-        padding: 16px 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #fff;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-shrink: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex; flex-direction: column; overflow: hidden; color: #ededed;
+    }
+    #chat-messages::-webkit-scrollbar { width: 4px; }
+    #chat-messages::-webkit-scrollbar-track { background: transparent; }
+    #chat-messages::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
+    
+    .panel-btn { background: transparent; border: none; color: #a1a1aa; cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.2s; }
+    .panel-btn:hover { color: #ededed; background: #27272a; }
+    .drag-active { border-color: #4ade80 !important; background-color: #27272a !important; box-shadow: 0 0 10px rgba(74, 222, 128, 0.1); }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* --- MARKDOWN STYLES --- */
+    .markdown-body p { margin-bottom: 8px; margin-top: 0; }
+    .markdown-body p:last-child { margin-bottom: 0; }
+    
+    .markdown-body code {
+      font-family: "Fira Code", Consolas, monospace;
+      font-size: 12px;
+      background: #3f3f46;
+      color: #e4e4e7;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    
+    .markdown-body pre {
+      background: #0f0f10;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 8px 0;
+      border: 1px solid #27272a;
+    }
+    
+    .markdown-body pre code {
+      background: transparent;
+      padding: 0;
+      color: #a7f3d0; /* Code block color */
+      border: none;
+    }
+
+    .markdown-body ul, .markdown-body ol { margin: 8px 0; padding-left: 20px; }
+    .markdown-body li { margin-bottom: 4px; }
+    
+    .markdown-body a { color: #60a5fa; text-decoration: none; }
+    .markdown-body a:hover { text-decoration: underline; }
+    
+    .markdown-body h1, .markdown-body h2, .markdown-body h3 { 
+      font-weight: 600; margin-top: 16px; margin-bottom: 8px; color: #fff; line-height: 1.3;
+    }
+    .markdown-body h1 { font-size: 1.4em; }
+    .markdown-body h2 { font-size: 1.2em; }
+    .markdown-body h3 { font-size: 1.1em; }
+    .markdown-body blockquote {
+        border-left: 3px solid #4ade80;
+        margin: 8px 0;
+        padding-left: 10px;
+        color: #a1a1aa;
+    }
+  `;
+
+  panel.innerHTML = `
+    <style>${css}</style>
+    
+    <!-- Header -->
+    <div style="height: 48px; border-bottom: 1px solid #27272a; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0;">
+      <div style="font-weight: 500; font-size: 14px; color: #ededed; display: flex; align-items: center; gap: 8px;">
+        <span style="width: 8px; height: 8px; background: #4ade80; border-radius: 50%;"></span>
+        Manus Test (Markdown)
+      </div>
+      <div style="display: flex; gap: 4px;">
+        <button id="chat-clear-btn" class="panel-btn" title="Xóa lịch sử"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+        <button id="chat-close-btn" class="panel-btn" title="Đóng"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div id="chat-messages" style="flex: 1; padding: 20px; overflow-y: auto; background-color: #18181b;"></div>
+
+    <!-- Input Area -->
+    <div style="padding: 16px; background-color: #18181b; border-top: 1px solid #27272a;">
+      <div id="chat-input-wrapper" style="
+        background: #202023; border: 1px solid #3f3f46; border-radius: 8px; padding: 8px; 
+        display: flex; flex-direction: column; gap: 6px; transition: all 0.2s ease;
       ">
-        <div style="display: flex; align-items: center; gap: 10px">
-          <span style="font-size: 24px">💬</span>
-          <div>
-            <div style="font-weight: 700; font-size: 16px">AI Chat Test</div>
-            <div style="font-size: 11px; opacity: 0.9">Test automation engine</div>
+        <div id="chat-file-list" style="display: flex; flex-wrap: wrap;"></div>
+
+        <textarea id="chat-input" placeholder="Nhập tin nhắn..." style="
+          width: 100%; background: transparent; border: none; color: #ededed; 
+          resize: none; font-family: inherit; font-size: 14px; outline: none; 
+          height: 40px; min-height: 40px;
+        "></textarea>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 4px;">
+            <input id="chat-file-input" type="file" multiple style="display: none" />
+            <button id="chat-file-btn" class="panel-btn" style="color: #a1a1aa;" title="Đính kèm file">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+            </button>
           </div>
-        </div>
-        
-        <div style="display: flex; gap: 8px">
-          <button id="chat-clear-btn" style="
-            background: rgba(255,255,255,.2);
-            border: none;
-            color: #fff;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 16px;
-          " title="Clear chat">🗑️</button>
-          
-          <button id="chat-close-btn" style="
-            background: rgba(255,255,255,.2);
-            border: none;
-            color: #fff;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 18px;
-          ">×</button>
-        </div>
-      </div>
-
-      <!-- Messages Area -->
-      <div id="chat-messages" style="
-        flex: 1;
-        padding: 20px;
-        overflow-y: auto;
-        background: #fafafa;
-      ">
-        <div style="
-          text-align: center;
-          color: #9ca3af;
-          font-size: 13px;
-          padding: 40px 20px;
-        ">
-          👋 Xin chào! Hãy gửi câu hỏi để test AI automation
-        </div>
-      </div>
-
-      <!-- Input Area -->
-      <div style="
-        padding: 16px;
-        background: #fff;
-        border-top: 1px solid #e5e7eb;
-        flex-shrink: 0;
-      ">
-        
-        <!-- File Upload -->
-        <div style="margin-bottom: 12px">
-          <input
-            id="chat-file-input"
-            type="file"
-            multiple
-            style="display: none"
-          />
-          <button id="chat-file-btn" style="
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-            color: #6b7280;
-            font-size: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-          ">
-            📎 Attach files
-          </button>
-          <div id="chat-file-list" style="
-            margin-top: 6px;
-            font-size: 11px;
-            color: #6b7280;
-          "></div>
-        </div>
-
-        <!-- Text Input -->
-        <div style="display: flex; gap: 8px">
-          <textarea
-            id="chat-input"
-            placeholder="Nhập câu hỏi..."
-            style="
-              flex: 1;
-              border: 2px solid #e5e7eb;
-              border-radius: 12px;
-              padding: 10px 12px;
-              font-size: 14px;
-              resize: none;
-              height: 44px;
-              font-family: inherit;
-              transition: border-color .2s;
-            "
-          ></textarea>
-
           <button id="chat-send-btn" style="
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-            font-size: 18px;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: transform .2s;
+            width: 28px; height: 28px; border-radius: 4px; background: #ededed; color: #18181b; 
+            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
           ">
-            🚀
-          </button>
-        </div>
-
-        <!-- Quick Actions -->
-        <div style="
-          margin-top: 12px;
-          display: flex;
-          gap: 6px;
-          flex-wrap: wrap;
-        ">
-          <button class="quick-btn" data-prompt="Viết 1 bài thơ về mùa xuân">
-            🌸 Thơ mùa xuân
-          </button>
-          <button class="quick-btn" data-prompt="Tạo danh sách 5 món ăn Việt Nam">
-            🍜 Món ăn VN
-          </button>
-          <button class="quick-btn" data-prompt="Giải thích AI là gì">
-            🤖 AI là gì?
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
           </button>
         </div>
       </div>
-
     </div>
   `;
 
   document.body.appendChild(panel);
 
-  // Apply styles for quick buttons
-  const quickBtns = panel.querySelectorAll('.quick-btn');
-  quickBtns.forEach(btn => {
-    btn.style.cssText = `
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid #e5e7eb;
-      background: #fff;
-      color: #6b7280;
-      font-size: 11px;
-      cursor: pointer;
-      transition: all .2s;
-    `;
-    
-    btn.addEventListener('mouseenter', () => {
-      btn.style.background = '#f3f4f6';
-      btn.style.borderColor = '#667eea';
-      btn.style.color = '#667eea';
-    });
-    
-    btn.addEventListener('mouseleave', () => {
-      btn.style.background = '#fff';
-      btn.style.borderColor = '#e5e7eb';
-      btn.style.color = '#6b7280';
-    });
-  });
-
   /*********************************
    * Event Handlers
    *********************************/
-
-  // Close button
-  document.getElementById('chat-close-btn').onclick = () => {
-    panel.remove();
-  };
-
-  // Clear chat
+  document.getElementById('chat-close-btn').onclick = () => panel.remove();
+  
   document.getElementById('chat-clear-btn').onclick = () => {
-    if (confirm('Xóa toàn bộ lịch sử chat?')) {
-      messages = [];
-      renderMessages();
-      document.getElementById('chat-messages').innerHTML = `
-        <div style="
-          text-align: center;
-          color: #9ca3af;
-          font-size: 13px;
-          padding: 40px 20px;
-        ">
-          👋 Xin chào! Hãy gửi câu hỏi để test AI automation
-        </div>
-      `;
-    }
+    messages = [];
+    selectedFiles = [];
+    renderFileList();
+    renderMessages();
   };
 
-  // File input
-  document.getElementById('chat-file-btn').onclick = () => {
-    document.getElementById('chat-file-input').click();
+  const fileInput = document.getElementById('chat-file-input');
+  document.getElementById('chat-file-btn').onclick = () => fileInput.click();
+
+  fileInput.onchange = (e) => {
+    handleAddFiles(e.target.files);
+    fileInput.value = '';
   };
 
-  document.getElementById('chat-file-input').onchange = (e) => {
-    const files = [...e.target.files];
-    const fileList = document.getElementById('chat-file-list');
-    
-    if (files.length === 0) {
-      fileList.innerHTML = '';
-      return;
-    }
+  const dropZone = document.getElementById('chat-input-wrapper');
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+  });
 
-    fileList.innerHTML = files.map(f => 
-      `<div style="padding: 2px 0">📎 ${f.name} (${(f.size / 1024).toFixed(1)} KB)</div>`
-    ).join('');
-  };
+  dropZone.addEventListener('dragover', () => { if (!isProcessing) dropZone.classList.add('drag-active'); });
+  dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-active'); });
+  dropZone.addEventListener('drop', (e) => {
+    dropZone.classList.remove('drag-active');
+    if (isProcessing) return;
+    handleAddFiles(e.dataTransfer.files);
+  });
 
-  // Send button
-  document.getElementById('chat-send-btn').onclick = () => {
-    if (!isProcessing) sendMessage();
-  };
-
-  // Enter to send
+  document.getElementById('chat-send-btn').onclick = () => { if (!isProcessing) sendMessage(); };
   document.getElementById('chat-input').onkeydown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -505,34 +404,14 @@
     }
   };
 
-  // Input focus effect
   const chatInput = document.getElementById('chat-input');
-  chatInput.onfocus = () => {
-    chatInput.style.borderColor = '#667eea';
-  };
-  chatInput.onblur = () => {
-    chatInput.style.borderColor = '#e5e7eb';
-  };
-
-  // Quick action buttons
-  quickBtns.forEach(btn => {
-    btn.onclick = () => {
-      const prompt = btn.getAttribute('data-prompt');
-      document.getElementById('chat-input').value = prompt;
-      document.getElementById('chat-input').focus();
-    };
-  });
-
-  // Send button hover effect
-  const sendBtn = document.getElementById('chat-send-btn');
-  sendBtn.addEventListener('mouseenter', () => {
-    if (!isProcessing) {
-      sendBtn.style.transform = 'scale(1.05)';
+  chatInput.addEventListener('input', function() {
+    this.style.height = '40px';
+    if(this.scrollHeight > 40) {
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     }
   });
-  sendBtn.addEventListener('mouseleave', () => {
-    sendBtn.style.transform = 'scale(1)';
-  });
 
-  console.log('✅ AI Chat Test Panel injected');
+  renderMessages();
+  console.log('✅ Manus UI Test Panel (Markdown Enabled) injected');
 })();
