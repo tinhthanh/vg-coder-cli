@@ -6,6 +6,11 @@
   }
 
   /*********************************
+   * State Management
+   *********************************/
+  let autoScrollInterval = null;
+
+  /*********************************
    * Event Bus
    *********************************/
   const listeners = {};
@@ -25,6 +30,31 @@
 
   function off(event, fn) {
     listeners[event] = (listeners[event] || []).filter(f => f !== fn);
+  }
+
+  /*********************************
+   * Auto-scroll Utils
+   *********************************/
+  function startAutoScroll() {
+    // Clear any existing interval
+    stopAutoScroll();
+    
+    console.log('📜 Bắt đầu auto-scroll...');
+    
+    autoScrollInterval = setInterval(() => {
+      const scrollContainer = document.querySelector('ms-autoscroll-container');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }, 100); // Scroll mỗi 100ms để mượt
+  }
+
+  function stopAutoScroll() {
+    if (autoScrollInterval) {
+      clearInterval(autoScrollInterval);
+      autoScrollInterval = null;
+      console.log('⏸️ Dừng auto-scroll');
+    }
   }
 
   /*********************************
@@ -71,46 +101,40 @@
   }
 
   /**
-   * Tự động nhấn Skip khi AI Studio hiển thị dialog "Which response do you prefer?"
-   * @returns {Promise<void>}
+   * Interval liên tục để tự động skip preference voting
+   * Chạy global, không timeout, cứ gặp dialog là skip ngay
    */
-  async function autoSkipPreferenceVote() {
-    return new Promise((resolve) => {
-      const checkInterval = setInterval(() => {
-        // Tìm dialog inline preference voting
-        const preferenceDialog = document.querySelector('ms-inline-preference-vote-middleware');
-        
-        if (preferenceDialog) {
-          console.log('🔍 Phát hiện dialog "Which response do you prefer?"');
-          
-          // Tìm nút Skip
-          const skipButton = Array.from(preferenceDialog.querySelectorAll('button'))
-            .find(btn => btn.textContent.trim() === 'Skip');
-          
-          if (skipButton) {
-            console.log('⏭️ Đang nhấn nút Skip...');
-            skipButton.click();
-            emit('PREFERENCE_SKIPPED');
-            
-            // Đợi dialog biến mất
-            setTimeout(() => {
-              clearInterval(checkInterval);
-              console.log('✅ Đã skip preference voting, đợi kết quả mới...');
-              
-              // Đợi thêm để AI render lại kết quả
-              setTimeout(resolve, 1000);
-            }, 500);
-          }
+  function startAutoSkipPreferenceVoting() {
+    console.log('🔄 Bắt đầu auto-skip preference voting (continuous)...');
+    
+    setInterval(() => {
+      // Tìm dialog inline preference voting
+      const preferenceDialog = document.querySelector('ms-inline-preference-vote-middleware');
+      
+      if (preferenceDialog) {
+        // Check xem đã skip chưa (tránh click nhiều lần)
+        if (preferenceDialog.hasAttribute('data-vg-skipped')) {
+          return;
         }
-      }, 300); // Check mỗi 300ms
-
-      // Timeout sau 10s nếu không thấy dialog
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        console.log('⏱️ Không phát hiện preference dialog (timeout 10s)');
-        resolve();
-      }, 10000);
-    });
+        
+        console.log('🔍 Phát hiện dialog "Which response do you prefer?"');
+        
+        // Tìm nút Skip
+        const skipButton = Array.from(preferenceDialog.querySelectorAll('button'))
+          .find(btn => btn.textContent.trim() === 'Skip');
+        
+        if (skipButton) {
+          console.log('⏭️ Tự động nhấn Skip...');
+          skipButton.click();
+          
+          // Đánh dấu đã skip để tránh click lại
+          preferenceDialog.setAttribute('data-vg-skipped', 'true');
+          
+          emit('PREFERENCE_SKIPPED');
+          console.log('✅ Đã skip preference voting');
+        }
+      }
+    }, 200); // Check liên tục mỗi 200ms
   }
 
   /**
@@ -240,17 +264,25 @@
           clearInterval(i);
           runBtn.click();
           emit('RUN_CLICKED');
+          
+          // Bắt đầu auto-scroll ngay sau khi click Run
+          startAutoScroll();
+          
           resolve();
         }
       }, 100);
     });
 
-    await waitForRunFinish(runBtn);
-    
-    // Tự động skip preference voting nếu xuất hiện
-    await autoSkipPreferenceVote();
-    
-    emit('DONE');
+    try {
+      await waitForRunFinish(runBtn);
+      emit('DONE');
+    } catch (error) {
+      console.error('❌ Lỗi khi chờ AI trả lời:', error);
+      emit('ERROR', { error: error.message });
+    } finally {
+      // Dừng auto-scroll khi AI xong hoặc lỗi
+      stopAutoScroll();
+    }
   }
 
   /*********************************
@@ -290,5 +322,8 @@
     copyLastTurnAsMarkdown      // ← Export hàm copy markdown
   };
 
-  console.log('✅ AIChat automation engine ready');
+  // Khởi động interval tự động skip preference voting
+  startAutoSkipPreferenceVoting();
+
+  console.log('✅ AIChat automation engine ready (Auto-skip preference voting enabled)');
 })();

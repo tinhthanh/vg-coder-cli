@@ -5,24 +5,47 @@
     return;
   }
 
-  // 2. Load thư viện Markdown-it (Dynamic Import)
-  if (typeof window.markdownit !== 'function') {
-    console.log('⏳ Loading markdown-it...');
-    await new Promise((resolve, reject) => {
+  /*********************************
+   * LIBRARY LOADER
+   *********************************/
+  const loadScript = (src) => {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js';
+      script.src = src;
       script.onload = resolve;
       script.onerror = reject;
       document.head.appendChild(script);
     });
-    console.log('✅ Markdown-it loaded');
+  };
+
+  console.log('⏳ Loading libraries...');
+  try {
+    await Promise.all([
+      loadScript('https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js'),
+      loadScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js')
+    ]);
+    console.log('✅ Libraries loaded');
+  } catch (e) {
+    console.error('❌ Failed to load libraries', e);
+    return;
   }
 
-  // 3. Khởi tạo Markdown Parser
+  // Init Markdown-it
   const md = window.markdownit({
-    html: false,        // Không cho phép thẻ HTML thô (bảo mật)
-    breaks: true,       // Enter là xuống dòng (<br>)
-    linkify: true       // Tự động nhận diện link
+    html: false,
+    breaks: true,
+    linkify: true
+  });
+
+  // Init Mermaid
+  window.mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark', // Giao diện tối cho hợp với panel
+    securityLevel: 'loose',
   });
 
   /*********************************
@@ -50,13 +73,11 @@
       return;
     }
 
-    // Message List
+    // 1. Render HTML từ Markdown
     container.innerHTML = messages.map(msg => {
       const isUser = msg.role === 'user';
-      
-      // Render nội dung: Nếu là User thì text thường, AI thì dùng Markdown
-      // (Hoặc dùng markdown cho cả 2 tuỳ ý, ở đây mình dùng cả 2 cho đẹp)
-      const renderedContent = md.render(msg.content);
+      // User dùng text thường (escape), AI dùng Markdown render
+      const contentHtml = isUser ? escapeHtml(msg.content) : md.render(msg.content);
 
       return `
       <div style="display: flex; width: 100%; margin-bottom: 20px; ${isUser ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
@@ -77,9 +98,9 @@
           border: ${isUser ? '1px solid #3f3f46' : 'none'};
           word-break: break-word;
           overflow-wrap: break-word;
+          min-width: 0; /* Fix flex overflow */
         ">
-          <!-- Class 'markdown-body' để áp dụng CSS -->
-          <div class="markdown-body">${renderedContent}</div>
+          <div class="markdown-body">${contentHtml}</div>
           
           <div style="margin-top: 6px; font-size: 10px; color: #71717a; display: flex; align-items: center; gap: 6px; justify-content: ${isUser ? 'flex-end' : 'flex-start'}">
             <span>${msg.timestamp}</span>
@@ -89,7 +110,50 @@
       </div>
     `}).join('');
 
+    // 2. Xử lý Mermaid sau khi HTML đã được chèn vào DOM
+    processMermaidDiagrams(container);
+
     container.scrollTop = container.scrollHeight;
+  }
+
+  // Hàm xử lý tìm và vẽ Mermaid
+  async function processMermaidDiagrams(container) {
+    // Tìm tất cả code block có class language-mermaid
+    const mermaidCodeBlocks = container.querySelectorAll('code.language-mermaid');
+    
+    if (mermaidCodeBlocks.length === 0) return;
+
+    const nodesToRender = [];
+
+    mermaidCodeBlocks.forEach((codeBlock, index) => {
+      const preElement = codeBlock.parentElement; // markdown-it bọc code trong thẻ <pre>
+      if (preElement && preElement.tagName === 'PRE') {
+        // Tạo thẻ div thay thế cho pre
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        // Lấy text thuần túy từ code block (giải mã các ký tự HTML entity do markdown-it tạo ra)
+        div.textContent = codeBlock.textContent;
+        div.style.textAlign = 'center';
+        div.style.background = '#202023';
+        div.style.padding = '10px';
+        div.style.borderRadius = '8px';
+        
+        // Thay thế <pre> bằng <div> mermaid
+        preElement.replaceWith(div);
+        nodesToRender.push(div);
+      }
+    });
+
+    // Gọi thư viện Mermaid để render các thẻ div .mermaid vừa tạo
+    if (nodesToRender.length > 0) {
+      try {
+        await window.mermaid.run({
+          nodes: nodesToRender
+        });
+      } catch (err) {
+        console.error('Mermaid render error:', err);
+      }
+    }
   }
 
   function renderFileList() {
@@ -143,6 +207,13 @@
     if (status === 'processing') return '<span style="color:#fbbf24">● thinking</span>';
     if (status === 'error') return '<span style="color:#ef4444">failed</span>';
     return '';
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   function setProcessing(processing) {
@@ -207,6 +278,8 @@
       addMessage('assistant', '...', 'processing');
 
       await window.AIChat.send({ prompt, files: payloadFiles });
+      
+      // Delay giả lập để thấy hiệu ứng loading
       await new Promise(r => setTimeout(r, 1000));
 
       const aiResponse = await window.AIChat.copyLastTurnAsMarkdown();
@@ -240,11 +313,17 @@
   const panel = document.createElement('div');
   panel.id = 'ai-chat-test-panel';
   
-  // Style CSS cho Markdown (quan trọng)
   const css = `
+    .prompt-box-container {
+     opacity: 0 !important;
+    }
+     .navbar-header {
+      display: none !important;
+     }
+
     #ai-chat-test-panel {
       position: fixed; bottom: 20px; right: 20px;
-      width: 450px; height: 600px;
+      width: 500px; height: 700px; /* Tăng kích thước chút để hiển thị diagram */
       background-color: #18181b;
       border: 1px solid #27272a;
       border-radius: 12px;
@@ -263,6 +342,7 @@
     @keyframes spin { 100% { transform: rotate(360deg); } }
 
     /* --- MARKDOWN STYLES --- */
+    .markdown-body { font-size: 14px; }
     .markdown-body p { margin-bottom: 8px; margin-top: 0; }
     .markdown-body p:last-child { margin-bottom: 0; }
     
@@ -275,6 +355,7 @@
       border-radius: 4px;
     }
     
+    /* Code block thông thường */
     .markdown-body pre {
       background: #0f0f10;
       padding: 10px;
@@ -283,12 +364,17 @@
       margin: 8px 0;
       border: 1px solid #27272a;
     }
-    
     .markdown-body pre code {
       background: transparent;
       padding: 0;
-      color: #a7f3d0; /* Code block color */
+      color: #a7f3d0;
       border: none;
+    }
+
+    /* Mermaid Container */
+    .mermaid {
+      margin: 10px 0;
+      overflow-x: auto;
     }
 
     .markdown-body ul, .markdown-body ol { margin: 8px 0; padding-left: 20px; }
@@ -318,7 +404,7 @@
     <div style="height: 48px; border-bottom: 1px solid #27272a; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0;">
       <div style="font-weight: 500; font-size: 14px; color: #ededed; display: flex; align-items: center; gap: 8px;">
         <span style="width: 8px; height: 8px; background: #4ade80; border-radius: 50%;"></span>
-        Manus Test (Markdown)
+        Manus Test (Markdown + Mermaid)
       </div>
       <div style="display: flex; gap: 4px;">
         <button id="chat-clear-btn" class="panel-btn" title="Xóa lịch sử"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
@@ -413,5 +499,5 @@
   });
 
   renderMessages();
-  console.log('✅ Manus UI Test Panel (Markdown Enabled) injected');
+  console.log('✅ Manus UI Test Panel (Markdown + Mermaid) injected');
 })();
