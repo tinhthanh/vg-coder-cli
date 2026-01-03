@@ -160,64 +160,89 @@
 
   /**
    * Copy markdown của turn cuối cùng vào clipboard (Using CDP!)
+   * @param {number} retryCount - Số lần retry còn lại
    * @returns {Promise<string>} Nội dung markdown đã copy
    */
-  async function copyLastTurnAsMarkdown() {
-    // 1. Lấy ms-chat-turn cuối cùng
-    const turns = document.querySelectorAll('ms-chat-turn');
-    if (!turns.length) {
-      throw new Error('Không tìm thấy ms-chat-turn');
+  async function copyLastTurnAsMarkdown(retryCount = 3) {
+    const attemptNumber = 4 - retryCount; // Attempt 1, 2, 3
+    console.log(`📋 [Attempt ${attemptNumber}/3] Bắt đầu copy markdown...`);
+    
+    try {
+      // 1. Lấy ms-chat-turn cuối cùng
+      const turns = document.querySelectorAll('ms-chat-turn');
+      if (!turns.length) {
+        throw new Error('Không tìm thấy ms-chat-turn');
+      }
+
+      const lastTurn = turns[turns.length - 1];
+
+      // 2. Ép hiện actions
+      const actions = lastTurn.querySelector('.actions.hover-or-edit');
+      if (actions) {
+        actions.style.opacity = '1';
+        actions.style.pointerEvents = 'auto';
+        actions.style.visibility = 'visible';
+      }
+
+      // 3. Click nút More (⋮) với CDP - REAL click!
+      const moreBtn = lastTurn.querySelector(
+        'ms-chat-turn-options button.mat-mdc-menu-trigger'
+      );
+
+      if (!moreBtn) {
+        throw new Error('Không tìm thấy nút More (⋮)');
+      }
+
+      console.log('📋 CDP Clicking More button...');
+      // trigger click body 
+      window.vetgoCDPClick(document.querySelector('body'));
+      moreBtn.click();
+      console.log('✅ More button clicked via CDP');
+
+      // 4. Đợi menu render (Angular CDK overlay) - Tăng thời gian đợi
+      await new Promise(r => setTimeout(r, 400));
+
+      // 5. Tìm & click "Copy as markdown" với CDP
+      const copyMarkdownBtn =
+        document.querySelector('.cdk-overlay-pane .copy-markdown-button')
+          ?.closest('button');
+
+      if (!copyMarkdownBtn) {
+        throw new Error('Không tìm thấy Copy as markdown');
+      }
+
+      console.log('📋 CDP Clicking Copy button...');
+      await window.vetgoCDPClick(copyMarkdownBtn);
+      console.log('✅ Copy button clicked via CDP');
+
+      // 6. Đợi Angular write vào clipboard (CDP click = real user gesture!)
+      await new Promise(r => setTimeout(r, 500));
+
+      // 7. Đọc lại từ clipboard bằng server API (bypass restrictions!)
+      const markdown = await readClipboard();
+      console.log('✅ Read markdown via server API:', markdown.substring(0, 100) + '...');
+      
+      console.log(`✅ [Attempt ${attemptNumber}/3] Copy markdown thành công!`);
+      return markdown;
+      
+    } catch (error) {
+      console.error(`❌ [Attempt ${attemptNumber}/3] Lỗi:`, error.message);
+      
+      // Nếu còn retry, thử lại
+      if (retryCount > 1) {
+        const waitTime = attemptNumber * 500; // Exponential backoff: 500ms, 1000ms, 1500ms
+        console.log(`🔄 Đợi ${waitTime}ms trước khi retry...`);
+        await new Promise(r => setTimeout(r, waitTime));
+        
+        return copyLastTurnAsMarkdown(retryCount - 1);
+      }
+      
+      // Hết retry, emit event để UI có thể hiện nút retry
+      console.error('❌ Đã thử 3 lần nhưng vẫn thất bại!');
+      emit('COPY_MARKDOWN_FAILED', { error: error.message, attempts: 3 });
+      
+      throw error;
     }
-
-    const lastTurn = turns[turns.length - 1];
-
-    // 2. Ép hiện actions
-    const actions = lastTurn.querySelector('.actions.hover-or-edit');
-    if (actions) {
-      actions.style.opacity = '1';
-      actions.style.pointerEvents = 'auto';
-      actions.style.visibility = 'visible';
-    }
-
-    // 3. Click nút More (⋮) với CDP - REAL click!
-    const moreBtn = lastTurn.querySelector(
-      'ms-chat-turn-options button.mat-mdc-menu-trigger'
-    );
-
-    if (!moreBtn) {
-      throw new Error('Không tìm thấy nút More (⋮)');
-    }
-
-    console.log('📋 CDP Clicking More button...');
-    // trigger click body 
-    window.vetgoCDPClick(document.querySelector('body'));
-    moreBtn.click();
-    // await window.vetgoCDPClick(moreBtn);
-    console.log('✅ More button clicked via CDP');
-
-    // 4. Đợi menu render (Angular CDK overlay)
-    await new Promise(r => setTimeout(r, 300));
-
-    // 5. Tìm & click "Copy as markdown" với CDP
-    const copyMarkdownBtn =
-      document.querySelector('.cdk-overlay-pane .copy-markdown-button')
-        ?.closest('button');
-
-    if (!copyMarkdownBtn) {
-      throw new Error('Không tìm thấy Copy as markdown');
-    }
-
-    console.log('📋 CDP Clicking Copy button...');
-    await window.vetgoCDPClick(copyMarkdownBtn);
-    console.log('✅ Copy button clicked via CDP');
-
-    // 6. Đợi Angular write vào clipboard (CDP click = real user gesture!)
-    await new Promise(r => setTimeout(r, 500));
-
-    // 7. Đọc lại từ clipboard bằng server API (bypass restrictions!)
-    const markdown = await readClipboard();
-    console.log('✅ Read markdown via server API:', markdown.substring(0, 100) + '...');
-    return markdown;
   }
 
   /*********************************

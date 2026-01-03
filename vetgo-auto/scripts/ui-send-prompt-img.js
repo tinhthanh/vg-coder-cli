@@ -37,12 +37,294 @@
   window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
 
   /*********************************
+   * CHAT HISTORY MANAGER (Inline)
+   *********************************/
+  const ChatHistoryManager = (() => {
+    const STORAGE_PREFIX = 'vg-chat-';
+    const METADATA_KEY = 'vg-chat-metadata';
+    const MAX_CHAT_AGE_DAYS = 30;
+    const MAX_TITLE_LENGTH = 50;
+
+    function generateChatId() {
+      const timestamp = Date.now().toString(36);
+      const random = Math.random().toString(36).substring(2, 15) + 
+                     Math.random().toString(36).substring(2, 15);
+      return `${timestamp}${random}`;
+    }
+
+    function generateTitle(messages) {
+      if (!messages || messages.length === 0) return 'New Chat';
+      const firstUserMsg = messages.find(m => m.role === 'user');
+      if (!firstUserMsg) return 'New Chat';
+      let title = firstUserMsg.content.trim();
+      if (title.length > MAX_TITLE_LENGTH) {
+        title = title.substring(0, MAX_TITLE_LENGTH) + '...';
+      }
+      return title;
+    }
+
+    function getMetadata() {
+      try {
+        const data = localStorage.getItem(METADATA_KEY);
+        return data ? JSON.parse(data) : { allChatIds: [], lastAccessedChatId: null };
+      } catch (error) {
+        console.error('[ChatHistory] Failed to get metadata:', error);
+        return { allChatIds: [], lastAccessedChatId: null };
+      }
+    }
+
+    function updateMetadata(updates) {
+      const metadata = getMetadata();
+      Object.assign(metadata, updates);
+      try {
+        localStorage.setItem(METADATA_KEY, JSON.stringify(metadata));
+      } catch (error) {
+        console.error('[ChatHistory] Failed to update metadata:', error);
+        handleStorageError(error);
+      }
+    }
+
+    function handleStorageError(error) {
+      if (error.name === 'QuotaExceededError') {
+        console.warn('[ChatHistory] Storage quota exceeded, cleaning up old chats...');
+        const deletedCount = cleanupOldChats(7);
+        if (deletedCount > 0) {
+          console.log(`[ChatHistory] Cleaned up ${deletedCount} old chats`);
+        } else {
+          console.error('[ChatHistory] Storage full and no old chats to cleanup!');
+          alert('⚠️ Bộ nhớ đã đầy! Vui lòng xóa bớt lịch sử chat cũ.');
+        }
+      }
+    }
+
+    function saveChat(chatId, messages, options = {}) {
+      if (!chatId) {
+        console.error('[ChatHistory] Cannot save chat without ID');
+        return false;
+      }
+
+      const now = Date.now();
+      const key = STORAGE_PREFIX + chatId;
+
+      let chatData;
+      try {
+        const existing = localStorage.getItem(key);
+        chatData = existing ? JSON.parse(existing) : { id: chatId, createdAt: now };
+      } catch (error) {
+        console.error('[ChatHistory] Failed to load existing chat:', error);
+        chatData = { id: chatId, createdAt: now };
+      }
+
+      chatData.messages = messages;
+      chatData.updatedAt = now;
+      chatData.title = options.title || generateTitle(messages);
+
+      try {
+        localStorage.setItem(key, JSON.stringify(chatData));
+        const metadata = getMetadata();
+        if (!metadata.allChatIds.includes(chatId)) {
+          metadata.allChatIds.push(chatId);
+        }
+        metadata.lastAccessedChatId = chatId;
+        updateMetadata(metadata);
+        return true;
+      } catch (error) {
+        console.error('[ChatHistory] Failed to save chat:', error);
+        handleStorageError(error);
+        return false;
+      }
+    }
+
+    function loadChat(chatId) {
+      if (!chatId) return null;
+
+      const key = STORAGE_PREFIX + chatId;
+      try {
+        const data = localStorage.getItem(key);
+        if (!data) {
+          console.warn(`[ChatHistory] Chat not found: ${chatId}`);
+          return null;
+        }
+
+        const chatData = JSON.parse(data);
+        if (!chatData.messages || !Array.isArray(chatData.messages)) {
+          console.error('[ChatHistory] Invalid chat data structure');
+          return null;
+        }
+
+        updateMetadata({ lastAccessedChatId: chatId });
+
+        return {
+          messages: chatData.messages,
+          metadata: {
+            title: chatData.title,
+            createdAt: chatData.createdAt,
+            updatedAt: chatData.updatedAt,
+          }
+        };
+      } catch (error) {
+        console.error('[ChatHistory] Failed to load chat:', error);
+        return null;
+      }
+    }
+
+    function deleteChat(chatId) {
+      if (!chatId) return false;
+
+      const key = STORAGE_PREFIX + chatId;
+      try {
+        localStorage.removeItem(key);
+        const metadata = getMetadata();
+        metadata.allChatIds = metadata.allChatIds.filter(id => id !== chatId);
+        if (metadata.lastAccessedChatId === chatId) {
+          metadata.lastAccessedChatId = null;
+        }
+        updateMetadata(metadata);
+        return true;
+      } catch (error) {
+        console.error('[ChatHistory] Failed to delete chat:', error);
+        return false;
+      }
+    }
+
+    function cleanupOldChats(maxAgeDays = MAX_CHAT_AGE_DAYS) {
+      const cutoffTime = Date.now() - (maxAgeDays * 24 * 60 * 60 * 1000);
+      const metadata = getMetadata();
+      let deletedCount = 0;
+
+      for (const chatId of [...metadata.allChatIds]) {
+        const key = STORAGE_PREFIX + chatId;
+        try {
+          const data = localStorage.getItem(key);
+          if (data) {
+            const chatData = JSON.parse(data);
+            if (chatData.updatedAt < cutoffTime) {
+              deleteChat(chatId);
+              deletedCount++;
+            }
+          }
+        } catch (error) {
+          console.error(`[ChatHistory] Failed to check chat ${chatId}:`, error);
+        }
+      }
+
+      return deletedCount;
+    }
+
+    return { generateChatId, saveChat, loadChat, deleteChat, cleanupOldChats };
+  })();
+
+  /*********************************
+   * CHAT ROUTER (Inline)
+   *********************************/
+  const ChatRouter = (() => {
+    const ROUTE_PREFIX = '/prompts/';
+    const NEW_CHAT_PATH = '/prompts/new_chat';
+    let routeChangeCallbacks = [];
+
+    function getCurrentChatId() {
+      const pathname = window.location.pathname;
+      if (!pathname.startsWith(ROUTE_PREFIX)) return null;
+      if (pathname === NEW_CHAT_PATH || pathname === NEW_CHAT_PATH + '/') return null;
+      
+      const parts = pathname.split('/');
+      const chatId = parts[parts.length - 1];
+      if (!chatId || chatId.trim() === '') return null;
+      
+      return chatId;
+    }
+
+    function isNewChat() {
+      const pathname = window.location.pathname;
+      return pathname === NEW_CHAT_PATH || pathname === NEW_CHAT_PATH + '/';
+    }
+
+    function updateURL(chatId, replace = false) {
+      if (!chatId) {
+        console.error('[ChatRouter] Cannot update URL without chat ID');
+        return;
+      }
+
+      const newPath = `${ROUTE_PREFIX}${chatId}`;
+      const title = `Chat - ${chatId}`;
+
+      try {
+        if (replace) {
+          window.history.replaceState({ chatId }, title, newPath);
+        } else {
+          window.history.pushState({ chatId }, title, newPath);
+        }
+        notifyRouteChange(chatId);
+      } catch (error) {
+        console.error('[ChatRouter] Failed to update URL:', error);
+      }
+    }
+
+    function navigateToNewChat(replace = false) {
+      const title = 'New Chat';
+      try {
+        if (replace) {
+          window.history.replaceState({}, title, NEW_CHAT_PATH);
+        } else {
+          window.history.pushState({}, title, NEW_CHAT_PATH);
+        }
+        notifyRouteChange(null);
+      } catch (error) {
+        console.error('[ChatRouter] Failed to navigate to new chat:', error);
+      }
+    }
+
+    function onRouteChange(callback) {
+      if (typeof callback !== 'function') {
+        console.error('[ChatRouter] Callback must be a function');
+        return () => {};
+      }
+      routeChangeCallbacks.push(callback);
+      return () => {
+        routeChangeCallbacks = routeChangeCallbacks.filter(cb => cb !== callback);
+      };
+    }
+
+    function notifyRouteChange(chatId) {
+      for (const callback of routeChangeCallbacks) {
+        try {
+          callback(chatId);
+        } catch (error) {
+          console.error('[ChatRouter] Error in route change callback:', error);
+        }
+      }
+    }
+
+    function handlePopState(event) {
+      const chatId = getCurrentChatId();
+      console.log('[ChatRouter] Browser navigation detected, chatId:', chatId);
+      notifyRouteChange(chatId);
+    }
+
+    function getCurrentRoute() {
+      return {
+        chatId: getCurrentChatId(),
+        isNew: isNewChat(),
+        path: window.location.pathname,
+      };
+    }
+
+    // Init router
+    window.addEventListener('popstate', handlePopState);
+    console.log('[ChatRouter] Initialized');
+
+    return { getCurrentChatId, isNewChat, updateURL, navigateToNewChat, onRouteChange, getCurrentRoute };
+  })();
+
+  /*********************************
    * State
    *********************************/
   let messages = [];
   let selectedFiles = [];
   let isProcessing = false;
   let isMaximized = false; // Trạng thái toàn màn hình
+  let currentChatId = null; // ID của chat hiện tại
+  let autoSaveTimeout = null; // Debounce timer cho auto-save
 
   // Variables cho Dragging
   let isDragging = false;
@@ -129,11 +411,13 @@
   function addMessage(role, content, status = 'done') {
     messages.push({ id: Date.now(), role, content, status, timestamp: new Date().toLocaleTimeString('vi-VN') });
     renderMessages();
+    autoSaveChat(); // Auto-save after adding message
   }
   function updateLastMessage(updates) {
     if (messages.length === 0) return;
     Object.assign(messages[messages.length - 1], updates);
     renderMessages();
+    autoSaveChat(); // Auto-save after updating message
   }
   function getStatusIcon(status, role) {
     if (status === 'sending') return '<span style="color:#71717a">sending...</span>';
@@ -172,6 +456,10 @@
     const prompt = input.value.trim();
     if (!prompt && selectedFiles.length === 0) return;
     if (!window.AIChat) { alert('❌ AIChat engine chưa được inject!'); return; }
+    
+    // Generate chat ID sau tin nhắn đầu tiên
+    const isFirstMessage = messages.length === 0;
+    
     let userMsg = prompt;
     if (selectedFiles.length > 0) userMsg += `\n\n📎 Files: ${selectedFiles.map(f => f.name).join(', ')}`;
     addMessage('user', userMsg, 'sending');
@@ -180,19 +468,87 @@
     selectedFiles = [];
     renderFileList();
     setProcessing(true);
+    
     try {
       updateLastMessage({ status: 'done' });
       addMessage('assistant', '...', 'processing');
       await window.AIChat.send({ prompt, files: payloadFiles });
       await new Promise(r => setTimeout(r, 1000));
+      
+      // Thử copy markdown với retry mechanism
       const aiResponse = await window.AIChat.copyLastTurnAsMarkdown();
       updateLastMessage({ content: aiResponse || '(AI không trả về nội dung)', status: 'done' });
+      
+      // Sau khi có response, nếu là tin nhắn đầu tiên thì tạo chat ID và update URL
+      if (isFirstMessage && !currentChatId && ChatHistoryManager && ChatRouter) {
+        currentChatId = ChatHistoryManager.generateChatId();
+        ChatRouter.updateURL(currentChatId, true); // Use replaceState
+        console.log(`[ChatHistory] Created new chat: ${currentChatId}`);
+      }
     } catch (error) {
-      updateLastMessage({ content: `Lỗi: ${error.message}`, status: 'error' });
+      console.error('❌ Lỗi khi gửi tin nhắn:', error);
+      
+      // Hiển thị lỗi với nút retry
+      const errorHtml = `
+        <div style="color: #ef4444; padding: 12px; background: #2a1515; border-radius: 8px; border: 1px solid #7f1d1d;">
+          <div style="font-weight: 600; margin-bottom: 8px;">❌ Lỗi: ${escapeHtml(error.message)}</div>
+          <button 
+            onclick="window.retryLastCopy()" 
+            style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; margin-top: 4px;"
+            onmouseover="this.style.background='#b91c1c'" 
+            onmouseout="this.style.background='#dc2626'"
+          >
+            🔄 Thử lại (Retry)
+          </button>
+        </div>
+      `;
+      updateLastMessage({ content: errorHtml, status: 'error' });
     } finally {
       setProcessing(false);
     }
   }
+
+  /**
+   * Retry function để gọi lại copyLastTurnAsMarkdown
+   */
+  window.retryLastCopy = async function() {
+    if (!window.AIChat) {
+      alert('❌ AIChat engine chưa sẵn sàng!');
+      return;
+    }
+    
+    console.log('🔄 Người dùng click retry...');
+    setProcessing(true);
+    
+    try {
+      updateLastMessage({ content: '🔄 Đang thử lại copy markdown...', status: 'processing' });
+      
+      // Gọi lại với full 3 retry attempts
+      const aiResponse = await window.AIChat.copyLastTurnAsMarkdown();
+      updateLastMessage({ content: aiResponse || '(AI không trả về nội dung)', status: 'done' });
+      
+      console.log('✅ Retry thành công!');
+    } catch (error) {
+      console.error('❌ Retry vẫn thất bại:', error);
+      
+      const errorHtml = `
+        <div style="color: #ef4444; padding: 12px; background: #2a1515; border-radius: 8px; border: 1px solid #7f1d1d;">
+          <div style="font-weight: 600; margin-bottom: 8px;">❌ Vẫn lỗi: ${escapeHtml(error.message)}</div>
+          <button 
+            onclick="window.retryLastCopy()" 
+            style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; margin-top: 4px;"
+            onmouseover="this.style.background='#b91c1c'" 
+            onmouseout="this.style.background='#dc2626'"
+          >
+            🔄 Thử lại (Retry)
+          </button>
+        </div>
+      `;
+      updateLastMessage({ content: errorHtml, status: 'error' });
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   function handleAddFiles(newFiles) {
     if (isProcessing) return;
@@ -377,12 +733,119 @@
     isDragging = false;
   });
 
+  /*********************************
+   * CHAT HISTORY FUNCTIONS
+   *********************************/
+  
+  /**
+   * Auto-save chat với debouncing
+   */
+  function autoSaveChat() {
+    if (!ChatHistoryManager || !currentChatId) return;
+    
+    // Clear existing timeout
+    if (autoSaveTimeout) {
+      clearTimeout(autoSaveTimeout);
+    }
+    
+    // Debounce: save after 500ms of inactivity
+    autoSaveTimeout = setTimeout(() => {
+      const success = ChatHistoryManager.saveChat(currentChatId, messages);
+      if (success) {
+        console.log(`[ChatHistory] Auto-saved chat ${currentChatId}`);
+      }
+     }, 500);
+  }
+  
+  /**
+   * Initialize chat session từ URL
+   */
+  async function initializeChatSession() {
+    // Check local variables, not window properties
+    if (!ChatHistoryManager || !ChatRouter) {
+      console.warn('[ChatHistory] Managers not loaded, skipping history initialization');
+      return;
+    }
+    
+    const route = ChatRouter.getCurrentRoute();
+    console.log('[ChatHistory] Current route:', route);
+    
+    if (route.isNew) {
+      // New chat - start fresh
+      console.log('[ChatHistory] Starting new chat');
+      currentChatId = null;
+      messages = [];
+      renderMessages();
+    } else if (route.chatId) {
+      // Load existing chat
+      console.log(`[ChatHistory] Loading chat: ${route.chatId}`);
+      currentChatId = route.chatId;
+      
+      const chatData = ChatHistoryManager.loadChat(currentChatId);
+      if (chatData && chatData.messages) {
+        messages = chatData.messages;
+        renderMessages();
+        console.log(`[ChatHistory] Loaded ${messages.length} messages`);
+      } else {
+        console.warn(`[ChatHistory] Chat ${currentChatId} not found in storage`);
+        // Chat chưa có trong localStorage, giữ nguyên ID và bắt đầu chat mới
+        // KHÔNG redirect về new_chat!
+        messages = [];
+        renderMessages();
+        console.log(`[ChatHistory] Starting fresh chat with ID: ${currentChatId}`);
+      }
+    } else {
+      // No specific route, start fresh
+      console.log('[ChatHistory] No chat ID in URL, starting fresh');
+      currentChatId = null;
+      messages = [];
+      renderMessages();
+    }
+  }
+  
+  /**
+   * Handle route changes (browser back/forward)
+   */
+  function handleRouteChange(newChatId) {
+    console.log(`[ChatHistory] Route changed to: ${newChatId || 'new chat'}`);
+    
+    // Reload chat session
+    if (newChatId && newChatId !== currentChatId) {
+      currentChatId = newChatId;
+      const chatData = ChatHistoryManager.loadChat(currentChatId);
+      if (chatData && chatData.messages) {
+        messages = chatData.messages;
+        renderMessages();
+      }
+    } else if (!newChatId) {
+      // New chat
+      currentChatId = null;
+      messages = [];
+      selectedFiles = [];
+      renderFileList();
+      renderMessages();
+    }
+  }
+  
   // 3. Các sự kiện cũ (Chat, File,...)
   document.getElementById('chat-clear-btn').onclick = () => {
+    // Delete from localStorage if chat exists
+    if (currentChatId && ChatHistoryManager) {
+      ChatHistoryManager.deleteChat(currentChatId);
+      console.log(`[ChatHistory] Deleted chat ${currentChatId}`);
+    }
+    
+    // Clear UI
     messages = [];
     selectedFiles = [];
+    currentChatId = null;
     renderFileList();
     renderMessages();
+    
+    // Navigate to new chat
+    if (ChatRouter) {
+      ChatRouter.navigateToNewChat(true);
+    }
   };
 
   const fileInput = document.getElementById('chat-file-input');
@@ -413,5 +876,13 @@
   });
 
   renderMessages();
-  console.log('✅ Manus UI Panel (Resizable & Draggable) injected');
+  
+  // Initialize chat session and setup route change listener
+  initializeChatSession();
+  
+  if (ChatRouter) {
+    ChatRouter.onRouteChange(handleRouteChange);
+  }
+  
+  console.log('✅ Manus UI Panel (Resizable & Draggable) injected with Chat History');
 })();
