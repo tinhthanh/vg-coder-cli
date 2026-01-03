@@ -269,8 +269,109 @@ function renderMessages() {
     // Process mermaid diagrams
     processMermaidDiagrams(container);
     
+    // Add run bash buttons
+    addRunBashButtons(container);
+    
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
+}
+
+/**
+ * Add "Run Bash" buttons to bash code blocks
+ */
+function addRunBashButtons(container) {
+    const bashCodeBlocks = container.querySelectorAll('code.language-bash');
+    if (bashCodeBlocks.length === 0) return;
+
+    console.log(`[AgentPanel] Found ${bashCodeBlocks.length} bash code block(s)`);
+
+    bashCodeBlocks.forEach((codeBlock, index) => {
+        const preElement = codeBlock.parentElement;
+        if (!preElement || preElement.tagName !== 'PRE') return;
+
+        // Check if button already exists
+        if (preElement.querySelector('.agent-run-bash-btn')) return;
+
+        // Create button
+        const button = document.createElement('button');
+        button.className = 'agent-run-bash-btn';
+        button.innerHTML = '▶ Run Bash';
+        button.title = 'Run bash command in terminal';
+
+        // Click handler
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const code = codeBlock.textContent || '';
+            if (!code.trim()) {
+                console.warn('[AgentPanel] No bash code found');
+                return;
+            }
+
+            console.log('[AgentPanel] Run bash triggered');
+
+            // Copy to clipboard
+            try {
+                await navigator.clipboard.writeText(code);
+            } catch (err) {
+                console.error('[AgentPanel] Clipboard copy failed:', err);
+                return;
+            }
+
+            // Dispatch event
+            dispatchPasteRun(code);
+        });
+
+        // Wrap pre in container if not already
+        if (!preElement.parentElement.classList.contains('agent-code-block-wrapper')) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'agent-code-block-wrapper';
+            preElement.parentNode.insertBefore(wrapper, preElement);
+            wrapper.appendChild(preElement);
+            wrapper.appendChild(button);
+        } else {
+            preElement.parentElement.appendChild(button);
+        }
+
+        console.log(`[AgentPanel] Run bash button added (${index + 1})`);
+    });
+}
+
+/**
+ * Dispatch paste-run event for bash execution
+ */
+function dispatchPasteRun(code) {
+    const EVENT_TYPE = 'vg:paste-run';
+    
+    // Use global dispatcher if available
+    const dispatcher = window.__VG_EVENT_DISPATCHER__ || window.globalDispatcher || null;
+
+    const eventPayload = {
+        type: EVENT_TYPE,
+        source: 'agent-panel',
+        target: 'bubble-runner',
+        payload: {
+            code,
+            from: 'run-bash-button',
+        },
+        context: 'window',
+    };
+
+    if (dispatcher?.dispatchCrossContext) {
+        dispatcher.dispatchCrossContext(eventPayload);
+        console.log('[AgentPanel] Dispatched via globalDispatcher:', EVENT_TYPE);
+        return;
+    }
+
+    // Fallback: CustomEvent
+    window.dispatchEvent(
+        new CustomEvent(EVENT_TYPE, {
+            detail: eventPayload,
+        })
+    );
+
+    console.log('[AgentPanel] Dispatched via CustomEvent:', EVENT_TYPE);
 }
 
 /**
