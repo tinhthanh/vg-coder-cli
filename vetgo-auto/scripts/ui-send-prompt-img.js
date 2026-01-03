@@ -661,7 +661,8 @@
       </div>
     </div>
   `;
-
+  // trigger để insert vào cuối DOM
+  await new Promise((resolve) => setTimeout(resolve, 5000)); 
   document.body.appendChild(panel);
 
   /*********************************
