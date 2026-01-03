@@ -1,6 +1,14 @@
 import { qs, getById } from '../utils.js';
 
 export function initResizeHandler() {
+    initLeftResizeHandler();
+    initRightResizeHandler();
+}
+
+/**
+ * Initialize resize handler for left tool panel
+ */
+function initLeftResizeHandler() {
     const toolPanelContainer = getById('tool-panel-container');
     const handle = getById('resize-handler');
 
@@ -40,4 +48,54 @@ export function initResizeHandler() {
             document.body.classList.remove('resizing');
         }
     });
+
+    console.log('[Resize] Left resize handler initialized');
+}
+
+/**
+ * Initialize resize handler for right tool panel
+ */
+function initRightResizeHandler() {
+    const toolPanelContainerRight = getById('tool-panel-container-right');
+    const handleRight = getById('resize-handler-right');
+
+    if (!toolPanelContainerRight || !handleRight) {
+        return;
+    }
+
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    handleRight.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = toolPanelContainerRight.getBoundingClientRect().width;
+        
+        document.body.classList.add('resizing');
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+
+        requestAnimationFrame(() => {
+            const currentX = e.clientX;
+            // For right panel, dragging left (negative diff) should increase width
+            const diffX = startX - currentX; // Inverted direction
+            const newWidth = Math.max(250, Math.min(600, startWidth + diffX)); // Min 250px, Max 600px
+            
+            // Update width of tool-panel-container-right
+            toolPanelContainerRight.style.width = `${newWidth}px`;
+        });
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isResizing) {
+            isResizing = false;
+            document.body.classList.remove('resizing');
+        }
+    });
+
+    console.log('[Resize] Right resize handler initialized');
 }

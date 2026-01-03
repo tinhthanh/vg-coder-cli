@@ -110,6 +110,53 @@
                 </div>
             </div>
         </div>
+
+        <div id="resize-handler-right" class="resize-handler resize-handler-right"></div>
+
+        <!-- RIGHT TOOL PANEL CONTAINER (Expandable Panels) -->
+        <div id="tool-panel-container-right" class="tool-panel-container tool-panel-container-right">
+            <!-- Agent Panel -->
+            <div id="tool-panel-agent" class="tool-panel">
+                <div class="tool-panel-header">
+                    <div class="tool-panel-title">
+                        <span>🤖</span>
+                        <span>Agent</span>
+                    </div>
+                    <div class="tool-panel-actions">
+                        <button class="tool-panel-action-btn" onclick="window.closeToolPanelsRight()" title="Close">✕</button>
+                    </div>
+                </div>
+                <div id="agent-panel-content" class="tool-panel-content">
+                    <!-- Agent panel content will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Browser Panel -->
+            <div id="tool-panel-browser" class="tool-panel">
+                <div class="tool-panel-header">
+                    <div class="tool-panel-title">
+                        <span>🌐</span>
+                        <span>Browser</span>
+                    </div>
+                    <div class="tool-panel-actions">
+                        <button class="tool-panel-action-btn" onclick="window.closeToolPanelsRight()" title="Close">✕</button>
+                    </div>
+                </div>
+                <div id="browser-panel-content" class="tool-panel-content">
+                    <!-- Browser panel content will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT TOOL WINDOW BAR (IDE-Style Sidebar) -->
+        <div id="tool-window-bar-right" class="tool-window-bar tool-window-bar-right">
+            <button class="tool-window-icon" data-panel="agent" data-tooltip="Agent" title="Agent">
+                🤖
+            </button>
+            <button class="tool-window-icon" data-panel="browser" data-tooltip="Browser" title="Browser">
+                🌐
+            </button>
+        </div>
     </div>
 
     <!-- Modals & Overlays -->
