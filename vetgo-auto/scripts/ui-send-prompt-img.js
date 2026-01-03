@@ -353,7 +353,7 @@
       const contentHtml = isUser ? escapeHtml(msg.content) : md.render(msg.content);
       return `
       <div style="display: flex; width: 100%; margin-bottom: 20px; ${isUser ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
-        ${!isUser ? `<div style="width: 24px; height: 24px; margin-right: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;"><svg viewBox="0 0 24 24" style="width:18px; height:18px; color: #ededed; fill:none; stroke:currentColor; stroke-width:2;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg></div>` : ''}
+        ${!isUser ? '' : ''}
         <div style="max-width: 85%; padding: 8px 14px; border-radius: ${isUser ? '12px' : '4px'}; background: ${isUser ? '#27272a' : 'transparent'}; color: #ededed; font-size: 14px; line-height: 1.6; border: ${isUser ? '1px solid #3f3f46' : 'none'}; word-break: break-word; overflow-wrap: break-word; min-width: 0;">
           <div class="markdown-body">${contentHtml}</div>
           <div style="margin-top: 6px; font-size: 10px; color: #71717a; display: flex; align-items: center; gap: 6px; justify-content: ${isUser ? 'flex-end' : 'flex-start'}">
