@@ -564,6 +564,9 @@
   
   // CSS Styles
   const css = `
+    ms-prompt-box {
+      display: none;
+    }
     /* Panel mặc định (minimized) */
     #ai-chat-test-panel {
       position: fixed;
