@@ -18,6 +18,7 @@ import { initProjectPanel } from './features/project-panel.js';
 import { initGitPanel } from './features/git-panel.js';
 import { initCommandsPanel } from './features/commands-panel.js';
 import { initBrowserPanel } from './features/browser-panel.js';
+import { initAgentPanel } from './features/agent-panel.js';
 
 export async function initMain() {
     console.log('VG Coder: Starting Main Logic...');
@@ -39,6 +40,7 @@ export async function initMain() {
         initGitPanel();
         initCommandsPanel();
         initBrowserPanel();
+        initAgentPanel();
         
         initGitView();
         initTerminal();

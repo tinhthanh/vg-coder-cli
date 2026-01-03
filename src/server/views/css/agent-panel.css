@@ -1,0 +1,358 @@
+/* Agent Panel Styles */
+
+/* Panel Content Container */
+#agent-panel-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Chat Messages Area */
+.agent-chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #18181b;
+}
+
+.agent-chat-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.agent-chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.agent-chat-messages::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+    border-radius: 2px;
+}
+
+/* Empty State */
+.agent-chat-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #52525b;
+    gap: 10px;
+}
+
+.agent-chat-empty svg {
+    width: 40px;
+    height: 40px;
+}
+
+.agent-chat-empty span {
+    font-size: 13px;
+}
+
+/* Message Container */
+.agent-message {
+    display: flex;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.agent-message.user {
+    justify-content: flex-end;
+}
+
+.agent-message.assistant {
+    justify-content: flex-start;
+}
+
+/* Message Bubble */
+.agent-message-content {
+    max-width: 85%;
+    padding: 8px 14px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+}
+
+.agent-message.user .agent-message-content {
+    border-radius: 12px;
+    background: #27272a;
+    color: #ededed;
+    border: 1px solid #3f3f46;
+}
+
+.agent-message.assistant .agent-message-content {
+    border-radius: 4px;
+    background: transparent;
+    color: #ededed;
+}
+
+/* Message Metadata */
+.agent-message-meta {
+    margin-top: 6px;
+    font-size: 10px;
+    color: #71717a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.agent-message.user .agent-message-meta {
+    justify-content: flex-end;
+}
+
+.agent-message.assistant .agent-message-meta {
+    justify-content: flex-start;
+}
+
+/* Status Icons */
+.agent-status-sending {
+    color: #71717a;
+}
+
+.agent-status-processing {
+    color: #fbbf24;
+}
+
+.agent-status-error {
+    color: #ef4444;
+}
+
+/* Input Area */
+.agent-chat-input-area {
+    padding: 16px;
+    background-color: #18181b;
+    border-top: 1px solid #27272a;
+    flex-shrink: 0;
+}
+
+.agent-input-wrapper {
+    background: #202023;
+    border: 1px solid #3f3f46;
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.agent-input-wrapper.drag-active {
+    border-color: #4ade80;
+    background-color: #27272a;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.1);
+}
+
+/* File List */
+.agent-file-list {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.agent-file-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #3f3f46;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    color: #e4e4e7;
+}
+
+.agent-file-name {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.agent-file-size {
+    color: #a1a1aa;
+}
+
+.agent-file-remove {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 0 2px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* Textarea */
+.agent-chat-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #ededed;
+    resize: none;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    height: 40px;
+    min-height: 40px;
+}
+
+.agent-chat-textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Input Controls */
+.agent-input-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.agent-input-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* Buttons */
+.agent-btn {
+    background: transparent;
+    border: none;
+    color: #a1a1aa;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.agent-btn:hover {
+    color: #ededed;
+    background: #27272a;
+}
+
+.agent-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.agent-send-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background: #ededed;
+    color: #18181b;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.agent-send-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Mermaid Diagrams */
+.agent-mermaid {
+    margin: 16px 0;
+    padding: 20px;
+    background-color: var(--code-block-bg, #161b22);
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: auto;
+    min-height: 100px;
+}
+
+.agent-mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mermaid error state */
+.agent-mermaid-error {
+    margin: 16px 0;
+    padding: 16px;
+    background-color: rgba(255, 59, 48, 0.1);
+    border: 1px solid var(--ios-red, #ff3b30);
+    border-radius: 6px;
+    color: var(--ios-red, #ff3b30);
+    font-family: monospace;
+    font-size: 12px;
+}
+
+/* Light Theme Support */
+[data-theme="light"] .agent-chat-messages {
+    background-color: #FFFFFF;
+}
+
+[data-theme="light"] .agent-chat-input-area {
+    background-color: #FFFFFF;
+}
+
+[data-theme="light"] .agent-input-wrapper {
+    background: #F7F7F7;
+    border-color: #D1D1D1;
+}
+
+[data-theme="light"] .agent-message.user .agent-message-content {
+    background: #F0F0F0;
+    color: #000000;
+    border-color: #D1D1D1;
+}
+
+[data-theme="light"] .agent-message.assistant .agent-message-content {
+    color: #000000;
+}
+
+[data-theme="light"] .agent-chat-textarea {
+    color: #000000;
+}
+
+/* Spinner Animation */
+@keyframes agent-spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.agent-spinner {
+    animation: agent-spin 1s linear infinite;
+}
+
+/* Error Message */
+.agent-error-box {
+    color: #ef4444;
+    padding: 12px;
+    background: #2a1515;
+    border-radius: 8px;
+    border: 1px solid #7f1d1d;
+}
+
+.agent-error-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.agent-retry-btn {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+.agent-retry-btn:hover {
+    background: #b91c1c;
+}
