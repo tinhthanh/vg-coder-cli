@@ -11,6 +11,113 @@
   let autoScrollInterval = null;
 
   /*********************************
+   * Chat History Management (No Cache)
+   *********************************/
+  
+  /**
+   * Extract chat ID from URL
+   * Example: https://aistudio.google.com/prompts/1_MFt2BE-NCNtdKPASm3MK-xO6JvYGjtD
+   * Returns: '1_MFt2BE-NCNtdKPASm3MK-xO6JvYGjtD' or null
+   */
+  function getChatIdFromUrl() {
+    const url = window.location.pathname;
+    const match = url.match(/\/prompts\/([^/]+)/);
+    return match ? match[1] : null;
+  }
+  
+  /**
+   * Get turn ID from ms-chat-turn element
+   */
+  function getTurnId(turnElement) {
+    return turnElement?.id?.replace('turn-', '') || null;
+  }
+  
+  /**
+   * Extract message from turn element
+   */
+  async function extractMessageFromTurn(turnElement, index) {
+    const turnId = getTurnId(turnElement);
+    
+    // Extract from DOM using CDP (same as copyLastTurnAsMarkdown)
+    console.log(`[ChatHistory] Extracting message ${index + 1} via CDP...`);
+    
+    // Scroll to turn
+    turnElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    await new Promise(r => setTimeout(r, 300));
+    
+    // Determine role from data-turn-role attribute
+    const container = turnElement.querySelector('[data-turn-role]');
+    const turnRole = container?.getAttribute('data-turn-role');
+    const role = turnRole === 'User' ? 'user' : 'assistant';
+    
+    // Extract content via CDP (same method as copyLastTurnAsMarkdown)
+    const content = await copyTurnAsMarkdown(turnElement);
+    
+    const messageData = {
+      id: turnId,
+      role,
+      content: content.trim(),
+      timestamp: Date.now()
+    };
+    
+    return messageData;
+  }
+  
+  /**
+   * Get current messages (last 2 from bottom up)
+   * Always fresh - no caching
+   * @returns {Promise<Array>} Array of message objects
+   */
+  async function getCurrentMessages() {
+    const chatId = getChatIdFromUrl();
+    
+    // If not in a chat URL, return empty
+    if (!chatId) {
+      console.log('[ChatHistory] Not in a chat URL, returning empty messages');
+      return [];
+    }
+    
+    const turns = document.querySelectorAll('ms-chat-turn');
+    if (!turns.length) {
+      console.log('[ChatHistory] No turns found');
+      return [];
+    }
+    
+    // Filter out thinking messages (skip turns with thinking indicators)
+    const validTurns = Array.from(turns).filter(turn => {
+      // Check for <ms-thought-chunk> element (thinking process)
+      const hasThoughtChunk = turn.querySelector('ms-thought-chunk');
+      if (hasThoughtChunk) {
+        console.log('[ChatHistory] Skipping thinking message:', getTurnId(turn));
+        return false;
+      }
+      
+      // Also check for old class-based pattern (backup)
+      const thinkingElements = turn.querySelectorAll("[class*='thinking-']");
+      const hasThinkingClass = thinkingElements.length > 0;
+      if (hasThinkingClass) {
+        console.log('[ChatHistory] Skipping thinking message (class):', getTurnId(turn));
+        return false;
+      }
+      
+      return true;
+    });
+    
+    // Get last 2 valid turns only
+    const last2Turns = validTurns.slice(-2);
+    
+    console.log(`[ChatHistory] Fetching last ${last2Turns.length} messages for chat ${chatId} (skipped ${turns.length - validTurns.length} thinking messages)`);
+    
+    const messages = [];
+    for (let i = 0; i < last2Turns.length; i++) {
+      const msg = await extractMessageFromTurn(last2Turns[i], i);
+      messages.push(msg);
+    }
+    
+    return messages;
+  }
+
+  /*********************************
    * Event Bus
    *********************************/
   const listeners = {};
@@ -159,6 +266,62 @@
   }
 
   /**
+   * Copy turn as markdown (extracted from copyLastTurnAsMarkdown for reuse)
+   * @param {HTMLElement} turnElement - The ms-chat-turn element
+   * @returns {Promise<string>} Markdown content
+   */
+  async function copyTurnAsMarkdown(turnElement) {
+    try {
+      // 1. Ép hiện actions
+      const actions = turnElement.querySelector('.actions.hover-or-edit');
+      if (actions) {
+        actions.style.opacity = '1';
+        actions.style.pointerEvents = 'auto';
+        actions.style.visibility = 'visible';
+      }
+
+      // 2. Click nút More (⋮) với CDP
+      const moreBtn = turnElement.querySelector(
+        'ms-chat-turn-options button.mat-mdc-menu-trigger'
+      );
+
+      if (!moreBtn) {
+        throw new Error('Không tìm thấy nút More (⋮)');
+      }
+
+      moreBtn.click();
+
+      // 3. Đợi menu render
+      await new Promise(r => setTimeout(r, 400));
+
+      // 4. Tìm & click "Copy as markdown"
+      const copyMarkdownBtn =
+        document.querySelector('.cdk-overlay-pane .copy-markdown-button')
+          ?.closest('button');
+
+      if (!copyMarkdownBtn) {
+        throw new Error('Không tìm thấy Copy as markdown');
+      }
+
+      // Trigger click body
+      window.vetgoCDPClick(document.querySelector('body'));
+     copyMarkdownBtn.click();
+
+      // 5. Đợi Angular write vào clipboard
+      await new Promise(r => setTimeout(r, 500));
+
+      // 6. Đọc lại từ clipboard
+      const markdown = await readClipboard();
+      
+      return markdown;
+      
+    } catch (error) {
+      console.error('[ChatHistory] Failed to copy turn as markdown:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Copy markdown của turn cuối cùng vào clipboard (Using CDP!)
    * @param {number} retryCount - Số lần retry còn lại
    * @returns {Promise<string>} Nội dung markdown đã copy
@@ -175,52 +338,12 @@
       }
 
       const lastTurn = turns[turns.length - 1];
-
-      // 2. Ép hiện actions
-      const actions = lastTurn.querySelector('.actions.hover-or-edit');
-      if (actions) {
-        actions.style.opacity = '1';
-        actions.style.pointerEvents = 'auto';
-        actions.style.visibility = 'visible';
-      }
-
-      // 3. Click nút More (⋮) với CDP - REAL click!
-      const moreBtn = lastTurn.querySelector(
-        'ms-chat-turn-options button.mat-mdc-menu-trigger'
-      );
-
-      if (!moreBtn) {
-        throw new Error('Không tìm thấy nút More (⋮)');
-      }
-
-      console.log('📋 CDP Clicking More button...');
-      // trigger click body 
-      window.vetgoCDPClick(document.querySelector('body'));
-      moreBtn.click();
-      console.log('✅ More button clicked via CDP');
-
-      // 4. Đợi menu render (Angular CDK overlay) - Tăng thời gian đợi
-      await new Promise(r => setTimeout(r, 400));
-
-      // 5. Tìm & click "Copy as markdown" với CDP
-      const copyMarkdownBtn =
-        document.querySelector('.cdk-overlay-pane .copy-markdown-button')
-          ?.closest('button');
-
-      if (!copyMarkdownBtn) {
-        throw new Error('Không tìm thấy Copy as markdown');
-      }
-
-      console.log('📋 CDP Clicking Copy button...');
-      await window.vetgoCDPClick(copyMarkdownBtn);
-      console.log('✅ Copy button clicked via CDP');
-
-      // 6. Đợi Angular write vào clipboard (CDP click = real user gesture!)
-      await new Promise(r => setTimeout(r, 500));
-
-      // 7. Đọc lại từ clipboard bằng server API (bypass restrictions!)
-      const markdown = await readClipboard();
+      
+      // 2. Use refactored copyTurnAsMarkdown
+      const markdown = await copyTurnAsMarkdown(lastTurn);
       console.log('✅ Read markdown via server API:', markdown.substring(0, 100) + '...');
+      
+      // No caching - always fetch fresh
       
       console.log(`✅ [Attempt ${attemptNumber}/3] Copy markdown thành công!`);
       return markdown;
@@ -347,7 +470,9 @@
     on,
     off,
     readClipboard,              // ← Export hàm đọc clipboard
-    copyLastTurnAsMarkdown      // ← Export hàm copy markdown
+    copyLastTurnAsMarkdown,     // ← Export hàm copy markdown
+    getCurrentMessages,         // ← Export hàm lấy messages hiện tại
+    getChatIdFromUrl            // ← Export hàm lấy chat ID
   };
 
   // Khởi động interval tự động skip preference voting

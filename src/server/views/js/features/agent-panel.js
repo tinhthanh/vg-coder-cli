@@ -4,7 +4,6 @@
  */
 
 import { getById } from '../utils.js';
-import * as ChatHistory from '../utils/chat-history-manager.js';
 // Import markdown-it and mermaid from npm packages (bundled by webpack)
 import markdownit from 'markdown-it';
 import mermaid from 'mermaid';
@@ -122,10 +121,10 @@ async function renderAgentPanel() {
     // Attach event listeners
     attachEventListeners();
     
-    // Load last chat or start fresh
-    await initializeChatSession();
+    // Don't auto-load - let user click reload
+    console.log('[AgentPanel] Panel ready, waiting for user action');
     
-    // Render messages
+    // Render empty state
     renderMessages();
 
     console.log('[AgentPanel] Rendered successfully');
@@ -209,24 +208,44 @@ function attachEventListeners() {
  * Initialize chat session
  */
 async function initializeChatSession() {
-    // Try to load last chat
-    const lastChatId = ChatHistory.getLastChatId();
-    
-    if (lastChatId) {
-        console.log(`[AgentPanel] Loading last chat: ${lastChatId}`);
-        currentChatId = lastChatId;
+    // Check if AIChat is available
+    if (!window.AIChat) {
+        console.warn('[AgentPanel] AIChat not available yet');
+        return;
+    }
+
+    try {
+        // Load from adapter cache (single source of truth)
+        console.log('[AgentPanel] Loading conversation history from adapter...');
+        const historyMessages = await window.AIChat.getCurrentMessages();
         
-        const chatData = ChatHistory.loadChat(currentChatId);
-        if (chatData && chatData.messages) {
-            messages = chatData.messages;
-            console.log(`[AgentPanel] Loaded ${messages.length} messages`);
+        if (historyMessages && historyMessages.length > 0) {
+            console.log(`[AgentPanel] Loaded ${historyMessages.length} messages from adapter cache`);
+            
+            // Convert history format to agent panel format
+            messages = historyMessages.map(msg => ({
+                role: msg.role,
+                content: msg.content,
+                timestamp: new Date(msg.timestamp).toLocaleTimeString(),
+                status: 'done'
+            }));
+            
+            // Get chat ID from URL
+            const chatId = window.AIChat.getChatIdFromUrl?.();
+            if (chatId) {
+                currentChatId = chatId;
+            }
+            
+            renderMessages();
         } else {
+            console.log('[AgentPanel] No conversation history found');
             messages = [];
+            renderMessages();
         }
-    } else {
-        console.log('[AgentPanel] Starting fresh chat');
+    } catch (error) {
+        console.error('[AgentPanel] Failed to load history:', error);
         messages = [];
-        currentChatId = null;
+        renderMessages();
     }
 }
 
@@ -243,9 +262,25 @@ function renderMessages() {
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
                 </svg>
-                <span>Kéo thả file hoặc nhập tin nhắn</span>
+                <span>No conversation loaded</span>
+                <button class="agent-reload-btn" id="agent-reload-btn">
+                    🔄 Load Conversation History
+                </button>
             </div>
         `;
+        
+        // Attach reload button listener
+        const reloadBtn = getById('agent-reload-btn');
+        if (reloadBtn) {
+            reloadBtn.addEventListener('click', async () => {
+                reloadBtn.disabled = true;
+                reloadBtn.textContent = '⏳ Loading...';
+                await initializeChatSession();
+                reloadBtn.disabled = false;
+                reloadBtn.textContent = '🔄 Load Conversation History';
+            });
+        }
+        
         return;
     }
 
@@ -465,10 +500,13 @@ async function sendMessage() {
         const aiResponse = await window.AIChat.copyLastTurnAsMarkdown();
         updateLastMessage({ content: aiResponse || '(AI không trả về nội dung)', status: 'done' });
 
-        // Create chat ID after first message
+        // Get chat ID from URL (adapter manages chat ID)
         if (isFirstMessage && !currentChatId) {
-            currentChatId = ChatHistory.generateChatId();
-            console.log(`[AgentPanel] Created new chat: ${currentChatId}`);
+            const chatId = window.AIChat?.getChatIdFromUrl?.();
+            if (chatId) {
+                currentChatId = chatId;
+                console.log(`[AgentPanel] Using chat ID from URL: ${currentChatId}`);
+            }
         }
     } catch (error) {
         console.error('[AgentPanel] Error sending message:', error);
@@ -535,7 +573,7 @@ function addMessage(role, content, status = 'done') {
         timestamp: new Date().toLocaleTimeString('vi-VN')
     });
     renderMessages();
-    autoSaveChat();
+    // Adapter auto-saves, no manual save needed
 }
 
 /**
@@ -545,41 +583,26 @@ function updateLastMessage(updates) {
     if (messages.length === 0) return;
     Object.assign(messages[messages.length - 1], updates);
     renderMessages();
-    autoSaveChat();
+    // Adapter handles storage
 }
 
 /**
- * Auto-save chat
+ * Auto-save is handled by adapter
+ * No manual save needed
  */
-function autoSaveChat() {
-    if (!currentChatId) return;
-
-    if (autoSaveTimeout) {
-        clearTimeout(autoSaveTimeout);
-    }
-
-    autoSaveTimeout = setTimeout(() => {
-        const success = ChatHistory.saveChat(currentChatId, messages);
-        if (success) {
-            console.log(`[AgentPanel] Auto-saved chat ${currentChatId}`);
-        }
-    }, 500);
-}
 
 /**
- * Clear chat
+ * Handle clear chat
  */
 function handleClearChat() {
-    if (!confirm('Xóa toàn bộ lịch sử chat?')) return;
-
-    if (currentChatId) {
-        ChatHistory.deleteChat(currentChatId);
+    if (messages.length === 0) return;
+    
+    if (confirm('Clear chat history?')) {
         console.log(`[AgentPanel] Deleted chat ${currentChatId}`);
     }
 
     messages = [];
     selectedFiles = [];
-    currentChatId = null;
     renderFileList();
     renderMessages();
 }

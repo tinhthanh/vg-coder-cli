@@ -37,7 +37,7 @@
     justify-content: center;
     height: 100%;
     color: #52525b;
-    gap: 10px;
+    gap: 16px;
 }
 
 .agent-chat-empty svg {
@@ -47,6 +47,34 @@
 
 .agent-chat-empty span {
     font-size: 13px;
+}
+
+.agent-reload-btn {
+    margin-top: 8px;
+    padding: 10px 20px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.agent-reload-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.agent-reload-btn:active {
+    transform: translateY(0);
+}
+
+.agent-reload-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* Message Container */
