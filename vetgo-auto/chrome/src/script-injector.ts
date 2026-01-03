@@ -127,12 +127,12 @@ export class ScriptInjector {
           const head = await this.getHeadElement();
           head.appendChild(scriptElement);
         } catch (error) {
-          console.error('Failed to get head element for data URL:', error);
+          console.log('Failed to get head element for data URL:');
           resolve(false);
         }
       });
     } catch (error) {
-      console.error('Data URL injection failed:', error);
+      console.log('Data URL injection failed:');
       return false;
     }
   }

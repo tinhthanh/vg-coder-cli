@@ -3,6 +3,9 @@ import { getById, qsa } from '../utils.js';
 let activePanel = null;
 let activePanelRight = null;
 
+const STORAGE_KEY_ACTIVE_PANEL_LEFT = 'vg-coder-active-panel-left';
+const STORAGE_KEY_ACTIVE_PANEL_RIGHT = 'vg-coder-active-panel-right';
+
 /**
  * Initialize Tool Window system
  */
@@ -40,13 +43,34 @@ export function initToolWindow() {
         console.log('[ToolWindow] Right tool window bar initialized');
     }
 
-    // Open Project panel by default after a short delay
-    // This ensures all panel listeners are registered first
+    // Restore saved panel states after a short delay
     setTimeout(() => {
-        togglePanel('project');
+        restorePanelStates();
     }, 100);
 
-    console.log('[ToolWindow] Initialized with Project panel active');
+    console.log('[ToolWindow] Initialized');
+}
+
+/**
+ * Restore previously active panels from localStorage
+ */
+function restorePanelStates() {
+    // Restore left panel
+    const savedLeftPanel = localStorage.getItem(STORAGE_KEY_ACTIVE_PANEL_LEFT);
+    if (savedLeftPanel) {
+        togglePanel(savedLeftPanel);
+    } else {
+        // Default to project panel if no saved state
+        togglePanel('project');
+    }
+
+    // Restore right panel
+    const savedRightPanel = localStorage.getItem(STORAGE_KEY_ACTIVE_PANEL_RIGHT);
+    if (savedRightPanel) {
+        togglePanelRight(savedRightPanel);
+    }
+
+    console.log('[ToolWindow] Restored panel states - Left:', savedLeftPanel || 'project', 'Right:', savedRightPanel || 'none');
 }
 
 /**
@@ -88,6 +112,9 @@ export function togglePanel(panelId) {
     if (icon) icon.classList.add('active');
 
     activePanel = panelId;
+    
+    // Save active panel state to localStorage
+    localStorage.setItem(STORAGE_KEY_ACTIVE_PANEL_LEFT, panelId);
 
     // Trigger panel-specific initialization if needed
     triggerPanelInit(panelId);
@@ -133,6 +160,9 @@ export function togglePanelRight(panelId) {
     if (icon) icon.classList.add('active');
 
     activePanelRight = panelId;
+    
+    // Save active right panel state to localStorage
+    localStorage.setItem(STORAGE_KEY_ACTIVE_PANEL_RIGHT, panelId);
 
     // Trigger panel-specific initialization if needed
     triggerPanelInit(panelId, 'right');
@@ -163,6 +193,9 @@ export function closeAllPanels() {
     });
 
     activePanel = null;
+    
+    // Clear saved panel state
+    localStorage.removeItem(STORAGE_KEY_ACTIVE_PANEL_LEFT);
 
     console.log('[ToolWindow] Closed all panels');
 }
@@ -191,6 +224,9 @@ export function closeAllPanelsRight() {
     });
 
     activePanelRight = null;
+    
+    // Clear saved right panel state
+    localStorage.removeItem(STORAGE_KEY_ACTIVE_PANEL_RIGHT);
 
     console.log('[ToolWindow] Closed all right panels');
 }
