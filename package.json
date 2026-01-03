@@ -1,6 +1,6 @@
 {
   "name": "vg-coder-cli",
-  "version": "2.0.42",
+  "version": "2.0.43",
   "description": "🚀 CLI tool to analyze projects, concatenate source files, count tokens, and export HTML with syntax highlighting and copy functionality",
   "main": "src/index.js",
   "bin": {
@@ -15,8 +15,9 @@
     "test:watch": "jest --watch",
     "dev": "nodemon src/index.js",
     "build:extension": "cd vetgo-auto && npm run build",
+    "deploy-scripts": "cd vetgo-auto && npm run deploy-scripts",
     "build:copy": "node scripts/build.js",
-    "build": "npm run build:extension && npm run build:copy && npm run build:inject && npm run install:local",
+    "build": "npm run deploy-scripts && npm run build:extension && npm run build:copy && npm run build:inject && npm run install:local",
     "push": "npm run build && npm pack && npm publish",
     "build:inject": "gulp"
   },
