@@ -101,7 +101,7 @@ function isFromVGCoder(event) {
 /**
  * Toggle VG Coder dashboard visibility
  */
-function toggleDashboard() {
+export function toggleDashboard() {
     const appRoot = getById('vg-app-root');
     if (!appRoot) {
         console.warn('[Keyboard] Cannot toggle dashboard: vg-app-root not found');

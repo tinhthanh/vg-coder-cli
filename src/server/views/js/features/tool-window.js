@@ -1,4 +1,5 @@
 import { getById, qsa } from '../utils.js';
+import { toggleDashboard } from './keyboard-shortcuts.js';
 
 let activePanel = null;
 let activePanelRight = null;
@@ -41,6 +42,16 @@ export function initToolWindow() {
             });
         });
         console.log('[ToolWindow] Right tool window bar initialized');
+    }
+    
+    // Initialize exit button
+    const exitBtn = getById('exit-dashboard-btn');
+    if (exitBtn) {
+        exitBtn.addEventListener('click', () => {
+            toggleDashboard();
+            console.log('[ToolWindow] Dashboard toggled via exit button');
+        });
+        console.log('[ToolWindow] Exit button initialized');
     }
 
     // Restore saved panel states after a short delay

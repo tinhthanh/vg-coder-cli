@@ -44,6 +44,9 @@
     height: 100% !important;
     opacity: 1 !important;
 }
+#vg-app-root.visible .vg-bubble { 
+   display: none !important; 
+}
 
 /* Main Layout */
 .split-layout { display: flex; height: 100%; width: 100%; flex-direction: row; }
