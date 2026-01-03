@@ -1,8 +1,44 @@
 import { qs, getById } from '../utils.js';
 
+const STORAGE_KEY_LEFT_WIDTH = 'vg-coder-left-panel-width';
+const STORAGE_KEY_RIGHT_WIDTH = 'vg-coder-right-panel-width';
+
 export function initResizeHandler() {
     initLeftResizeHandler();
     initRightResizeHandler();
+    loadSavedWidths();
+}
+
+/**
+ * Load saved panel widths from localStorage
+ */
+function loadSavedWidths() {
+    const leftWidth = localStorage.getItem(STORAGE_KEY_LEFT_WIDTH);
+    const rightWidth = localStorage.getItem(STORAGE_KEY_RIGHT_WIDTH);
+
+    const leftContainer = getById('tool-panel-container');
+    const rightContainer = getById('tool-panel-container-right');
+
+    if (leftWidth && leftContainer) {
+        leftContainer.style.width = leftWidth;
+        console.log('[Resize] Loaded left panel width:', leftWidth);
+    }
+
+    if (rightWidth && rightContainer) {
+        rightContainer.style.width = rightWidth;
+        console.log('[Resize] Loaded right panel width:', rightWidth);
+    }
+}
+
+/**
+ * Save panel width to localStorage
+ */
+function saveWidth(key, width) {
+    try {
+        localStorage.setItem(key, `${width}px`);
+    } catch (e) {
+        console.warn('[Resize] Failed to save width:', e);
+    }
 }
 
 /**
@@ -46,6 +82,10 @@ function initLeftResizeHandler() {
         if (isResizing) {
             isResizing = false;
             document.body.classList.remove('resizing');
+            
+            // Save width to localStorage
+            const finalWidth = toolPanelContainer.getBoundingClientRect().width;
+            saveWidth(STORAGE_KEY_LEFT_WIDTH, finalWidth);
         }
     });
 
@@ -94,6 +134,10 @@ function initRightResizeHandler() {
         if (isResizing) {
             isResizing = false;
             document.body.classList.remove('resizing');
+            
+            // Save width to localStorage
+            const finalWidth = toolPanelContainerRight.getBoundingClientRect().width;
+            saveWidth(STORAGE_KEY_RIGHT_WIDTH, finalWidth);
         }
     });
 

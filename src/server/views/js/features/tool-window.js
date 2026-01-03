@@ -75,6 +75,15 @@ export function togglePanel(panelId) {
     // Open the new panel
     setActivePanel(panelId);
     container.classList.add('expanded');
+    
+    // Restore saved width from localStorage (or use default)
+    const savedWidth = localStorage.getItem('vg-coder-left-panel-width');
+    if (savedWidth) {
+        container.style.width = savedWidth;
+    } else {
+        container.style.width = '520px'; // Default width
+    }
+    
     panel.classList.add('active');
     if (icon) icon.classList.add('active');
 
@@ -111,6 +120,15 @@ export function togglePanelRight(panelId) {
 
     // Open the new panel
     container.classList.add('expanded');
+    
+    // Restore saved width from localStorage (or use default)
+    const savedWidth = localStorage.getItem('vg-coder-right-panel-width');
+    if (savedWidth) {
+        container.style.width = savedWidth;
+    } else {
+        container.style.width = '520px'; // Default width
+    }
+    
     panel.classList.add('active');
     if (icon) icon.classList.add('active');
 
@@ -132,8 +150,8 @@ export function closeAllPanels() {
 
     if (container) {
         container.classList.remove('expanded');
-        // Reset width to allow CSS transition to work properly
-        container.style.width = '';
+        // Set width to 0 to collapse panel (saved width will be restored on open)
+        container.style.width = '0';
     }
 
     panels.forEach(panel => {
@@ -160,8 +178,8 @@ export function closeAllPanelsRight() {
 
     if (container) {
         container.classList.remove('expanded');
-        // Reset width to allow CSS transition to work properly
-        container.style.width = '';
+        // Set width to 0 to collapse panel (saved width will be restored on open)
+        container.style.width = '0';
     }
 
     panels.forEach(panel => {
@@ -183,7 +201,8 @@ export function closeAllPanelsRight() {
  * @param {string} panelId - Panel ID
  */
 function setActivePanel(panelId) {
-    const panels = qsa('.tool-panel');
+    // Only select panels from left container to avoid affecting right panels
+    const panels = qsa('#tool-panel-container .tool-panel');
     panels.forEach(panel => {
         if (panel.id === `tool-panel-${panelId}`) {
             panel.classList.add('active');
@@ -192,6 +211,7 @@ function setActivePanel(panelId) {
         }
     });
 }
+
 
 /**
  * Trigger initialization for panel-specific features
