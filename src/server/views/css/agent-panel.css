@@ -176,6 +176,7 @@
 .agent-file-list {
     display: flex;
     flex-wrap: wrap;
+    gap: 8px;
 }
 
 .agent-file-badge {
@@ -185,21 +186,43 @@
     background: #3f3f46;
     padding: 4px 8px;
     border-radius: 4px;
-    margin-right: 6px;
-    margin-bottom: 4px;
     font-size: 11px;
     color: #e4e4e7;
+    max-width: 100%;
+}
+
+.agent-file-badge.has-preview {
+    padding: 4px;
+    gap: 8px;
+}
+
+.agent-file-preview {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #52525b;
+    flex-shrink: 0;
+}
+
+.agent-file-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
 }
 
 .agent-file-name {
-    max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 150px;
 }
 
 .agent-file-size {
     color: #a1a1aa;
+    font-size: 10px;
 }
 
 .agent-file-remove {
@@ -208,9 +231,16 @@
     color: #ef4444;
     cursor: pointer;
     font-weight: bold;
-    padding: 0 2px;
-    font-size: 14px;
+    padding: 0 4px;
+    font-size: 16px;
     line-height: 1;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.agent-file-remove:hover {
+    color: #dc2626;
+    transform: scale(1.2);
 }
 
 /* Textarea */

@@ -159,6 +159,46 @@ function attachEventListeners() {
                 this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             }
         });
+
+        // Paste event - Handle images from clipboard
+        input.addEventListener('paste', async (e) => {
+            if (isProcessing) return;
+            
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            // Check for image items
+            const imageItems = Array.from(items).filter(item => 
+                item.type.startsWith('image/')
+            );
+
+            if (imageItems.length === 0) return;
+
+            // Prevent default paste for images
+            e.preventDefault();
+
+            // Process all images
+            for (const item of imageItems) {
+                const blob = item.getAsFile();
+                if (!blob) continue;
+
+                // Create a File object with a proper name
+                const timestamp = Date.now();
+                const extension = blob.type.split('/')[1] || 'png';
+                const file = new File(
+                    [blob], 
+                    `pasted-image-${timestamp}.${extension}`, 
+                    { type: blob.type }
+                );
+
+                // Add to selected files
+                selectedFiles.push(file);
+                console.log('[AgentPanel] Image pasted:', file.name, file.type, `${(file.size/1024).toFixed(1)}KB`);
+            }
+
+            // Update UI to show pasted images
+            renderFileList();
+        });
     }
 
     // File button
@@ -625,13 +665,21 @@ function renderFileList() {
     const listContainer = getById('agent-file-list');
     if (!listContainer) return;
 
-    listContainer.innerHTML = selectedFiles.map((file, index) => `
-        <div class="agent-file-badge">
-            <span class="agent-file-name">📎 ${file.name}</span>
-            <span class="agent-file-size">(${(file.size / 1024).toFixed(0)}KB)</span>
-            <button class="agent-file-remove" onclick="window.removeAgentFile(${index})">×</button>
-        </div>
-    `).join('');
+    listContainer.innerHTML = selectedFiles.map((file, index) => {
+        const isImage = file.type.startsWith('image/');
+        const fileUrl = isImage ? URL.createObjectURL(file) : '';
+        
+        return `
+            <div class="agent-file-badge ${isImage ? 'has-preview' : ''}">
+                ${isImage ? `<img class="agent-file-preview" src="${fileUrl}" alt="${file.name}" />` : '📎'}
+                <div class="agent-file-info">
+                    <span class="agent-file-name">${file.name}</span>
+                    <span class="agent-file-size">(${(file.size / 1024).toFixed(0)}KB)</span>
+                </div>
+                <button class="agent-file-remove" onclick="window.removeAgentFile(${index})">×</button>
+            </div>
+        `;
+    }).join('');
 }
 
 /**
