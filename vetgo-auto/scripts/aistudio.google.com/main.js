@@ -304,8 +304,8 @@
       }
 
       // Trigger click body
-      window.vetgoCDPClick(document.querySelector('body'));
-     copyMarkdownBtn.click();
+      window.vetgoCDPClick(copyMarkdownBtn);
+    //  copyMarkdownBtn.click();
 
       // 5. Đợi Angular write vào clipboard
       await new Promise(r => setTimeout(r, 500));
