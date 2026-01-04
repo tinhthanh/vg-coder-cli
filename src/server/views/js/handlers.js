@@ -2,6 +2,7 @@ import { SYSTEM_PROMPT, API_BASE } from './config.js';
 import { analyzeProject, executeScript, copyToClipboard, readFromClipboard } from './api.js';
 import { showToast, showLoading, resetButton, showResponse, showCopiedState, getById } from './utils.js';
 import { globalDispatcher, EVENT_TYPES } from './event-protocol.js';
+import { loadGitData } from './features/git-panel.js';
 
 let lastAnalyzeResult = null;
 
@@ -159,7 +160,11 @@ export async function testExecute(event) {
         const data = await executeScript(bash);
         showResponse('execute-response', data, !data.success);
         data.success ? showToast('Thực thi thành công', 'success') : showToast('Thực thi thất bại', 'error');
-        if (data.success) bashInput.value = '';
+        if (data.success) {
+            bashInput.value = '';
+            // Refresh git panel sau khi execute thành công
+            await loadGitData();
+        }
     } catch (err) {
         showResponse('execute-response', { error: err.message }, true);
         showToast('Lỗi: ' + err.message, 'error');
@@ -200,6 +205,8 @@ export async function executeFromClipboard(event) {
             if (bashInput) {
                 bashInput.value = '';
             }
+            // Refresh git panel sau khi execute thành công
+            await loadGitData();
         } else {
             data.syntaxError ? showToast('Lỗi syntax script', 'error') : showToast('Thực thi thất bại', 'error');
         }

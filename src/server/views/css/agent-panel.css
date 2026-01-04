@@ -94,7 +94,7 @@
 
 /* Message Bubble */
 .agent-message-content {
-    max-width: 85%;
+    max-width: 100%;
     padding: 8px 14px;
     font-size: 14px;
     line-height: 1.6;
