@@ -245,17 +245,172 @@
 /* Mermaid Diagrams */
 .markdown-body .mermaid-diagram {
     margin: 16px 0;
-    padding: 20px;
     background-color: var(--code-block-bg, #161b22);
     border-radius: 6px;
+    overflow: hidden;
+    min-height: 100px;
+    position: relative;
+}
+
+.mermaid-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mermaid-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    color: #a1a1aa;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.mermaid-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ededed;
+}
+
+.mermaid-btn:active {
+    transform: scale(0.95);
+}
+
+.mermaid-diagram-content {
+    padding: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
     overflow-x: auto;
-    min-height: 100px;
 }
 
-.markdown-body .mermaid-diagram svg {
+.mermaid-diagram-content svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mermaid Toast Notification */
+.mermaid-toast {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 100;
+    animation: mermaid-toast-fade 2s ease-out forwards;
+}
+
+.mermaid-toast.success {
+    background: rgba(74, 222, 128, 0.9);
+    color: #000;
+}
+
+.mermaid-toast.error {
+    background: rgba(239, 68, 68, 0.9);
+    color: #fff;
+}
+
+@keyframes mermaid-toast-fade {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+/* Mermaid Fullscreen Modal */
+.mermaid-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.mermaid-modal.open {
+    opacity: 1;
+}
+
+.mermaid-modal.closing {
+    opacity: 0;
+}
+
+.mermaid-modal-content {
+    background: #1a1a1a;
+    border-radius: 12px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+}
+
+.mermaid-modal.open .mermaid-modal-content {
+    transform: scale(1);
+}
+
+.mermaid-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #252525;
+    border-bottom: 1px solid #333;
+    color: #ededed;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.mermaid-modal-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.mermaid-modal-actions .mermaid-btn {
+    padding: 6px 12px;
+}
+
+.mermaid-close {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.mermaid-close:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.mermaid-modal-body {
+    padding: 40px;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #161b22;
+}
+
+.mermaid-modal-body svg {
     max-width: 100%;
     height: auto;
 }

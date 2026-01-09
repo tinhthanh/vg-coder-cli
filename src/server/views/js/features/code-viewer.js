@@ -6,6 +6,8 @@ import hljs from 'highlight.js/lib/core';
 import markdownit from 'markdown-it';
 // Import mermaid for rendering diagrams
 import mermaid from 'mermaid';
+// Import mermaid viewer for fullscreen functionality
+import { createMermaidToolbar, openMermaidViewer, showToast as showMermaidToast } from './mermaid-viewer.js';
 
 // Import common languages to reduce bundle size
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -80,17 +82,29 @@ async function renderMermaidDiagrams(container) {
             const id = `mermaid-diagram-${Date.now()}-${i}`;
             const { svg, bindFunctions } = await mermaid.render(id, code);
             
-            // Create wrapper div for mermaid
+            // Create wrapper div for mermaid with toolbar
             const wrapper = document.createElement('div');
             wrapper.className = 'mermaid-diagram';
-            wrapper.innerHTML = svg;
+            wrapper.style.cssText = 'position: relative; margin: 16px 0; background: #161b22; border-radius: 6px; overflow: hidden;';
+            
+            // Create toolbar using mermaid-viewer module
+            const toolbar = createMermaidToolbar(code, svg);
+            
+            // Create diagram container
+            const diagramContainer = document.createElement('div');
+            diagramContainer.className = 'mermaid-diagram-content';
+            diagramContainer.style.cssText = 'padding: 20px; display: flex; justify-content: center; align-items: center; overflow-x: auto;';
+            diagramContainer.innerHTML = svg;
+            
+            wrapper.appendChild(toolbar);
+            wrapper.appendChild(diagramContainer);
             
             // Replace pre/code with wrapper
             pre.replaceWith(wrapper);
             
             // Bind any interactive functions if present
             if (bindFunctions) {
-                bindFunctions(wrapper);
+                bindFunctions(diagramContainer);
             }
             
             console.log(`[Mermaid] Successfully rendered diagram ${i + 1}`);
@@ -184,3 +198,4 @@ function escapeHtml(text) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+

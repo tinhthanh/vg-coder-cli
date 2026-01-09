@@ -7,6 +7,8 @@ import { getById } from '../utils.js';
 // Import markdown-it and mermaid from npm packages (bundled by webpack)
 import markdownit from 'markdown-it';
 import mermaid from 'mermaid';
+// Import mermaid viewer for fullscreen functionality
+import { createMermaidToolbar, openMermaidViewer, showToast as showMermaidToast } from './mermaid-viewer.js';
 
 // State
 let messages = [];
@@ -473,17 +475,29 @@ async function processMermaidDiagrams(container) {
             const id = `agent-mermaid-${Date.now()}-${i}`;
             const { svg, bindFunctions } = await mermaid.render(id, code);
             
-            // Create wrapper div for mermaid
+            // Create wrapper div for mermaid with toolbar
             const wrapper = document.createElement('div');
             wrapper.className = 'agent-mermaid';
-            wrapper.innerHTML = svg;
+            wrapper.style.cssText = 'position: relative; margin: 16px 0; background: #161b22; border-radius: 6px; overflow: hidden;';
+            
+            // Create toolbar using mermaid-viewer module
+            const toolbar = createMermaidToolbar(code, svg);
+            
+            // Create diagram container
+            const diagramContainer = document.createElement('div');
+            diagramContainer.className = 'agent-mermaid-diagram';
+            diagramContainer.style.cssText = 'padding: 20px; display: flex; justify-content: center; align-items: center; overflow-x: auto;';
+            diagramContainer.innerHTML = svg;
+            
+            wrapper.appendChild(toolbar);
+            wrapper.appendChild(diagramContainer);
             
             // Replace pre/code with wrapper
             preElement.replaceWith(wrapper);
             
             // Bind any interactive functions if present
             if (bindFunctions) {
-                bindFunctions(wrapper);
+                bindFunctions(diagramContainer);
             }
             
             console.log(`[AgentPanel] Rendered mermaid diagram ${i + 1}`);
@@ -756,3 +770,4 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+

@@ -123,7 +123,7 @@ function initRightResizeHandler() {
             const currentX = e.clientX;
             // For right panel, dragging left (negative diff) should increase width
             const diffX = startX - currentX; // Inverted direction
-            const newWidth = Math.max(250, Math.min(600, startWidth + diffX)); // Min 250px, Max 600px
+            const newWidth = Math.max(250, Math.min(1200, startWidth + diffX)); // Min 250px, Max 1200px
             
             // Update width of tool-panel-container-right
             toolPanelContainerRight.style.width = `${newWidth}px`;

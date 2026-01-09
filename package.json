@@ -1,6 +1,6 @@
 {
   "name": "vg-coder-cli",
-  "version": "2.0.44",
+  "version": "2.0.46",
   "description": "🚀 CLI tool to analyze projects, concatenate source files, count tokens, and export HTML with syntax highlighting and copy functionality",
   "main": "src/index.js",
   "bin": {
